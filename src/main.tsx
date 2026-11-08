@@ -17,9 +17,31 @@ function Localized({ children }: { children: ReactNode }) {
   return <I18nProvider lang={lang}>{children}</I18nProvider>;
 }
 
-const auth = await initAuth({ requireLogin: true });
+/** If start-up fails, say so instead of leaving a blank page (e.g. sign-in needs HTTPS outside localhost). */
+function fatal(err: unknown) {
+  const fr = navigator.languages.some((l) => l.toLowerCase().startsWith("fr"));
+  const insecure = !window.isSecureContext;
+  const box = document.createElement("div");
+  box.className = "card app-fatal";
+  const h = document.createElement("h1");
+  h.className = "t-title-m";
+  h.textContent = fr ? "Locke n'a pas pu démarrer" : "Locke couldn't start";
+  const p = document.createElement("p");
+  p.className = "t-body c2";
+  p.textContent = insecure
+    ? fr ? "La connexion sécurisée exige HTTPS. Ouvrez Locke via son adresse https." : "Signing in requires HTTPS. Open Locke through its https address."
+    : fr ? "La connexion a échoué. Réessayez dans un instant." : "Signing in failed. Try again in a moment.";
+  const b = document.createElement("button");
+  b.className = "btn btn-primary";
+  b.textContent = fr ? "Réessayer" : "Try again";
+  b.onclick = () => location.reload();
+  box.append(h, p, b);
+  document.getElementById("root")!.replaceChildren(box);
+  console.error(err);
+}
 
-createRoot(document.getElementById("root")!).render(
+const auth = await initAuth({ requireLogin: true }).catch((e: unknown) => { fatal(e); return null; });
+if (auth) createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <PrefsProvider>
       <Localized>

@@ -323,3 +323,7 @@ html.lk, .lk body { margin: 0; min-height: 100%; background: var(--bg); }
 @media (max-width: 639px) { .app-toasts { bottom: calc(var(--safe-bottom) + 80px); align-items: center; } }
 @media (min-width: 640px) { .app-toasts { left: calc(72px + 16px); } }
 @media (min-width: 1280px) { .app-toasts { left: calc(248px + 16px); } }
+
+/* Start-up failure (no React yet). */
+.app-fatal { max-width: 440px; margin: 15vh auto 0; padding: 24px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.app-fatal h1, .app-fatal p { margin: 0; }
