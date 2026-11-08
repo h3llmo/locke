@@ -39,12 +39,16 @@ const signal = () => queueSignal.emit("job");
 
 // ---------- capabilities and routing ----------
 
-export interface FaceSwapRequirements { characters: { gender: string; age: string; faces: number }[] }
+export interface FaceSwapRequirements { characters: { gender: string; age: string; faces: number }[]; format?: string }
+export interface GenerateRequirements { style: string; count: number; references: number; character: boolean; format?: string }
+/** Admin test jobs with hand-written params: routed on the job type only, so the worker's own validation is tested. */
+export interface RawRequirements { raw: true }
 export interface Capabilities {
   maxConcurrency?: number;
   resultFormats?: string[];
   faceSwap?: { maxCharacters?: number; maxFacesPerCharacter?: number; genders?: string[]; ages?: string[]; ageAliases?: Record<string, string>; distinctFilters?: boolean } | null;
-  generate?: unknown; enhance?: unknown; blur?: unknown; edit?: unknown;
+  generate?: { styles?: { id: string; label?: string }[]; counts?: number[]; character?: boolean } | null;
+  enhance?: unknown; blur?: unknown; edit?: unknown;
 }
 
 const capKey: Record<JobType, keyof Capabilities> = { face_swap: "faceSwap", generate: "generate", enhance: "enhance", blur: "blur", edit: "edit" };
@@ -66,6 +70,18 @@ export function overlaps(a: { gender: string; age: string }, b: { gender: string
 /** Why a worker can't take a job, or null when it can. */
 export function incompatibility(caps: Capabilities | null, type: string, req: unknown): "type" | "values" | "overlap" | null {
   if (!supportsType(caps, type)) return "type";
+  if ((req as RawRequirements).raw) return null;
+  const format = (req as { format?: string }).format ?? "png";
+  if (!(caps!.resultFormats ?? ["png", "jpeg"]).includes(format)) return "values";
+  if (type === "generate") {
+    const g = caps!.generate!;
+    const r = req as GenerateRequirements;
+    if (!(g.styles ?? []).some((s) => s.id === r.style)) return "values";
+    if (!(g.counts ?? [1]).includes(r.count)) return "values";
+    if (r.references > 4) return "values";
+    if (r.character && g.character === false) return "values";
+    return null;
+  }
   if (type !== "face_swap") return null;
   const fs = caps!.faceSwap!;
   const chars = (req as FaceSwapRequirements).characters;

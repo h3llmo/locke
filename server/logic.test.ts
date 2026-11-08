@@ -55,3 +55,16 @@ test("metadata is stripped, JPEG orientation kept", () => {
   assert.ok(clean.includes(Buffer.from([0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06])), "orientation 6 kept");
   assert.ok(clean.subarray(-9).equals(Buffer.from([0xff, 0xda, 0, 2, 1, 2, 3, 0xff, 0xd9])));
 });
+
+test("generate routing: style, count, format and character support", () => {
+  const caps = { resultFormats: ["png"], generate: { styles: [{ id: "photo-neutre" }], counts: [1, 2, 3, 4], character: false } };
+  const g = (o: Record<string, unknown> = {}) => ({ style: "photo-neutre", count: 1, references: 0, character: false, format: "png", ...o });
+  assert.equal(incompatibility(caps, "generate", g()), null);
+  assert.equal(incompatibility(caps, "generate", g({ style: "nope" })), "values");
+  assert.equal(incompatibility(caps, "generate", g({ count: 5 })), "values");
+  assert.equal(incompatibility(caps, "generate", g({ format: "jpeg" })), "values");
+  assert.equal(incompatibility(caps, "generate", g({ character: true })), "values");
+  assert.equal(incompatibility(caps, "generate", g({ references: 5 })), "values");
+  assert.equal(incompatibility(caps, "generate", { raw: true }), null, "raw admin tests go to the worker as written");
+  assert.equal(incompatibility(caps, "face_swap", { raw: true }), "type");
+});

@@ -5,7 +5,7 @@ import { createCallerAuthenticator, type Caller } from "@ilven/common";
 import { fingerprint } from "./crypto.ts";
 import { contentType, detectFormat, stripMetadata, syntheticPng } from "./images.ts";
 import {
-  AGES, assertSomeWorkerCan, createJob, err, GENDERS, newId, purgeJob, readResult, SETTINGS, type Capabilities, type Ctx,
+  AGES, assertSomeWorkerCan, createJob, err, GENDERS, incompatibility, newId, purgeJob, readResult, SETTINGS, type Capabilities, type Ctx,
 } from "./jobs.ts";
 import { workerKeyHash } from "./worker-api.ts";
 
@@ -81,7 +81,7 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
     let raw: unknown;
     try { raw = JSON.parse(paramsText); } catch { throw err(400, "bad_request", "params is not JSON"); }
     const p = faceSwapSchema.parse(raw);
-    const requirements = { characters: p.characters.map((ch) => ({ gender: ch.gender, age: ch.age, faces: ch.faces.length })) };
+    const requirements = { characters: p.characters.map((ch) => ({ gender: ch.gender, age: ch.age, faces: ch.faces.length })), format: p.output?.format ?? "png" };
     await assertSomeWorkerCan(ctx, p.type, requirements);
 
     const inputs: { id: string; data: Buffer }[] = [];
@@ -302,25 +302,81 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
     return reply.status(204).send();
   });
 
-  // A face_swap job made of synthetic images (no real face), sent only to this worker. Expected outcome:
-  // done, or failed with no_face_found; both prove the whole path (claim, crypto, upload, complete).
+  /**
+   * Test jobs, sent only to this worker (admins). Inputs are synthetic images (no real face).
+   * - face_swap: expected outcome done, or failed with no_face_found; both prove the whole path.
+   * - generate: the default parameters below, overridden by `params` (validated against the worker's capabilities),
+   *   with `references` synthetic reference images.
+   * - `raw: true`: `params` are sent as written, without validation (to test the worker's own refusals).
+   */
   app.post(`${API_PREFIX}/admin/workers/:id/test-job`, async (req, reply) => {
     const c = await admin(req);
     const { id } = req.params as { id: string };
+    const b = z.object({
+      type: z.enum(["face_swap", "generate"]).default("face_swap"),
+      params: z.record(z.string(), z.unknown()).default({}),
+      references: z.number().int().min(0).max(4).default(0),
+      raw: z.boolean().default(false),
+    }).parse(req.body ?? {});
     const w = await getWorker(id);
-    const fs = (w.capabilities as Capabilities | null)?.faceSwap;
-    if (!fs) throw err(409, "conflict", "This worker hasn't announced face swap support yet (no hello)");
-    const pick = (list: string[] | undefined) => (list?.includes("any") ? "any" : list?.[0] ?? "any");
-    const target = { id: newId("in"), data: syntheticPng(512, 512, 1) };
-    const face = { id: newId("in"), data: syntheticPng(256, 256, 2) };
-    const character = { gender: pick(fs.genders), age: pick(fs.ages) };
-    const jobId = await createJob(ctx, {
-      ownerSub: c.sub, type: "face_swap", isTest: true, targetWorker: id, maxResults: 1,
-      inputs: [target, face],
-      requirements: { characters: [{ ...character, faces: 1 }] },
-      params: { test: true, image: target.id, match: "largest", characters: [{ ref: "ch_1", faces: [face.id], mainFace: face.id, ...character }], output: { format: "png" } },
-      summary: { title: "Test job", worker: w.name },
-    });
+    const caps = w.capabilities as Capabilities | null;
+    if (!caps) throw err(409, "conflict", "This worker hasn't connected yet (no hello)");
+    const summary = { title: b.type === "generate" ? "Generate test" : "Face swap test", worker: w.name };
+
+    if (b.type === "face_swap") {
+      const fs = caps.faceSwap;
+      if (!fs) throw err(409, "conflict", "This worker doesn't announce face swap");
+      const pick = (list: string[] | undefined) => (list?.includes("any") ? "any" : list?.[0] ?? "any");
+      const target = { id: newId("in"), data: syntheticPng(512, 512, 1) };
+      const face = { id: newId("in"), data: syntheticPng(256, 256, 2) };
+      const character = { gender: pick(fs.genders), age: pick(fs.ages) };
+      const jobId = await createJob(ctx, {
+        ownerSub: c.sub, type: "face_swap", isTest: true, targetWorker: id, maxResults: 1, inputs: [target, face], summary,
+        requirements: b.raw ? { raw: true } : { characters: [{ ...character, faces: 1 }] },
+        params: { test: true, image: target.id, match: "largest", characters: [{ ref: "ch_1", faces: [face.id], mainFace: face.id, ...character }], output: { format: "png" }, ...b.params },
+      });
+      return reply.status(201).send(await jobView(jobId, c.sub));
+    }
+
+    if (!caps.generate) throw err(409, "conflict", "This worker doesn't announce generate");
+    const refs = Array.from({ length: b.references }, (_, i) => ({ id: newId("in"), data: syntheticPng(512, 512, i + 3) }));
+    const params: Record<string, unknown> = {
+      test: true,
+      positive: ["a red apple on a wooden table", "studio photo"],
+      negative: ["blurry"],
+      style: caps.generate.styles?.some((s) => s.id === "photo-neutre") ? "photo-neutre" : caps.generate.styles?.[0]?.id,
+      aspect: "portrait",
+      count: 1,
+      mode: "fast",
+      references: refs.map((r) => r.id),
+      seed: 12345,
+      output: { format: "png" },
+      ...b.params,
+    };
+    const count = Number(params.count);
+    const maxResults = Number.isInteger(count) ? Math.min(4, Math.max(1, count)) : 1;
+    if (!b.raw) {
+      z.object({
+        positive: z.array(z.string().max(500)).max(50),
+        negative: z.array(z.string().max(500)).max(50),
+        style: z.string(),
+        aspect: z.enum(["square", "portrait", "landscape"]),
+        count: z.number().int().min(1).max(4),
+        mode: z.enum(["fast", "quality"]),
+        seed: z.number().int().min(0).max(2 ** 32 - 1).nullable(),
+        output: z.object({ format: z.enum(["png", "jpeg"]) }),
+      }).loose().parse(params);
+      if (params.character !== undefined) throw err(422, "unsupported", "Characters in generate test jobs need raw: true");
+    }
+    const requirements = b.raw ? { raw: true } : {
+      style: params.style, count, references: refs.length, character: params.character !== undefined,
+      format: (params.output as { format: string }).format,
+    };
+    if (!b.raw) {
+      const why = incompatibility(caps, "generate", requirements);
+      if (why) throw err(422, "unsupported", "This worker can't run these parameters (style, count or format)");
+    }
+    const jobId = await createJob(ctx, { ownerSub: c.sub, type: "generate", isTest: true, targetWorker: id, maxResults, inputs: refs, summary, requirements, params });
     return reply.status(201).send(await jobView(jobId, c.sub));
   });
 }

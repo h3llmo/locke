@@ -25,7 +25,11 @@ const capabilitiesSchema = z.object({
     ageAliases: z.record(z.string(), z.string()).optional(),
     distinctFilters: z.boolean().optional(),
   }).nullable().optional(),
-  generate: z.object({}).loose().nullable().optional(),
+  generate: z.object({
+    styles: z.array(z.object({ id: z.string().regex(/^[A-Za-z0-9_.-]{1,64}$/), label: z.string().max(80).optional() }).loose()).max(200).optional(),
+    counts: z.array(z.number().int().min(1).max(4)).max(4).optional(),
+    character: z.boolean().optional(),
+  }).loose().nullable().optional(),
   enhance: z.object({}).loose().nullable().optional(),
   blur: z.object({}).loose().nullable().optional(),
   edit: z.unknown().optional(),

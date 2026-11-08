@@ -3,7 +3,7 @@
 How a GPU worker (first partner: **windows-pilot**, which drives Fooocus and FaceFusion) takes Locke jobs and
 returns results. The worker **pulls**: it only makes outbound HTTPS calls to Locke and opens no port.
 
-Status (2026-11-08): **v1, frozen for `face_swap`, implemented in Locke** (tested end to end, `test/e2e.mjs`; rate limits not enforced yet); `generate`, `enhance` and `blur` parameters are drafts
+Status (2026-11-08): **v1, frozen for `face_swap`, implemented in Locke** (tested end to end, `test/e2e.mjs`; rate limits not enforced yet); `generate` is frozen too (§5.5); `enhance` and `blur` parameters are drafts
 and may change before those types go live. Test first against the
 mock server and the test vectors in [`worker-api/`](worker-api/), then against Locke with a `test` worker.
 
@@ -352,7 +352,7 @@ Capability: `"enhance": { "strengths": ["subtle", "balanced", "strong"], "maxSca
   blur radius is fine.
 - Same dimensions as the input. Capability: `"blur": {}`.
 
-### 5.5 `generate` (draft)
+### 5.5 `generate` (v1, frozen 2026-11-08)
 ```json
 {
   "v": 1, "type": "generate",
@@ -369,9 +369,22 @@ Capability: `"enhance": { "strengths": ["subtle", "balanced", "strong"], "maxSca
 }
 ```
 
-**Style presets belong to the worker.** It lists them in
-`"generate": { "styles": [ { "id": "photo-cinematic", "label": "Photography" } ], "counts": [1, 2, 3, 4] }`, and
-Locke shows exactly those in Create. So there's nothing to map.
+**Capability.** The worker announces:
+```json
+"generate": {
+  "styles": [ { "id": "photo-cinematic", "label": "Photography" } ],
+  "counts": [1, 2, 3, 4],
+  "character": false
+}
+```
+- **Style presets belong to the worker:** Locke shows exactly these in Create, so there's nothing to map. Style ids
+  match `^[A-Za-z0-9_.-]{1,64}$`. The list can change; it is re-announced with `hello`.
+- `counts`: the numbers of results the worker accepts.
+- `character`: `false` = the worker can't apply a character's face to a generated image. Locke then hides the
+  character choice for generation and never sends `character`. Absent = supported.
+- Locke only sends a style, a count and an `output.format` (from `resultFormats`) the worker announced. A job that
+  breaks these anyway fails at once with `invalid_input` (bad value) or `unsupported` (feature not offered),
+  `retryable: false`, without using the GPU.
 
 Other fields:
 - `positive` / `negative`: the enabled prompt fragments, in order. Join them with `", "`.
@@ -379,8 +392,8 @@ Other fields:
 - `count` = number of results (1–4) = `maxResults`.
 - `mode`: `fast | quality`.
 - `references`: 0–4 ordered input ids (image prompts).
-- `character`: optional. Apply that face to the generated person. How (image prompt, or a face swap afterwards) is
-  up to the worker.
+- `character`: optional, only when the worker doesn't announce `character: false`. Apply that face to the generated
+  person. How (image prompt, or a face swap afterwards) is up to the worker.
 - `seed`: an integer, or `null` for random.
 
 ### 5.6 `edit`
@@ -462,3 +475,6 @@ Once the API is live, the admin creates the worker in **`test`** mode and uses "
 - It queues a `face_swap` job built from synthetic images, with `"test": true` in params.
 - Only the admin sees the result, then it's discarded.
 - A `test` worker never receives user jobs. Switch it to `live` in Locke when ready.
+- "Generate test" in the same screen sends a `generate` test job (style, count, speed, prompt, 0–2 synthetic
+  references) and shows its results. Admins can also send params as written (`raw: true` on
+  `POST /api/admin/workers/{id}/test-job`) to test the worker's own refusals.

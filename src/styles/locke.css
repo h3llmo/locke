@@ -343,3 +343,8 @@ html.lk, .lk body { margin: 0; min-height: 100%; background: var(--bg); }
 .app-worker code, .app-keybox code { font: 500 13px/18px ui-monospace, "SFMono-Regular", Menlo, monospace; }
 .app-keybox { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: var(--r-md); border: 1px solid var(--accent); background: var(--accent-soft); }
 .app-key { display: block; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); color: var(--text); overflow-wrap: anywhere; user-select: all; }
+.app-stack-s { display: flex; flex-direction: column; gap: 8px; }
+.app-genform { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.app-select { width: auto; min-width: 0; flex: 0 1 auto; }
+.app-thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
+.app-thumbs img { width: 120px; height: 154px; object-fit: cover; border-radius: var(--r-sm); background: var(--surface-2); display: block; }
