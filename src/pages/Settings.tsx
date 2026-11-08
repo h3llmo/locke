@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useI18n } from "../i18n/index.tsx";
 import { usePrefs, type LangPref, type ThemePref } from "../app/prefs.tsx";
 import { useAuth, useQuota, VAULT_URL } from "../app/session.tsx";
@@ -18,11 +19,39 @@ function Pills<T extends string>({ label, value, options, onChange }: { label: s
   );
 }
 
+/**
+ * Account pages live in the platform: the identity provider's account console (Keycloak: password, sessions) and
+ * Ilven Account (profile sharing, plan, API key). With Cloudflare Access there is no account console to link.
+ */
+function useAccountConsole(): string | null {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    fetch("/ilven-config.json")
+      .then((r) => r.json() as Promise<{ authMode: string; issuer: string }>)
+      .then((c) => setUrl(c.authMode === "oidc" && /^https?:\/\//.test(c.issuer) ? `${c.issuer.replace(/\/$/, "")}/account` : null))
+      .catch(() => setUrl(null));
+  }, []);
+  return url;
+}
+
+function AccountLink({ href, title, hint }: { href: string; title: string; hint: string }) {
+  return (
+    <a className="app-link-row" href={href}>
+      <span className="app-col">
+        <span className="t-label">{title}</span>
+        <span className="t-caption c2">{hint}</span>
+      </span>
+      <Icon name="external" size={16} />
+    </a>
+  );
+}
+
 export function SettingsPage() {
   const { t, bytes } = useI18n();
   const { prefs, set } = usePrefs();
   const auth = useAuth();
   const q = useQuota();
+  const accountConsole = useAccountConsole();
   return (
     <Page title={t("settings.title")}>
       <section className="card app-stack">
@@ -43,7 +72,12 @@ export function SettingsPage() {
         </div>
       </section>
       <section className="card app-stack">
+        <h2 className="t-title-s">{t("settings.account")}</h2>
         {auth.name && <p className="t-body-s c2">{auth.name}</p>}
+        <div className="app-links">
+          {accountConsole && <AccountLink href={accountConsole} title={t("settings.account.password")} hint={t("settings.account.password.hint")} />}
+          <AccountLink href={`/account/?return=${encodeURIComponent(location.href)}`} title={t("settings.account.profile")} hint={t("settings.account.profile.hint")} />
+        </div>
         <div><button type="button" className="btn btn-secondary" onClick={() => void auth.logout()}>{t("settings.signout")}</button></div>
         <p className="hint">{t("settings.signout.hint")}</p>
       </section>
