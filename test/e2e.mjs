@@ -186,6 +186,8 @@ test("user jobs: refused when no live worker can do them, routed to the live wor
   cleanup.jobs.push([alice, ok.body.id]);
   const status = await call("GET", `${API}/worker-status`, { auth: alice });
   assert.equal(status.body.queued >= 1, true);
+  const hb = await call("POST", `${W}/heartbeat`, { auth: workerKey, json: { accepting: true } });
+  assert.equal(hb.body.queuedByType.face_swap >= 1, true, JSON.stringify(hb.body));
 
   const c = await claim();
   assert.equal(c.body.jobId, ok.body.id);

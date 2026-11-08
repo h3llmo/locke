@@ -143,9 +143,11 @@ Response `200`:
 Errors: `400 unsupported_protocol | invalid_public_key | invalid_capabilities`.
 
 ### 3.2 `POST /heartbeat`
-Request `{"accepting": true}` → `200 {"keyStatus": "active", "queued": 3, "serverTime": "…"}`.
-`queued` = jobs waiting that this worker could take (a count only). windows-pilot can use it to decide when to
-switch the GPU to FaceFusion.
+Request `{"accepting": true}` →
+`200 {"keyStatus": "active", "queued": 3, "queuedByType": {"face_swap": 1, "generate": 2}, "serverTime": "…"}`.
+`queued` = jobs waiting that this worker could take (counts only); `queuedByType` splits it per job type (types with
+none waiting are left out; added 2026-11-08, additive). windows-pilot uses it to decide when to switch the GPU to
+FaceFusion: e.g. `queuedByType.face_swap > 0` while the generate engine is loaded and idle.
 
 ### 3.3 `POST /jobs/claim`
 Long poll. Request (all optional):

@@ -115,12 +115,14 @@ export function registerWorkerApi(app: FastifyInstance, ctx: Ctx, masterKey: str
     const { accepting } = z.object({ accepting: z.boolean() }).parse(req.body);
     await ctx.db.query("UPDATE workers SET accepting = $2 WHERE id = $1", [w.id, accepting]);
     const types = JOB_TYPES.filter((t) => supportsType(w.capabilities, t));
-    const { rows } = await ctx.db.query<{ n: number }>(
-      `SELECT count(*)::int AS n FROM jobs WHERE status = 'queued' AND type = ANY($1)
-         AND ((is_test AND target_worker = $2) OR (NOT is_test AND $3))`,
+    const { rows } = await ctx.db.query<{ type: string; n: number }>(
+      `SELECT type, count(*)::int AS n FROM jobs WHERE status = 'queued' AND type = ANY($1)
+         AND ((is_test AND target_worker = $2) OR (NOT is_test AND $3)) GROUP BY type`,
       [types, w.id, w.mode === "live" && w.enabled],
     );
-    return { keyStatus: keyStatus(w), queued: rows[0]!.n, serverTime: new Date().toISOString() };
+    const queuedByType = Object.fromEntries(rows.map((r) => [r.type, r.n]));
+    const queued = rows.reduce((sum, r) => sum + r.n, 0);
+    return { keyStatus: keyStatus(w), queued, queuedByType, serverTime: new Date().toISOString() };
   });
 
   app.post(`${WORKER_PREFIX}/jobs/claim`, async (req, reply) => {
