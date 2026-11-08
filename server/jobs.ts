@@ -14,6 +14,7 @@ export const SETTINGS = {
   maxConcurrency: 1,
   maxInputBytes: 25 * 1024 * 1024,
   maxResultBytes: 25 * 1024 * 1024,
+  rateLimitPerMinute: 120,
   maxJobSeconds: { face_swap: 600, generate: 1800, enhance: 600, blur: 300 } as Record<string, number>,
 };
 export const MAX_ATTEMPTS = 3;
@@ -122,6 +123,8 @@ export interface NewJob {
   maxResults: number;
   isTest?: boolean;
   targetWorker?: string;
+  /** Results must have this pixel size (face_swap and blur keep the input's size). */
+  resultSize?: { width: number; height: number } | null;
 }
 
 export async function createJob(ctx: Ctx, j: NewJob): Promise<string> {
@@ -136,10 +139,11 @@ export async function createJob(ctx: Ctx, j: NewJob): Promise<string> {
     }
     const params = seal(jobKey, Buffer.from(JSON.stringify({ v: 1, type: j.type, ...j.params }), "utf8"), aad.params(id));
     await ctx.db.query(
-      `INSERT INTO jobs (id, owner_sub, type, status, is_test, target_worker, requirements, job_key, params, summary, inputs, max_results, max_attempts)
-       VALUES ($1, $2, $3, 'queued', $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      `INSERT INTO jobs (id, owner_sub, type, status, is_test, target_worker, requirements, job_key, params, summary, inputs, max_results, max_attempts, result_size)
+       VALUES ($1, $2, $3, 'queued', $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
       [id, j.ownerSub, j.type, !!j.isTest, j.targetWorker ?? null, JSON.stringify(j.requirements), ctx.sealer.seal(jobKey.toString("base64")),
-        params, ctx.sealer.seal(JSON.stringify(j.summary)), JSON.stringify(inputs), j.maxResults, MAX_ATTEMPTS],
+        params, ctx.sealer.seal(JSON.stringify(j.summary)), JSON.stringify(inputs), j.maxResults, MAX_ATTEMPTS,
+        j.resultSize ? JSON.stringify(j.resultSize) : null],
     );
   } catch (e) {
     await ctx.store.deletePrefix(`jobs/${id}/`).catch(() => {});
@@ -267,7 +271,7 @@ export async function claimOnce(ctx: Ctx, w: WorkerRow, types: string[]) {
 export async function leasedJob(ctx: Ctx, w: WorkerRow, jobId: string, leaseId: unknown) {
   await reapLeases(ctx, jobId);
   const { rows } = await ctx.db.query(
-    "SELECT id, status, worker_id, lease_id, job_key, max_results, cancel_requested, deadline_at FROM jobs WHERE id = $1",
+    "SELECT id, status, worker_id, lease_id, job_key, max_results, cancel_requested, deadline_at, result_size FROM jobs WHERE id = $1",
     [jobId],
   );
   const j = rows[0];
@@ -275,7 +279,10 @@ export async function leasedJob(ctx: Ctx, w: WorkerRow, jobId: string, leaseId: 
   if (j.status !== "running" || j.worker_id !== w.id || typeof leaseId !== "string" || j.lease_id !== leaseId) {
     throw err(409, "lease_lost", "This worker no longer holds this job");
   }
-  return j as { id: string; job_key: string; max_results: number; cancel_requested: boolean; deadline_at: Date };
+  return j as {
+    id: string; job_key: string; max_results: number; cancel_requested: boolean; deadline_at: Date;
+    result_size: { width: number; height: number } | null;
+  };
 }
 
 export async function renewLease(ctx: Ctx, jobId: string): Promise<Date> {

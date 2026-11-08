@@ -68,4 +68,9 @@ export const migrations: Migration[] = [
       );
     `,
   },
+  {
+    // Pixel size a result must have (face_swap, blur keep the input's size); NULL = any size.
+    id: "002_result_size",
+    sql: "ALTER TABLE jobs ADD COLUMN result_size jsonb",
+  },
 ];

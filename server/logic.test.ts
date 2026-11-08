@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { detectFormat, metadataBlocks, stripMetadata, syntheticPng } from "./images.ts";
+import { detectFormat, imageSize, metadataBlocks, stripMetadata, syntheticPng } from "./images.ts";
 import { incompatibility, overlaps } from "./jobs.ts";
 
 const pilot = {
@@ -67,4 +67,14 @@ test("generate routing: style, count, format and character support", () => {
   assert.equal(incompatibility(caps, "generate", g({ references: 5 })), "values");
   assert.equal(incompatibility(caps, "generate", { raw: true }), null, "raw admin tests go to the worker as written");
   assert.equal(incompatibility(caps, "face_swap", { raw: true }), "type");
+});
+
+test("image size from PNG and JPEG headers", () => {
+  assert.deepEqual(imageSize(syntheticPng(64, 48, 1), "png"), { width: 64, height: 48 });
+  // Minimal JPEG: SOI, APP0 (JFIF), SOF0 for 300×200, SOS.
+  const app0 = Buffer.from([0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 1, 1, 0, 0, 1, 0, 1, 0, 0]);
+  const sof0 = Buffer.from([0xff, 0xc0, 0x00, 0x11, 8, 0x00, 200, 0x01, 0x2c, 3, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1]);
+  const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8]), app0, sof0, Buffer.from([0xff, 0xda, 0x00, 0x02])]);
+  assert.deepEqual(imageSize(jpeg, "jpeg"), { width: 300, height: 200 });
+  assert.equal(imageSize(Buffer.from([0xff, 0xd8, 0xff, 0xda, 0, 2]), "jpeg"), null);
 });

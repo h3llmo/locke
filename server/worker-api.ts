@@ -1,8 +1,9 @@
+import { createHash } from "node:crypto";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { bearer, hmacHex } from "@ilven/common";
 import { aad, b64u, fingerprint, open } from "./crypto.ts";
-import { detectFormat, metadataBlocks } from "./images.ts";
+import { detectFormat, imageSize, metadataBlocks } from "./images.ts";
 import {
   claimOnce, err, FAIL_CODES, finishFailed, JOB_TYPES, jobKeyOf, leasedJob, queueSignal, reapLeases, renewLease, SETTINGS,
   supportsType, type Ctx, type WorkerRow,
@@ -47,6 +48,24 @@ const helloSchema = z.object({
 export function registerWorkerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
   // Binary bodies (sealed results). Size is checked per route.
   app.addContentTypeParser("application/octet-stream", { parseAs: "buffer", bodyLimit: SETTINGS.maxResultBytes + 1024 }, (_req, body, done) => done(null, body));
+
+  // 120 requests per minute per worker key (§6), counted before any database work. Fixed one-minute windows.
+  const windows = new Map<string, { start: number; count: number }>();
+  app.addHook("onRequest", async (req, reply) => {
+    if (!req.url.startsWith(`${WORKER_PREFIX}/`)) return;
+    const id = createHash("sha256").update(req.headers.authorization ?? `ip:${req.ip}`).digest("base64url");
+    const now = Date.now();
+    let win = windows.get(id);
+    if (!win || now - win.start >= 60_000) {
+      if (windows.size > 10_000) for (const [k, v] of windows) if (now - v.start >= 60_000) windows.delete(k);
+      win = { start: now, count: 0 };
+      windows.set(id, win);
+    }
+    if (++win.count > SETTINGS.rateLimitPerMinute) {
+      const retry = Math.max(1, Math.ceil((win.start + 60_000 - now) / 1000));
+      return reply.status(429).header("retry-after", String(retry)).send({ error: "rate_limited", message: `Too many requests, retry in ${retry} s` });
+    }
+  });
 
   async function authWorker(req: FastifyRequest, opts: { allowPending?: boolean; allowDisabled?: boolean } = {}): Promise<WorkerRow> {
     const key = bearer(req);
@@ -177,8 +196,14 @@ export function registerWorkerApi(app: FastifyInstance, ctx: Ctx, masterKey: str
     const format = detectFormat(plain);
     if (!format) throw err(422, "unsupported_format", "Results must be PNG or JPEG");
     const meta = metadataBlocks(plain, format);
+    const size = imageSize(plain, format);
     plain.fill(0);
     if (meta.length) throw err(422, "metadata_present", `Remove image metadata (${meta.join(", ")})`);
+    const want = j.result_size;
+    // Same size as the input, or rotated by 90° (an input JPEG's EXIF orientation applied to the pixels).
+    if (want && (!size || !((size.width === want.width && size.height === want.height) || (size.width === want.height && size.height === want.width)))) {
+      throw err(422, "wrong_size", `The result must be ${want.width}×${want.height} like the input`, { expected: want, got: size });
+    }
     await ctx.store.put(`jobs/${jobId}/results/${n}`, blob);
     await ctx.db.query(
       "INSERT INTO job_results (job_id, n, bytes, format) VALUES ($1, $2, $3, $4) ON CONFLICT (job_id, n) DO UPDATE SET bytes = $3, format = $4",

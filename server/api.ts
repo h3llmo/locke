@@ -3,7 +3,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { createCallerAuthenticator, type Caller } from "@ilven/common";
 import { fingerprint } from "./crypto.ts";
-import { contentType, detectFormat, stripMetadata, syntheticPng } from "./images.ts";
+import { contentType, detectFormat, imageSize, stripMetadata, syntheticPng } from "./images.ts";
 import {
   AGES, assertSomeWorkerCan, createJob, err, GENDERS, incompatibility, newId, purgeJob, readResult, SETTINGS, type Capabilities, type Ctx,
 } from "./jobs.ts";
@@ -98,6 +98,10 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
       used.set(field, id);
       return id;
     };
+    const target = files.get(p.image);
+    const targetFormat = target && detectFormat(target);
+    const resultSize = targetFormat ? imageSize(target, targetFormat) : null;
+    if (targetFormat && !resultSize) throw err(415, "unsupported_image", `${p.image}: unreadable image size`);
     const params = {
       image: input(p.image),
       match: "largest",
@@ -112,7 +116,7 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
     };
     if (used.size !== files.size) throw err(400, "bad_request", "Every uploaded file must be used by params");
     const id = await createJob(ctx, {
-      ownerSub: c.sub, type: "face_swap", params, inputs, requirements, maxResults: 1,
+      ownerSub: c.sub, type: "face_swap", params, inputs, requirements, maxResults: 1, resultSize,
       summary: { title: "Face swap", characters: p.characters.length },
     });
     return reply.status(201).send(await jobView(id, c.sub));
@@ -332,6 +336,7 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
       const character = { gender: pick(fs.genders), age: pick(fs.ages) };
       const jobId = await createJob(ctx, {
         ownerSub: c.sub, type: "face_swap", isTest: true, targetWorker: id, maxResults: 1, inputs: [target, face], summary,
+        resultSize: b.raw ? null : { width: 512, height: 512 },
         requirements: b.raw ? { raw: true } : { characters: [{ ...character, faces: 1 }] },
         params: { test: true, image: target.id, match: "largest", characters: [{ ref: "ch_1", faces: [face.id], mainFace: face.id, ...character }], output: { format: "png" }, ...b.params },
       });

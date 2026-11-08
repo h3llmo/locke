@@ -13,6 +13,24 @@ export function detectFormat(buf: Buffer): ImageFormat | null {
 
 export const contentType = (f: ImageFormat) => (f === "png" ? "image/png" : "image/jpeg");
 
+const JPEG_SOF = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);
+
+/** Stored pixel size (PNG IHDR, JPEG SOFn), before any EXIF orientation. Null if the header can't be read. */
+export function imageSize(buf: Buffer, f: ImageFormat): { width: number; height: number } | null {
+  if (f === "png") {
+    if (buf.length < 24 || buf.toString("latin1", 12, 16) !== "IHDR") return null;
+    return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+  }
+  for (let i = 2; i + 9 <= buf.length && buf[i] === 0xff; ) {
+    const marker = buf[i + 1]!;
+    if (marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd7) || marker === 0x01) { i += 2; continue; }
+    if (JPEG_SOF.has(marker)) return { width: buf.readUInt16BE(i + 7), height: buf.readUInt16BE(i + 5) };
+    if (marker === 0xda) return null;
+    i += 2 + buf.readUInt16BE(i + 2);
+  }
+  return null;
+}
+
 const PNG_METADATA = new Set(["tEXt", "iTXt", "zTXt", "eXIf", "tIME"]);
 
 /** Metadata blocks that may carry prompts, locations or device details. Results must have none. */

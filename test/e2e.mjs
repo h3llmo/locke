@@ -141,6 +141,10 @@ test("results with metadata are rejected; lease checks; retryable failure re-que
   const { upload } = await work(c, { result: PNG_TEXT, complete: false });
   assert.equal(upload.status, 422);
   assert.equal(upload.body.error, "metadata_present");
+  const jobKey = unwrapJobKey(c.jobId, c.envelope, keys.privateKey);
+  const small = await call("PUT", `${W}/jobs/${c.jobId}/results/1`, { auth: workerKey, lease: c.leaseId, bytes: seal(jobKey, PNG, aad.result(c.jobId, 1)) });
+  assert.equal(small.status, 422);
+  assert.equal(small.body.error, "wrong_size", "a face swap result keeps the input's 512×512");
   assert.equal((await call("POST", `${W}/jobs/${c.jobId}/progress`, { auth: workerKey, json: { leaseId: "lse_wrong", progress: 0.1 } })).body.error, "lease_lost");
   assert.equal((await call("POST", `${W}/jobs/${c.jobId}/complete`, { auth: workerKey, json: { leaseId: c.leaseId, resultCount: 1 } })).body.error, "missing_result");
   assert.equal((await claim(0)).body.error, "concurrency_limit");
@@ -205,6 +209,14 @@ test("cancel while running reaches the worker", async () => {
   assert.equal(p.body.cancel, true);
   await call("POST", `${W}/jobs/${c.jobId}/fail`, { auth: workerKey, json: { leaseId: c.leaseId, code: "cancelled", retryable: false } });
   assert.equal((await call("GET", `${API}/jobs/${c.jobId}`, { auth: admin })).body.status, "cancelled");
+});
+
+test("rate limit: 120 requests per minute per key, then 429", async () => {
+  const bogus = `lkw_${b64u.enc(randomBytes(32))}`;
+  let last;
+  for (let i = 0; i < 121; i++) last = await call("POST", `${W}/heartbeat`, { auth: bogus, json: { accepting: false } });
+  assert.equal(last.status, 429);
+  assert.equal(last.body.error, "rate_limited");
 });
 
 test("rotating the key locks out the old one; cleanup", async () => {

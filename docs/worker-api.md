@@ -3,7 +3,7 @@
 How a GPU worker (first partner: **windows-pilot**, which drives Fooocus and FaceFusion) takes Locke jobs and
 returns results. The worker **pulls**: it only makes outbound HTTPS calls to Locke and opens no port.
 
-Status (2026-11-08): **v1, frozen for `face_swap`, implemented in Locke** (tested end to end, `test/e2e.mjs`; rate limits not enforced yet); `generate` is frozen too (§5.5); `enhance` and `blur` parameters are drafts
+Status (2026-11-08): **v1, frozen for `face_swap`, implemented in Locke** (tested end to end, `test/e2e.mjs`); `generate` is frozen too (§5.5); `enhance` and `blur` parameters are drafts
 and may change before those types go live. Test first against the
 mock server and the test vectors in [`worker-api/`](worker-api/), then against Locke with a `test` worker.
 
@@ -134,6 +134,7 @@ Response `200`:
     "maxConcurrency": 1,
     "maxInputBytes": 26214400,
     "maxResultBytes": 26214400,
+    "rateLimitPerMinute": 120,
     "maxJobSeconds": { "face_swap": 600, "generate": 1800, "enhance": 600, "blur": 300 }
   }
 }
@@ -204,10 +205,11 @@ Header `X-Locke-Lease: <leaseId>`, `Content-Type: application/octet-stream`. Bod
   PNG `tEXt`/`iTXt`/`zTXt`/`eXIf` chunks. Fooocus writes the prompt into PNG text chunks by default: strip them.
   Locke rejects a result that carries metadata.
 - Size: at most `maxResultBytes` (25 MiB) encrypted.
-- `face_swap` and `blur` keep the input's pixel dimensions.
+- `face_swap` and `blur` keep the input's pixel dimensions (stored size; swapping width and height is accepted, for a
+  JPEG whose EXIF orientation was applied). Otherwise `422 wrong_size {"expected": {"width", "height"}, "got": …}`.
 - Uploading the same `n` again replaces it (use a fresh nonce).
 - Response `200 {"n": 1, "bytes": 2483021}`. Errors: `413 too_large`, `409 lease_lost`, `400 invalid_result_number`,
-  `422 decrypt_failed | unsupported_format | metadata_present`.
+  `422 decrypt_failed | unsupported_format | metadata_present | wrong_size`.
 
 ### 3.7 `POST /jobs/{jobId}/complete`
 Request `{"leaseId": "lse_…", "resultCount": 1}`. Locke checks that results 1…`resultCount` are present and valid.
@@ -416,7 +418,7 @@ Not in v1. Locke never sends it.
 | Max job duration | `maxJobSeconds` (face_swap 10 min) |
 | Input / result size | ≤ 25 MiB each, encrypted |
 | Inputs per face_swap job | 1 + up to 8 per character |
-| Rate limit | 120 requests/min per worker → `429` with `Retry-After` |
+| Rate limit | 120 requests/min per worker key (`settings.rateLimitPerMinute`) → `429 rate_limited` with `Retry-After` |
 
 ### 6.3 Error handling
 | Response | Worker does |
