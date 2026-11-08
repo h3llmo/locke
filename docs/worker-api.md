@@ -106,6 +106,10 @@ Request:
 ```
 
 Capabilities:
+- Announce **everything the worker can do**, whichever engine is loaded right now. Locke builds the options users
+  see (styles, counts, face swap filters) from these and refuses jobs no live worker announces. To take only what the
+  loaded engine does, filter with `types` in `claim` (§3.3) and use `queuedByType` (§3.2) to decide when to switch.
+  Don't send a new `hello` on each engine switch.
 - A job type that is `null` or absent is **not supported**: Locke never sends it to this worker.
 - `genders` / `ages`: the values this worker handles. Locke never sends a character with another value.
   Values: genders `any | woman | man`; ages `any | child | teen | young | adult | senior`.
