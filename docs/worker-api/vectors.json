@@ -1,0 +1,46 @@
+{
+  "description": "locke-worker/1 test vectors. Binary values are base64url without padding unless the field name ends in Hex/Utf8.",
+  "alg": "X25519-HKDF-SHA256/A256GCM",
+  "hkdfInfoUtf8": "locke-worker/v1 job-key",
+  "jobId": "job_test_0001",
+  "worker": {
+    "privateKey": "uvhrlugFtq28TuiiCHZHX45aDxe5CstLbrAxJRQEgrQ",
+    "publicKey": "PmPABaAOeWJFFXQYKgQB6IlXkRN4jlQ3JoV9aQ8cxj0",
+    "fingerprint": "cf4b d6f8 b729 19c5"
+  },
+  "ephemeralPrivateKey": "geoU1ybHeSymUA_0En6jgoicg9Ij4x2mM-D4CIU87iA",
+  "jobKeyHex": "ce923b7bd4f56a9c66ceccc1d0966edfc026e0677d66fd1ff64258d11fa6ac2b",
+  "envelope": {
+    "alg": "X25519-HKDF-SHA256/A256GCM",
+    "epk": "k0SAccpEjdHoKzA9T1uRBYEgdUL_JhY9LFmryY4Q_Bg",
+    "wrappedKey": "eCdsr5y1LNGgUIqGdW1t-4-dQS_fiyeWjHyAFQewypu4y8ZvyEpP83991ISt9dDiOK3P6Gby4h4FnLgv"
+  },
+  "params": {
+    "aadUtf8": "locke/v1|job_test_0001|params",
+    "plaintextUtf8": "{\"v\":1,\"type\":\"face_swap\",\"image\":\"in_test_target\",\"match\":\"largest\",\"characters\":[{\"ref\":\"ch_1\",\"faces\":[\"in_test_face1\"],\"mainFace\":\"in_test_face1\",\"gender\":\"woman\",\"age\":\"adult\"}],\"output\":{\"format\":\"png\"}}",
+    "sealed": "AWW1rG9hk7ZuEJT_pXz_ATljn0DTVeUvdpj42Gbcf-Nrgj1s6qbt8QNlr_-qk-H6QQ8CR9bkcFDfJx_jDqgsr-MZAnWpCZUD9IPHcryUytkIPyadG_j-gYNCIDfn3bru2lkzQ-Dyp31HzwP9-75yQkbcXTmvNDHltuYnegcM_hbCtzGRfhWZZgs3u0ohtVH3eCBBMz-0A2XB9pWGmgutA8vlYGcv1MWTyaKClwINf5CD5EHaNxkNzeWYSGcLAnkODQjeTZJUAYy9g2d81BWBoOeaDk4MRmFxwhfRmGFZdtGVLSrPSpVuTwoEeS2U"
+  },
+  "input": {
+    "inputId": "in_test_target",
+    "aadUtf8": "locke/v1|job_test_0001|input|in_test_target",
+    "plaintextHex": "6f706171756520696e707574206279746573202861207265616c206a6f62206361727269657320616e20696d616765206865726529",
+    "sealedHex": "eab756a8da0aa6dcd07d29e141505deb770a0babf1a3fd2e0c265d101c3041199b3e82576f3d70bad0f89c74d09bc4601b9dd979df396e734d3d3376495c5efd0f1c83c29b87feafe7369221a2764e2f2a"
+  },
+  "result": {
+    "n": 1,
+    "aadUtf8": "locke/v1|job_test_0001|result|1",
+    "nonceHex": "fe67e65380bda5afdd3dd82e",
+    "plaintextHex": "6f706171756520726573756c74206279746573202861207265616c206a6f622063617272696573206120504e47206f72204a504547206865726529",
+    "sealedHex": "fe67e65380bda5afdd3dd82ef51bcc06b35f987c1ea3d556c943bae8a245ae110de035510ab997c74bd5e7a7e8a3fe9eef28b4a03b6ed4a26ce53dd75dac5738269d8d5cb4e8980485b9cbc31500860830109b2a20cd46"
+  },
+  "mustFail": [
+    {
+      "what": "params opened with another job id in the AAD",
+      "aadUtf8": "locke/v1|job_test_0002|params"
+    },
+    {
+      "what": "envelope unwrapped with jobId \"job_test_0002\"",
+      "jobId": "job_test_0002"
+    }
+  ]
+}
