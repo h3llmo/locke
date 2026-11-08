@@ -108,7 +108,9 @@ export async function assertSomeWorkerCan(ctx: Ctx, type: string, req: unknown) 
   const reasons = rows.map((r) => incompatibility(r.capabilities, type, req));
   if (reasons.includes(null)) return;
   if (reasons.includes("overlap")) throw err(422, "characters_overlap", "Give these characters different gender or age: the GPU worker can't tell them apart.");
-  throw err(422, "unsupported", "No GPU worker supports this job (check the characters' gender and age).");
+  throw err(422, "unsupported", type === "face_swap"
+    ? "No GPU worker supports this job (check the characters' gender and age)."
+    : "No GPU worker supports these settings (style, number of results or references).");
 }
 
 // ---------- creating jobs ----------

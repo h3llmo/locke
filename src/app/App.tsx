@@ -1,6 +1,9 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { MobileDock, Sidebar } from "../components/Nav.tsx";
-import { AutomatePage, CharactersPage, CreatePage, EditorPage, JobsPage } from "../pages/Sections.tsx";
+import { AutomatePage, CharactersPage } from "../pages/Sections.tsx";
+import { CreatePage } from "../pages/Create.tsx";
+import { EditorPage } from "../pages/Editor.tsx";
+import { JobsPage } from "../pages/Jobs.tsx";
 import { SettingsPage } from "../pages/Settings.tsx";
 
 /**

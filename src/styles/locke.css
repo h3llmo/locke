@@ -348,3 +348,82 @@ html.lk, .lk body { margin: 0; min-height: 100%; background: var(--bg); }
 .app-select { width: auto; min-width: 0; flex: 0 1 auto; }
 .app-thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
 .app-thumbs img { width: 120px; height: 154px; object-fit: cover; border-radius: var(--r-sm); background: var(--surface-2); display: block; }
+
+/* ---------- Jobs ---------- */
+.app-notice { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 18px; background: var(--surface-1); border: 1px solid var(--border); color: var(--text-2); }
+.app-notice.is-error { background: var(--danger-soft); border-color: transparent; color: var(--danger); }
+.app-joblist { list-style: none; margin: 0 -8px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.app-jobrow { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 16px; text-decoration: none; color: var(--text); min-height: 68px; }
+.app-jobrow:hover { background: var(--surface-2); }
+.app-jobrow-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.app-jobthumb { width: 52px; height: 52px; border-radius: 12px; flex: none; display: flex; align-items: center; justify-content: center; }
+.app-jobthumb-icon { color: var(--text-3); display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: var(--surface-2); }
+.app-fill { width: 100%; height: 100%; border-radius: 0; }
+.app-back { padding: 0 8px; margin-left: -8px; color: var(--text-2); }
+.app-pills { gap: 6px; }
+.app-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+@media (max-width: 639px) { .app-results { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } }
+.app-result-cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.app-result { aspect-ratio: 4 / 5; width: 100%; padding: 0; border: 0; cursor: zoom-in; }
+.app-result.skel { cursor: default; }
+.app-result-actions { gap: 4px; }
+.app-params { margin: 0; padding: 14px 16px; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
+.app-params dd { margin: 0; overflow-wrap: anywhere; }
+.app-viewer { position: fixed; inset: 0; z-index: 50; background: #0A0A0B; color: #F3F4F6; display: flex; flex-direction: column; }
+.app-viewer-top { display: flex; align-items: center; justify-content: space-between; padding: calc(var(--safe-top) + 8px) 8px 8px; }
+.app-viewer-top .icon-btn, .app-viewer-bar .icon-btn { border-radius: 50%; }
+.app-viewer-img { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0 8px; }
+.app-viewer-img img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.app-viewer-img .skel { width: min(80vw, 480px); aspect-ratio: 4 / 5; }
+/* Bottom bar ends 88 px before the right edge: the assistant corner stays free. */
+.app-viewer-bar { display: flex; gap: 8px; align-items: center; padding: 16px 88px calc(var(--safe-bottom) + 24px) 16px; max-width: 640px; width: 100%; margin: 0 auto; }
+.app-viewer-keep { flex: 1; background: #F3F4F6; color: #131417; }
+.app-flip .ic { transform: scaleX(-1); }
+
+/* ---------- Create ---------- */
+.app-create { display: grid; gap: 12px; align-items: start; }
+@media (min-width: 1024px) { .app-create { grid-template-columns: minmax(0, 1fr) minmax(280px, 380px); } }
+.app-prompt { padding: 10px 12px 8px; display: flex; flex-direction: column; gap: 8px; }
+.app-prompt-bar { gap: 8px; flex-wrap: nowrap; }
+.app-grow-0 { flex: 1; }
+.app-toklist { list-style: none; margin: 0; padding: 0; }
+.app-toklist:empty::before { display: none; }
+.app-tok-input { border: 0; background: none; padding: 8px 0; outline: none; width: 100%; }
+.app-tok-input:focus-visible { outline: none; box-shadow: 0 1px 0 var(--info-border); }
+.app-tok-input::placeholder { color: var(--text-3); font-weight: 400; }
+.tok.is-off .app-tok-input { text-decoration: line-through; color: var(--text-3); }
+button.switch { padding: 0; cursor: pointer; }
+.app-addfrag { align-self: flex-start; color: var(--text-2); padding-left: 4px; }
+.app-raw { min-height: 180px; resize: vertical; font: 400 15px/22px var(--font-ui); }
+.app-settings { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.app-chips { margin: 0 -16px; padding: 2px 16px; gap: 8px; }
+@media (min-width: 1024px) { .app-chips { margin: 0; padding: 0; flex-wrap: wrap; overflow: visible; } }
+.app-chip-thumbs { display: flex; }
+.app-chip-thumbs img { width: 22px; height: 26px; border-radius: 6px; object-fit: cover; }
+.app-chip-thumbs img + img { margin-left: -8px; border: 2px solid var(--bg); }
+.app-panel { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.app-aspect { display: inline-block; border: 1.5px solid currentColor; border-radius: 3px; }
+.app-aspect-square { width: 14px; height: 14px; }
+.app-aspect-portrait { width: 11px; height: 15px; }
+.app-aspect-landscape { width: 16px; height: 11px; }
+.app-refs { display: flex; flex-wrap: wrap; gap: 8px; }
+.app-ref { width: 88px; height: 110px; border-radius: 12px; flex: none; }
+.app-ref img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.app-ref.is-on { outline: 2px solid var(--info-border); outline-offset: 2px; }
+.app-ref-btn { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.app-ref-remove { position: absolute; right: 4px; top: 4px; width: 32px; height: 32px; border-radius: 50%; }
+.app-ref-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--surface-2); border: 1px dashed var(--border-strong); color: var(--text-2); cursor: pointer; }
+.app-runbar { display: flex; flex-direction: column; gap: 8px; max-width: 560px; width: 100%; }
+@media (max-width: 639px) {
+  .app-runbar { position: sticky; bottom: calc(var(--safe-bottom) + 92px); z-index: 5; padding-top: 16px; margin-top: -8px;
+    background: linear-gradient(to top, var(--bg) 70%, transparent); }
+}
+
+/* ---------- Editor: face swap ---------- */
+.app-editor { display: grid; gap: 12px; align-items: start; }
+@media (min-width: 1024px) { .app-editor { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.app-photo { width: 100%; max-height: 420px; aspect-ratio: 4 / 5; border-radius: 16px; padding: 0; border: 0; }
+.app-photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+button.app-photo { border: 1px dashed var(--border-strong); }
+.app-char { display: flex; flex-direction: column; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+.app-fieldw { min-width: 56px; }

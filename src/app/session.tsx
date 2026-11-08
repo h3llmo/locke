@@ -38,6 +38,10 @@ const IDLE: JobsSummary = { running: 0, queued: 0, worker: "unknown", unseen: 0 
 let summary = IDLE;
 const listeners = new Set<() => void>();
 let poller: ReturnType<typeof setInterval> | undefined;
+let reload: (() => void) | undefined;
+
+/** Refresh the indicator now (after submitting or cancelling a job) instead of at the next 15 s poll. */
+export function refreshJobsSummary() { reload?.(); }
 
 function startPolling(auth: IlvenAuth) {
   if (poller) return;
@@ -48,6 +52,7 @@ function startPolling(auth: IlvenAuth) {
         summary = { running: s.running, queued: s.queued, worker: s.workers ? s.status : "unknown", unseen: 0 };
         listeners.forEach((l) => l());
       }, () => {});
+  reload = () => void load();
   void load();
   poller = setInterval(load, 15_000);
 }

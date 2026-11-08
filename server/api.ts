@@ -46,6 +46,37 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
     return { status, workers: rows.length, ...mine.rows[0] };
   });
 
+  /**
+   * What users can ask for: the union of what live workers announce (styles, counts, character support, face swap
+   * filters). Jobs still wait in the queue while those workers are offline.
+   */
+  app.get(`${API_PREFIX}/options`, async (req) => {
+    await authenticate(req);
+    const { rows } = await ctx.db.query<{ capabilities: Capabilities | null }>(
+      "SELECT capabilities FROM workers WHERE enabled AND mode = 'live' AND public_key IS NOT NULL ORDER BY created_at",
+    );
+    const caps = rows.map((r) => r.capabilities).filter((c): c is Capabilities => !!c);
+    const gens = caps.map((c) => c.generate).filter((g) => !!g);
+    const styles = new Map<string, { id: string; label: string }>();
+    for (const g of gens) for (const s of g!.styles ?? []) if (!styles.has(s.id)) styles.set(s.id, { id: s.id, label: s.label ?? s.id });
+    const fss = caps.map((c) => c.faceSwap).filter((f) => !!f);
+    const union = (lists: (readonly string[] | undefined)[]) => [...new Set(lists.flatMap((l) => l ?? []))];
+    return {
+      generate: gens.length ? {
+        styles: [...styles.values()],
+        counts: [...new Set(gens.flatMap((g) => g!.counts ?? [1]))].sort((a, b) => a - b),
+        character: gens.some((g) => g!.character !== false),
+        maxReferences: 4,
+      } : null,
+      faceSwap: fss.length ? {
+        genders: GENDERS.filter((g) => union(fss.map((f) => f!.genders)).includes(g)),
+        ages: AGES.filter((a) => union(fss.map((f) => f!.ages)).includes(a)),
+        maxCharacters: Math.min(MAX_CHARACTERS, Math.max(...fss.map((f) => f!.maxCharacters ?? 1))),
+        maxFacesPerCharacter: Math.min(MAX_FACES, Math.max(...fss.map((f) => f!.maxFacesPerCharacter ?? 8))),
+      } : null,
+    };
+  });
+
   // ---------- jobs ----------
   const charSchema = z.object({
     gender: z.enum(GENDERS),
@@ -58,6 +89,18 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
     image: z.string().min(1).max(64),
     characters: z.array(charSchema).min(1).max(MAX_CHARACTERS),
     output: z.object({ format: z.enum(["png", "jpeg"]) }).optional(),
+  });
+  const fragments = z.array(z.string().trim().min(1).max(500)).max(60);
+  const generateSchema = z.object({
+    type: z.literal("generate"),
+    positive: fragments.min(1),
+    negative: fragments.default([]),
+    style: z.string().regex(/^[A-Za-z0-9_.-]{1,64}$/),
+    aspect: z.enum(["square", "portrait", "landscape"]).default("portrait"),
+    count: z.number().int().min(1).max(4).default(1),
+    mode: z.enum(["fast", "quality"]).default("fast"),
+    seed: z.number().int().min(0).max(2 ** 32 - 1).nullable().default(null),
+    references: z.array(z.string().min(1).max(64)).max(4).default([]),
   });
 
   /**
@@ -80,6 +123,7 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
     if (!paramsText) throw err(400, "bad_request", "Missing params");
     let raw: unknown;
     try { raw = JSON.parse(paramsText); } catch { throw err(400, "bad_request", "params is not JSON"); }
+    if ((raw as { type?: unknown } | null)?.type === "generate") return reply.status(201).send(await createGenerate(c.sub, generateSchema.parse(raw), files));
     const p = faceSwapSchema.parse(raw);
     const requirements = { characters: p.characters.map((ch) => ({ gender: ch.gender, age: ch.age, faces: ch.faces.length })), format: p.output?.format ?? "png" };
     await assertSomeWorkerCan(ctx, p.type, requirements);
@@ -121,6 +165,35 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
     });
     return reply.status(201).send(await jobView(id, c.sub));
   });
+
+  /** Shared by uploads: checks the image type and strips its metadata. */
+  function cleanImage(field: string, data: Buffer | undefined) {
+    if (!data) throw err(400, "bad_request", `Missing file ${field}`);
+    const format = detectFormat(data);
+    if (!format) throw err(415, "unsupported_image", `${field}: use a PNG or JPEG image`);
+    return stripMetadata(data, format);
+  }
+
+  async function createGenerate(sub: string, p: z.infer<typeof generateSchema>, files: Map<string, Buffer>) {
+    if (new Set(p.references).size !== p.references.length) throw err(400, "bad_request", "A reference is listed twice");
+    if (files.size !== p.references.length || p.references.some((r) => !files.has(r))) throw err(400, "bad_request", "Every uploaded file must be a reference");
+    const requirements = { style: p.style, count: p.count, references: p.references.length, character: false, format: "png" };
+    await assertSomeWorkerCan(ctx, "generate", requirements);
+    const inputs = p.references.map((field) => ({ id: newId("in"), data: cleanImage(field, files.get(field)) }));
+    const params = {
+      positive: p.positive, negative: p.negative, style: p.style, aspect: p.aspect, count: p.count, mode: p.mode,
+      references: inputs.map((i) => i.id), seed: p.seed, output: { format: "png" },
+    };
+    const title = p.positive.join(", ");
+    const id = await createJob(ctx, {
+      ownerSub: sub, type: "generate", params, inputs, requirements, maxResults: p.count,
+      summary: {
+        title: title.length > 140 ? `${title.slice(0, 139)}…` : title, style: p.style, aspect: p.aspect, mode: p.mode, count: p.count,
+        references: inputs.length, positive: p.positive, negative: p.negative,
+      },
+    });
+    return jobView(id, sub);
+  }
 
   async function jobView(id: string, ownerSub: string) {
     const { rows } = await ctx.db.query(

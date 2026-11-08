@@ -1,5 +1,6 @@
 // End-to-end test of Locke's job queue and worker API against a running Ilven deployment that includes Locke.
 // Plays the admin, a user (alice) and a GPU worker. Cleans up what it creates.
+// Put real GPU workers back in test mode first: a live one could take the user jobs this test queues for its own worker.
 //   docker run --rm --network ilven_default -v ilven_secrets:/s:ro -v "$PWD:/l:ro" node:22-alpine node /l/test/e2e.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -163,10 +164,13 @@ test("results with metadata are rejected; lease checks; retryable failure re-que
 test("user jobs: refused when no live worker can do them, routed to the live worker otherwise", async () => {
   const files = { target: PNG, face1: PNG, face2: PNG };
   const one = [{ gender: "woman", age: "adult", faces: ["face1"], mainFace: "face1" }];
-  // The only worker is in test mode: no live worker.
-  const none = await call("POST", `${API}/jobs`, { auth: alice, form: faceSwapForm(one, { target: PNG, face1: PNG }) });
-  assert.equal(none.status, 422);
-  assert.equal(none.body.error, "no_worker");
+  // Real workers (e.g. windows-pilot) may already be live on this deployment: then only the e2e worker's own checks run.
+  const othersLive = (await call("GET", `${API}/worker-status`, { auth: alice })).body.workers > 0;
+  if (!othersLive) {
+    const none = await call("POST", `${API}/jobs`, { auth: alice, form: faceSwapForm(one, { target: PNG, face1: PNG }) });
+    assert.equal(none.status, 422);
+    assert.equal(none.body.error, "no_worker");
+  }
   assert.equal((await call("PATCH", `${API}/admin/workers/${workerId}`, { auth: admin, json: { mode: "live" } })).body.worker.mode, "live");
 
   const teen = await call("POST", `${API}/jobs`, { auth: alice, form: faceSwapForm([{ gender: "woman", age: "teen", faces: ["face1"], mainFace: "face1" }], { target: PNG, face1: PNG }) });
@@ -177,6 +181,22 @@ test("user jobs: refused when no live worker can do them, routed to the live wor
   assert.equal(overlap.body.error, "characters_overlap");
   const notImage = await call("POST", `${API}/jobs`, { auth: alice, form: faceSwapForm(one, { target: Buffer.from("hello"), face1: PNG }) });
   assert.equal(notImage.status, 415);
+
+  // What users can ask for follows the live workers' capabilities.
+  const opts = (await call("GET", `${API}/options`, { auth: alice })).body;
+  assert.ok(opts.faceSwap.ages.includes("adult") && !opts.faceSwap.ages.includes("child"));
+  assert.ok(opts.faceSwap.maxCharacters >= 2);
+  if (!othersLive) {
+    assert.equal(opts.generate, null, "the e2e worker doesn't generate");
+    const genForm = new FormData();
+    genForm.set("params", JSON.stringify({ type: "generate", positive: ["a lighthouse"], style: "photo-neutre" }));
+    const gen = await call("POST", `${API}/jobs`, { auth: alice, form: genForm });
+    assert.equal(gen.status, 422);
+    assert.equal(gen.body.error, "unsupported");
+  }
+  const badGen = new FormData();
+  badGen.set("params", JSON.stringify({ type: "generate", positive: [], style: "photo-neutre" }));
+  assert.equal((await call("POST", `${API}/jobs`, { auth: alice, form: badGen })).body.error, "invalid_body");
 
   const ok = await call("POST", `${API}/jobs`, { auth: alice, form: faceSwapForm([
     { gender: "woman", age: "adult", faces: ["face1"], mainFace: "face1" },

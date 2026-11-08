@@ -15,6 +15,10 @@ const PATHS = {
   close: "M6 6l12 12 M18 6 6 18",
   check: "M5 12.5l4.5 4.5L19 7.5",
   back: "M15 5l-7 7 7 7",
+  list: "M9 6h11 M9 12h11 M9 18h11 M4.5 6h.01 M4.5 12h.01 M4.5 18h.01",
+  text: "M5 7h14 M5 12h14 M5 17h9",
+  play: "M7 4v16l13-8z",
+  download: "M12 4v11 M7 10l5 5 5-5 M5 20h14",
   external: "M14 4h6v6 M20 4l-9 9 M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
 } as const;
 
