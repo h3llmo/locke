@@ -1,0 +1,23 @@
+# Locke as an Ilven integration. Included by an Ilven deployment (see README): the gateway routes /apps/locke/*
+# to the container alias app-locke:8080. Builds against the Ilven repo checked out next to this one
+# (override with ILVEN_REPO).
+services:
+  locke:
+    build:
+      context: .
+      additional_contexts:
+        ilven: ${ILVEN_REPO:-../ilven}
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    user: "1000:1000"
+    networks:
+      default: { aliases: [app-locke] }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 30

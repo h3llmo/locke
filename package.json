@@ -1,0 +1,32 @@
+{
+  "name": "locke",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Locke — AI photo studio. An Ilven integration (runs inside an Ilven landing zone).",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "npm run build:web && npm run build:server",
+    "build:web": "vite build",
+    "build:server": "esbuild server/index.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/index.mjs --sourcemap --banner:js=\"import { createRequire as __cr } from 'module'; const require = __cr(import.meta.url);\""
+  },
+  "dependencies": {
+    "@fastify/static": "10.1.10",
+    "@ilven/web-auth": "file:../ilven/packages/web-auth",
+    "fastify": "5.12.8",
+    "oidc-client-ts": "3.5.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "7.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.1",
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
+    "@vitejs/plugin-react": "6.2.1",
+    "esbuild": "0.28.2",
+    "typescript": "5.9.3",
+    "vite": "8.3.6"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Locke",
+  "short_name": "Locke",
+  "start_url": "/apps/locke/create",
+  "scope": "/apps/locke/",
+  "display": "standalone",
+  "background_color": "#0D1117",
+  "theme_color": "#0D1117",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
