@@ -32,8 +32,46 @@ export function useQuota(): Quota | null | "error" {
   return q;
 }
 
-/** Jobs summary for the global indicator. The job queue arrives in a later step: idle until then. */
-export interface JobsSummary { running: number; queued: number; worker: "online" | "busy" | "offline" | "unknown"; unseen: number }
+/** Jobs summary for the global indicator, from Locke's API. One shared poll for every component that shows it. */
+export interface JobsSummary { running: number; queued: number; worker: "online" | "busy" | "paused" | "offline" | "unknown"; unseen: number }
+const IDLE: JobsSummary = { running: 0, queued: 0, worker: "unknown", unseen: 0 };
+let summary = IDLE;
+const listeners = new Set<() => void>();
+let poller: ReturnType<typeof setInterval> | undefined;
+
+function startPolling(auth: IlvenAuth) {
+  if (poller) return;
+  const load = () =>
+    auth.fetch("/apps/locke/api/worker-status")
+      .then((r) => (r.ok ? (r.json() as Promise<{ status: JobsSummary["worker"]; workers: number; queued: number; running: number }>) : Promise.reject(new Error(String(r.status)))))
+      .then((s) => {
+        summary = { running: s.running, queued: s.queued, worker: s.workers ? s.status : "unknown", unseen: 0 };
+        listeners.forEach((l) => l());
+      }, () => {});
+  void load();
+  poller = setInterval(load, 15_000);
+}
+
 export function useJobsSummary(): JobsSummary {
-  return { running: 0, queued: 0, worker: "unknown", unseen: 0 };
+  const auth = useAuth();
+  const [, force] = useState(0);
+  useEffect(() => {
+    const l = () => force((n) => n + 1);
+    listeners.add(l);
+    startPolling(auth);
+    return () => { listeners.delete(l); };
+  }, [auth]);
+  return summary;
+}
+
+/** True when the signed-in user is an Ilven admin (Locke shows admin settings). */
+export function useIsAdmin(): boolean {
+  const auth = useAuth();
+  const [admin, setAdmin] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    auth.fetch("/apps/locke/api/me").then((r) => (r.ok ? r.json() : { isAdmin: false })).then((m: { isAdmin: boolean }) => alive && setAdmin(m.isAdmin), () => {});
+    return () => { alive = false; };
+  }, [auth]);
+  return admin;
 }

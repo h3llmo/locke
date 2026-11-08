@@ -3,9 +3,9 @@
 How a GPU worker (first partner: **windows-pilot**, which drives Fooocus and FaceFusion) takes Locke jobs and
 returns results. The worker **pulls**: it only makes outbound HTTPS calls to Locke and opens no port.
 
-Status (2026-11-08): **v1 draft, frozen for `face_swap`**; `generate`, `enhance` and `blur` parameters are drafts
+Status (2026-11-08): **v1, frozen for `face_swap`, implemented in Locke** (tested end to end, `test/e2e.mjs`; rate limits not enforced yet); `generate`, `enhance` and `blur` parameters are drafts
 and may change before those types go live. Locke's server side is not built yet: until it is, test against the
-mock server and the test vectors in [`worker-api/`](worker-api/).
+mock server and the test vectors in [`worker-api/`](worker-api/), then against Locke with a `test` worker.
 
 | File | What it is |
 |---|---|

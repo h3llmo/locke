@@ -1,7 +1,42 @@
 # Locke as an Ilven integration. Included by an Ilven deployment (see README): the gateway routes /apps/locke/*
 # to the container alias app-locke:8080. Builds against the Ilven repo checked out next to this one
-# (override with ILVEN_REPO).
+# (override with ILVEN_REPO). Locke registers with Nevli at startup and receives its object storage (a private
+# Garage bucket) from the platform.
 services:
+  locke-secrets-init:
+    image: alpine:3.20
+    restart: "no"
+    network_mode: none
+    volumes: [locke-secrets:/secrets]
+    command:
+      - sh
+      - -euc
+      - |
+        umask 022
+        gen() { d=/secrets/$$1; mkdir -p "$$d"; if [ ! -s "$$d/$$2" ]; then head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "$$d/$$2"; fi; chmod 0444 "$$d/$$2"; }
+        gen db password
+        gen app master_key
+        gen app ilven_app_secret
+
+  locke-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    environment:
+      POSTGRES_DB: locke
+      POSTGRES_USER: locke
+      POSTGRES_PASSWORD_FILE: /run/locke-secrets/db/password
+    volumes:
+      - locke-db-data:/var/lib/postgresql/data
+      - { type: volume, source: locke-secrets, target: /run/locke-secrets/db, read_only: true, volume: { subpath: db } }
+    networks: [locke-db]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U locke -d locke"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    depends_on: { locke-secrets-init: { condition: service_completed_successfully } }
+
   locke:
     build:
       context: .
@@ -14,10 +49,39 @@ services:
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
     user: "1000:1000"
+    environment:
+      ILVEN_AUTH_MODE: ${ILVEN_AUTH_MODE:-oidc}
+      OIDC_ISSUER: ${ILVEN_OIDC_ISSUER:-${ILVEN_AUTH_URL:-http://localhost:8080/auth}/realms/ilven}
+      OIDC_JWKS_URL: ${ILVEN_OIDC_JWKS_URL:-http://keycloak:8080/auth/realms/ilven/protocol/openid-connect/certs}
+      OIDC_AUDIENCE: ilven
+      CF_ACCESS_TEAM_DOMAIN: ${CF_ACCESS_TEAM_DOMAIN:-}
+      CF_ACCESS_AUD: ${CF_ACCESS_AUD:-}
+      ILVEN_ADMIN_EMAILS: ${ILVEN_ADMIN_EMAILS:-}
+      DB_HOST: locke-db
+      DB_NAME: locke
+      DB_USER: locke
+      DB_PASSWORD_FILE: /run/locke-secrets/db/password
+      LOCKE_MASTER_KEY_FILE: /run/locke-secrets/app/master_key
+      LOCKE_APP_SECRET_FILE: /run/locke-secrets/app/ilven_app_secret
+      NEVLI_INTERNAL_URL: http://nevli:3001
+      LOCKE_MCP_URL: http://app-locke:8081/mcp
+    volumes:
+      - { type: volume, source: locke-secrets, target: /run/locke-secrets/db, read_only: true, volume: { subpath: db } }
+      - { type: volume, source: locke-secrets, target: /run/locke-secrets/app, read_only: true, volume: { subpath: app } }
     networks:
       default: { aliases: [app-locke] }
+      locke-db: {}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 5s
       timeout: 3s
       retries: 30
+    depends_on:
+      locke-db: { condition: service_healthy }
+
+networks:
+  locke-db: { internal: true }
+
+volumes:
+  locke-secrets: {}
+  locke-db-data: {}

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "../i18n/index.tsx";
 import { usePrefs, type LangPref, type ThemePref } from "../app/prefs.tsx";
-import { useAuth, useQuota, VAULT_URL } from "../app/session.tsx";
+import { useAuth, useIsAdmin, useQuota, VAULT_URL } from "../app/session.tsx";
+import { GpuWorkers } from "./Workers.tsx";
 import { Page } from "../components/Page.tsx";
 import { Icon } from "../components/Icon.tsx";
 import { QuotaRing } from "../components/QuotaRing.tsx";
@@ -52,6 +53,7 @@ export function SettingsPage() {
   const auth = useAuth();
   const q = useQuota();
   const accountConsole = useAccountConsole();
+  const isAdmin = useIsAdmin();
   return (
     <Page title={t("settings.title")}>
       <section className="card app-stack">
@@ -81,6 +83,7 @@ export function SettingsPage() {
         <div><button type="button" className="btn btn-secondary" onClick={() => void auth.logout()}>{t("settings.signout")}</button></div>
         <p className="hint">{t("settings.signout.hint")}</p>
       </section>
+      {isAdmin && <GpuWorkers />}
     </Page>
   );
 }

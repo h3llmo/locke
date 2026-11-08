@@ -3,29 +3,39 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
-  "description": "Locke — AI photo studio. An Ilven integration (runs inside an Ilven landing zone).",
+  "description": "Locke \u2014 AI photo studio. An Ilven integration (runs inside an Ilven landing zone).",
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "npm run build:web && npm run build:server",
     "build:web": "vite build",
-    "build:server": "esbuild server/index.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/index.mjs --sourcemap --banner:js=\"import { createRequire as __cr } from 'module'; const require = __cr(import.meta.url);\""
+    "build:server": "esbuild server/index.ts --bundle --platform=node --target=node22 --format=esm --preserve-symlinks --external:pg-native --outfile=dist/index.mjs --sourcemap --banner:js=\"import { createRequire as __cr } from 'module'; const require = __cr(import.meta.url);\"",
+    "test": "NODE_PRESERVE_SYMLINKS=1 tsx --test server/*.test.ts && node docs/worker-api/vectors.mjs"
   },
   "dependencies": {
+    "@fastify/multipart": "9.4.0",
     "@fastify/static": "10.1.10",
+    "@ilven/common": "file:../ilven/packages/common",
     "@ilven/web-auth": "file:../ilven/packages/web-auth",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "aws4fetch": "1.0.20",
     "fastify": "5.12.8",
+    "jose": "6.2.15",
     "oidc-client-ts": "3.5.0",
+    "pg": "8.23.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "react-router-dom": "7.18.5"
+    "react-router-dom": "7.18.5",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "22.19.1",
+    "@types/pg": "8.23.1",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
     "@vitejs/plugin-react": "6.2.1",
     "esbuild": "0.28.2",
+    "tsx": "4.23.15",
     "typescript": "5.9.3",
     "vite": "8.3.6"
   }

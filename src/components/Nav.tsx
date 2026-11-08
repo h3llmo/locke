@@ -46,7 +46,7 @@ function JobCard() {
   const { t } = useI18n();
   const j = useJobsSummary();
   const active = j.running + j.queued > 0;
-  const gpu = { online: "gpu.online", busy: "gpu.busy", offline: "gpu.offline", unknown: "gpu.unknown" } as const;
+  const gpu = { online: "gpu.online", busy: "gpu.busy", paused: "gpu.paused", offline: "gpu.offline", unknown: "gpu.unknown" } as const;
   return (
     <NavLink to="/jobs" className="sb-extra app-jobcard">
       <span className="t-label app-row">
