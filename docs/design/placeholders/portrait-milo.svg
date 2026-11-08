@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+<defs>
+<radialGradient id="b" cx=".45" cy=".35" r=".8"><stop offset="0" stop-color="#b98c55"/><stop offset="1" stop-color="#3a2614"/></radialGradient>
+<linearGradient id="k" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c99a76"/><stop offset="1" stop-color="#7e5038"/></linearGradient>
+</defs>
+<rect width="800" height="1000" fill="url(#b)"/>
+<path d="M90 1000 C120 820 270 760 400 760 C530 760 680 820 710 1000Z" fill="#1f2b3a"/>
+<path d="M340 760 l60 70 l60 -70" fill="none" stroke="#e8e4dc" stroke-width="10"/>
+<path d="M345 620 h110 v150 c-25 30 -85 30 -110 0Z" fill="#8a5a40"/>
+<path d="M276 440 C276 330 330 262 402 262 C474 262 528 330 528 440 C528 560 472 640 402 640 C332 640 276 560 276 440Z" fill="url(#k)"/>
+<path d="M290 520 C300 610 350 646 402 646 C454 646 504 610 514 520 C490 580 450 600 402 600 C354 600 314 580 290 520Z" fill="#3a2a22" opacity=".85"/>
+<path d="M270 420 C262 300 320 236 404 236 C488 236 546 298 534 420 C520 360 500 330 470 318 C420 300 370 306 330 322 C300 336 282 370 270 420Z" fill="#241a15"/>
+</svg>

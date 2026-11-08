@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Jobs, mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}}" style="position: relative; width: 390px; height: 844px; overflow: hidden; background: var(--bg)">
+
+  <header style="padding: 47px 12px 0 16px; height: 103px; display: flex; align-items: center; gap: 6px">
+    <h1 class="t-title-l" style="flex: 1">Jobs</h1>
+    <sc-if value="{{offline}}" hint-placeholder-val="{{true}}">
+      <span class="pill" style="min-height: 32px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2v4 M15 2v4 M7 6h10v4a5 5 0 0 1-10 0z M12 15v7"></path></svg>GPU offline</span>
+    </sc-if>
+    <sc-if value="{{busy}}" hint-placeholder-val="{{false}}">
+      <span class="pill pill-info" style="min-height: 32px"><span class="dot"></span>GPU busy</span>
+    </sc-if>
+    <button class="icon-btn" aria-label="Sort and filter"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16 M7 12h10 M10 18h4"></path></svg></button>
+  </header>
+
+  <main style="padding: 0 16px; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; align-items: center; gap: 8px">
+      <div class="tabs" role="tablist" aria-label="Jobs view">
+        <button role="tab" aria-selected="{{recentSel}}">Recent</button>
+        <button role="tab" aria-selected="{{schedSel}}">Scheduled <span class="t-num c3">2</span></button>
+      </div>
+      <span style="flex: 1"></span>
+      <span class="t-caption">Newest first</span>
+    </div>
+
+    <sc-if value="{{isRecent}}" hint-placeholder-val="{{true}}">
+      <sc-if value="{{offline}}" hint-placeholder-val="{{true}}">
+        <div role="status" style="display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 18px; background: var(--surface-1); border: 1px solid var(--border)">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-2)"><path d="M9 2v4 M15 2v4 M7 6h10v4a5 5 0 0 1-10 0z M12 15v7"></path></svg>
+          <span class="t-body-s c2" style="flex: 1">3 jobs wait for the GPU and start on their own.</span>
+        </div>
+      </sc-if>
+
+      <div role="list" style="display: flex; flex-direction: column; gap: 2px; margin: 0 -8px">
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+          <a role="listitem" href="JobResultMobile.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 16px; text-decoration: none; color: var(--text)">
+            <div class="tile" style="width: 52px; height: 52px; border-radius: 12px; flex: none"><img src="{{r.img}}" alt="" style="opacity: {{r.op}}"></div>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+              <span class="t-body-s clamp1" style="color: var(--text)">{{r.title}}</span>
+              <span class="t-caption clamp1">{{r.meta}}</span>
+              <sc-if value="{{r.prog}}" hint-placeholder-val="{{false}}"><div class="progress {{r.indet}}"><span style="width: {{r.pct}}"></span></div></sc-if>
+            </div>
+            <span class="pill {{r.pill}}">{{r.status}}</span>
+          </a>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isSched}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div style="flex: 1; min-width: 0"><div class="t-title-s" style="font-size: 16px">Morning lighthouse</div><div class="t-caption">Daily 07:00 · next in 9 h · 12 runs</div></div>
+            <span class="switch is-on" role="switch" aria-checked="true" aria-label="Morning lighthouse active"></span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px">
+            <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt=""></div>
+            <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="" style="object-position: 30% 40%; filter: sepia(.3)"></div>
+            <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt=""></div>
+            <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="" style="object-position: 60% 30%; filter: brightness(.85)"></div>
+            <a href="EditorPickMobile.dc.html" class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px; background: var(--surface-3); display: flex; align-items: center; justify-content: center; text-decoration: none" aria-label="Open source, 44 more"><span class="t-label t-num c2">+44</span></a>
+          </div>
+        </div>
+        <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div style="flex: 1; min-width: 0"><div class="t-title-s c2" style="font-size: 16px">Rooftop manga</div><div class="t-caption">Hourly · paused since Tue</div></div>
+            <span class="switch" role="switch" aria-checked="false" aria-label="Rooftop manga active"></span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; opacity: .6">
+            <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px"><img src="/_blob/ca494b0bfe456651a08cc89949f6a17a" alt=""></div>
+            <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px"><img src="/_blob/ca494b0bfe456651a08cc89949f6a17a" alt="" style="object-position: 20% 30%; transform: scale(1.3)"></div>
+            <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px"><img src="/_blob/ca494b0bfe456651a08cc89949f6a17a" alt="" style="transform: scaleX(-1)"></div>
+          </div>
+        </div>
+        <span class="t-caption" style="display: flex; align-items: center; gap: 6px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path></svg>Each schedule is a source in Editor and Automate</span>
+      </div>
+    </sc-if>
+  </main>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0">
+    <dc-import name="MobileNav" active="jobs" theme="{{theme}}" hint-size="390px,112px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"worker":{"editor":"enum","options":["busy","offline"],"default":"offline"},"tab":{"editor":"enum","options":["recent","scheduled"],"default":"recent"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const worker = this.props.worker ?? 'offline';
+    const tab = this.props.tab ?? 'recent';
+    const off = worker === 'offline';
+    const B = '/_blob/';
+    const live = off ? [
+      { img: B + '49f5c35875d79cdd1f8639ed04b97484', op: '.55', title: 'An old lighthouse keeper reading by lamplight', meta: 'Generate · Photography · ×4', status: 'Waiting', pill: '', prog: false },
+      { img: B + 'b98f848812490c10d9dfbf0ebffcc2f1', op: '.55', title: 'Café scene', meta: 'Face swap · Ana, Milo', status: 'Waiting', pill: '', prog: false },
+      { img: B + '615333cb7a7451c46b14f19e5d1cc710', op: '.55', title: 'Milo portrait', meta: 'Enhance', status: 'Waiting', pill: '', prog: false }
+    ] : [
+      { img: B + '45841a3c0c37777adabfb8651c5d55db', op: '1', title: 'Neon market alley after rain', meta: 'Generate · Cinematic · ×2', status: '60%', pill: 'pill-info', prog: true, pct: '60%', indet: '' },
+      { img: B + 'b98f848812490c10d9dfbf0ebffcc2f1', op: '1', title: 'Café scene', meta: 'Face swap · Ana, Milo', status: 'Running', pill: 'pill-info', prog: true, pct: '40%', indet: 'progress-indet' },
+      { img: B + '49f5c35875d79cdd1f8639ed04b97484', op: '.55', title: 'An old lighthouse keeper reading by lamplight', meta: 'Generate · Photography · ×4', status: '3rd', pill: '', prog: false }
+    ];
+    const rest = [
+      { img: B + '13c380256699ac3f901e2eb726da7630', op: '1', title: 'Quiet places at the edge of the day', meta: '1 h ago · ×4', status: 'Done', pill: 'pill-success', prog: false },
+      { img: B + 'd841ff50912394cbfa20e00483e2fecb', op: '1', title: 'Morning lighthouse', meta: 'Scheduled · 07:00 · ×4', status: 'Done', pill: 'pill-success', prog: false },
+      { img: B + 'b98f848812490c10d9dfbf0ebffcc2f1', op: '.4', title: 'Face swap didn’t find a matching face', meta: 'Rose · tap to retry', status: 'Failed', pill: 'pill-danger', prog: false },
+      { img: B + 'd424b7bc2418aaeb0000494dde022456', op: '.35', title: 'Still life with oranges', meta: 'Mon · results not kept', status: 'Expired', pill: 'pill-muted', prog: false }
+    ];
+    return {
+      theme: this.props.theme ?? 'dark', offline: off, busy: !off,
+      isRecent: tab === 'recent', isSched: tab === 'scheduled',
+      recentSel: tab === 'recent' ? 'true' : 'false', schedSel: tab === 'scheduled' ? 'true' : 'false',
+      rows: live.concat(rest)
+    };
+  }
+}
+</script>
+</body>
+</html>

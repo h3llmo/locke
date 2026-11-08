@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Layout and breakpoints</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-dark" style="width: 1440px; min-height: 1480px; padding: 72px 80px 80px; display: flex; flex-direction: column; gap: 48px; background: var(--bg)">
+
+  <header style="display: flex; flex-direction: column; gap: 8px">
+    <span class="t-overline">Locke design system</span>
+    <h1 class="t-display" style="font-size: 44px; line-height: 52px">Layout, shells &amp; breakpoints</h1>
+    <p class="t-body c2" style="max-width: 760px">One information architecture, three shells. Navigation moves from a bottom tab bar to a rail to a sidebar; the job indicator is always one tap away; the bottom-right corner always belongs to the platform assistant.</p>
+  </header>
+
+  <div style="display: grid; grid-template-columns: 300px 420px minmax(0, 1fr); gap: 32px; align-items: start">
+
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 class="t-title-s">Compact</h2><span class="t-caption">&lt; 640 · iPhone 390</span></div>
+      <div style="position: relative; width: 300px; height: 620px; border-radius: 36px; border: 1px solid var(--border-strong); background: var(--surface-1); overflow: hidden">
+        <div style="position: absolute; left: 0; right: 0; top: 0; height: 40px; background: repeating-linear-gradient(135deg, transparent 0 6px, var(--surface-3) 6px 7px); display: flex; align-items: center; justify-content: center"><span class="t-caption">safe-area-inset-top</span></div>
+        <div style="position: absolute; left: 12px; right: 12px; top: 48px; height: 44px; border-radius: 10px; background: var(--surface-3); display: flex; align-items: center; justify-content: space-between; padding: 0 10px"><span class="t-label">Title</span><span class="jobpill" style="min-height: 26px; padding: 0 8px; font-size: 11px"><span class="dot" style="color: var(--info)"></span>2 · 3</span></div>
+        <div style="position: absolute; left: 12px; right: 12px; top: 102px; bottom: 132px; border-radius: 10px; border: 1px dashed var(--border-strong); display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px"><span class="t-body-s c3">Content · 16 px gutter · 2-col image grids · scrolls under the tab bar</span></div>
+        <div style="position: absolute; left: 12px; right: 84px; bottom: 44px; height: 56px; border-radius: 18px; background: var(--surface-3); border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center"><span class="t-label">5 tabs · active one labelled</span></div>
+        <div style="position: absolute; right: 8px; bottom: 36px; width: 72px; height: 72px; border-radius: 14px; border: 2px dashed var(--accent); display: flex; align-items: center; justify-content: center"><div style="width: 44px; height: 44px; border-radius: 50%; background: var(--assist-bg)"></div></div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 28px; background: repeating-linear-gradient(135deg, transparent 0 6px, var(--surface-3) 6px 7px); display: flex; align-items: center; justify-content: center"><span class="t-caption">home indicator</span></div>
+      </div>
+      <p class="t-body-s c2">Floating tab bar stops 88 px short of the right edge. Tools and pickers open as bottom sheets. Settings sits behind the avatar in the header.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 class="t-title-s">Medium</h2><span class="t-caption">640 – 1023 · iPad portrait</span></div>
+      <div style="position: relative; width: 420px; height: 560px; border-radius: 24px; border: 1px solid var(--border-strong); background: var(--surface-1); overflow: hidden">
+        <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 72px; background: var(--surface-3); display: flex; flex-direction: column; align-items: center; gap: 14px; padding-top: 24px">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--accent)"></div>
+          <div style="width: 40px; height: 32px; border-radius: 8px; background: var(--border-strong)"></div>
+          <div style="width: 40px; height: 32px; border-radius: 8px; background: var(--border)"></div>
+          <div style="width: 40px; height: 32px; border-radius: 8px; background: var(--border)"></div>
+          <div style="width: 40px; height: 32px; border-radius: 8px; background: var(--border)"></div>
+          <span class="t-caption" style="margin-top: auto; margin-bottom: 16px">rail</span>
+        </div>
+        <div style="position: absolute; left: 88px; right: 16px; top: 16px; height: 40px; border-radius: 10px; background: var(--surface-3); display: flex; align-items: center; justify-content: space-between; padding: 0 10px"><span class="t-label">Title</span><span class="jobpill" style="min-height: 26px; padding: 0 8px; font-size: 11px"><span class="dot" style="color: var(--info)"></span>2 running · 3 queued</span></div>
+        <div style="position: absolute; left: 88px; right: 16px; top: 68px; bottom: 16px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+          <div style="border-radius: 8px; border: 1px dashed var(--border-strong)"></div><div style="border-radius: 8px; border: 1px dashed var(--border-strong)"></div><div style="border-radius: 8px; border: 1px dashed var(--border-strong)"></div>
+        </div>
+        <div style="position: absolute; right: 8px; bottom: 8px; width: 80px; height: 80px; border-radius: 14px; border: 2px dashed var(--accent); background: var(--surface-1); display: flex; align-items: center; justify-content: center"><div style="width: 48px; height: 48px; border-radius: 50%; background: var(--assist-bg)"></div></div>
+      </div>
+      <p class="t-body-s c2">Rail with icon + short label (labels wrap, never truncate). 24 px gutter, 3–4 column grids. Editor tools become a right side sheet over the canvas (360 px); job result opens as a full page, not a split.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 class="t-title-s">Expanded</h2><span class="t-caption">≥ 1024 · desktop 1440</span></div>
+      <div style="position: relative; width: 100%; height: 420px; border-radius: 16px; border: 1px solid var(--border-strong); background: var(--surface-1); overflow: hidden">
+        <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 132px; background: var(--surface-3); padding: 16px 12px; display: flex; flex-direction: column; gap: 10px">
+          <div style="width: 64px; height: 16px; border-radius: 4px; background: var(--accent)"></div>
+          <div style="height: 22px; border-radius: 6px; background: var(--border-strong)"></div>
+          <div style="height: 22px; border-radius: 6px; background: var(--border)"></div>
+          <div style="height: 22px; border-radius: 6px; background: var(--border)"></div>
+          <div style="height: 22px; border-radius: 6px; background: var(--border)"></div>
+          <div style="margin-top: 12px; height: 28px; border-radius: 14px; border: 1px solid var(--accent)"></div>
+          <span class="t-caption" style="margin-top: auto">sidebar 248</span>
+        </div>
+        <div style="position: absolute; left: 148px; right: 196px; top: 16px; bottom: 16px; border-radius: 10px; border: 1px dashed var(--border-strong); display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px"><span class="t-body-s c3">Content · fluid, max 1200 · 32 px gutter</span></div>
+        <div style="position: absolute; right: 16px; top: 16px; bottom: 112px; width: 164px; border-radius: 10px; background: var(--surface-3); display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px"><span class="t-body-s c3">Context panel 360 (editor tools, job result, character)</span></div>
+        <div style="position: absolute; right: 8px; bottom: 8px; width: 96px; height: 96px; border-radius: 14px; border: 2px dashed var(--accent); display: flex; align-items: center; justify-content: center"><div style="width: 52px; height: 52px; border-radius: 50%; background: var(--assist-bg)"></div></div>
+      </div>
+      <p class="t-body-s c2">Sidebar holds nav, the job indicator, worker status and vault quota. Context panels end 96 px above the bottom so the assistant never covers an action. Between 1024 and 1279 the sidebar collapses to a 72 px rail.</p>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 12px">
+      <h3 class="t-title-s">Assistant corner</h3>
+      <p class="t-body-s c2">Reserved: <code>right: 0; bottom: 0; 88 × 88</code> plus <code>env(safe-area-inset-bottom)</code>. No primary actions, toasts, FABs or pagination there.</p>
+      <p class="t-body-s c2">Sticky action bars (Generate, Run tool) end at <code>right: 88px</code> on compact, and sit in the content column on expanded.</p>
+      <p class="t-body-s c2">Its chat panel overlays Locke; Locke does not resize for it.</p>
+    </div>
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 12px">
+      <h3 class="t-title-s">Home-screen web app</h3>
+      <p class="t-body-s c2"><code>display: standalone</code>, <code>viewport-fit=cover</code>. Headers add <code>safe-area-inset-top</code>; the tab bar adds the bottom inset + 8 px.</p>
+      <p class="t-body-s c2"><code>theme-color</code> follows the active theme (#0E0F11 / #F5F5F6). No pull-to-refresh on screens with canvases; Jobs refreshes live.</p>
+      <p class="t-body-s c2">Back = in-app header back button (no browser chrome); edge-swipe back on iOS is preserved.</p>
+    </div>
+    <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 12px">
+      <h3 class="t-title-s">i18n stress test (EN → FR)</h3>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap"><span class="jobpill"><span class="dot" style="color: var(--info)"></span>2 running · 3 queued</span><span class="jobpill"><span class="dot" style="color: var(--info)"></span>2 en cours · 3 en attente</span></div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap"><button class="btn btn-secondary btn-sm">Keep</button><button class="btn btn-secondary btn-sm">Conserver</button><button class="btn btn-secondary btn-sm">Generate more like this</button><button class="btn btn-secondary btn-sm">Générer d'autres images similaires</button></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px"><span class="t-caption">Nov 7, 2026 · 2 min ago</span><span class="t-caption">7 nov. 2026 · il y a 2 min</span><span class="t-caption t-num">1,024 × 1,280 · 3.1 MB</span><span class="t-caption t-num">1 024 × 1 280 · 3,1 Mo</span></div>
+      </div>
+      <p class="t-body-s c3">Buttons grow, chips wrap to a second row, tab labels wrap to two lines. Nothing truncates except prompts and file names (with full text on hover/long-press).</p>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1480}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

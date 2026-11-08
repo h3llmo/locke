@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Editor, pick an image, mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}}" style="position: relative; width: 390px; height: 844px; overflow: hidden; background: var(--bg)">
+
+  <header style="padding: 47px 12px 0 16px; height: 103px; display: flex; align-items: center; gap: 4px">
+    <h1 class="t-title-l" style="flex: 1">Editor</h1>
+    <a href="#" class="icon-btn" aria-label="{{ringLabel}}">
+      <span class="ring" style="width: 32px; height: 32px; background: {{ringBg}}"><span style="width: 24px; height: 24px; background: var(--bg)"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px; color: {{ringFg}}"><path d="M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z M8 11V8a4 4 0 1 1 8 0v3"></path></svg></span></span>
+    </a>
+    <button class="icon-btn" aria-label="Upload or take a photo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg></button>
+  </header>
+
+  <main style="display: flex; flex-direction: column; gap: 12px">
+    <div class="tabs hscroll" role="tablist" aria-label="Source" style="padding: 0 16px; gap: 6px">
+      <button role="tab" aria-selected="true">Vault</button>
+      <button role="tab" aria-selected="false">Scheduled</button>
+      <button role="tab" aria-selected="false">iCloud</button>
+      <button role="tab" aria-selected="false">Documents</button>
+      <button role="tab" aria-selected="false">Generated</button>
+    </div>
+
+    <div style="padding: 0 16px; display: flex; align-items: center; gap: 8px">
+      <button class="chip chip-sm"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16 M4 17l3 3 3-3 M14 6h6 M14 12h4 M14 18h2"></path></svg>Recently edited</button>
+      <span style="flex: 1"></span>
+      <span class="t-caption t-num">12</span>
+      <button class="icon-btn" aria-label="Search and filter"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M20 20l-4-4"></path></svg></button>
+    </div>
+
+    <div style="padding: 0 16px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+      <a href="EditorMobile.dc.html" class="tile" style="aspect-ratio: 1"><img src="/_blob/b98f848812490c10d9dfbf0ebffcc2f1" alt="Café scene, 3 edits"><span class="tile-tag t-num"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 11px; height: 11px"><path d="M8 8h12v12H8z M4 16V4h12"></path></svg>3</span></a>
+      <a href="#" class="tile" style="aspect-ratio: 1"><img src="/_blob/615333cb7a7451c46b14f19e5d1cc710" alt="Milo portrait, 2 edits" style="object-position: 50% 30%"><span class="tile-tag t-num"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 11px; height: 11px"><path d="M8 8h12v12H8z M4 16V4h12"></path></svg>2</span></a>
+      <a href="#" class="tile" style="aspect-ratio: 1"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="Coast"></a>
+      <a href="#" class="tile" style="aspect-ratio: 1"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="Rose portrait, 4 edits" style="object-position: 50% 30%"><span class="tile-tag t-num"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 11px; height: 11px"><path d="M8 8h12v12H8z M4 16V4h12"></path></svg>4</span></a>
+      <a href="#" class="tile" style="aspect-ratio: 1"><img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt="Forest"></a>
+      <a href="#" class="tile" style="aspect-ratio: 1"><img src="/_blob/45841a3c0c37777adabfb8651c5d55db" alt="City, 2 edits"><span class="tile-tag t-num"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 11px; height: 11px"><path d="M8 8h12v12H8z M4 16V4h12"></path></svg>2</span></a>
+      <a href="#" class="tile" style="aspect-ratio: 1"><img src="/_blob/ca494b0bfe456651a08cc89949f6a17a" alt="Manga panel"></a>
+      <a href="#" class="tile" style="aspect-ratio: 1"><img src="/_blob/603ff0cb7d029ea8f9a5e95b09cda895" alt="Jun portrait" style="object-position: 50% 30%"></a>
+      <a href="#" class="tile" style="aspect-ratio: 1"><img src="/_blob/13c380256699ac3f901e2eb726da7630" alt="Dunes"></a>
+      <a href="#" class="tile" style="aspect-ratio: 1"><img src="/_blob/d424b7bc2418aaeb0000494dde022456" alt="Still life"></a>
+      <a href="#" class="tile" style="aspect-ratio: 1"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="Ana portrait" style="object-position: 50% 30%"></a>
+      <a href="#" class="tile" style="aspect-ratio: 1"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="Coast, second shot" style="transform: scaleX(-1)"></a>
+    </div>
+  </main>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0">
+    <dc-import name="MobileNav" active="editor" theme="{{theme}}" hint-size="390px,112px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"quota":{"editor":"enum","options":["normal","almost","full"],"default":"normal"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const q = this.props.quota ?? 'normal';
+    const map = {
+      normal: ['conic-gradient(var(--text-2) 44%, var(--surface-3) 0)', 'var(--text-2)', 'Vault 44% used, 144 MB free'],
+      almost: ['conic-gradient(var(--warning) 90%, var(--surface-3) 0)', 'var(--warning)', 'Vault almost full, 25 MB free'],
+      full: ['conic-gradient(var(--danger) 100%, var(--surface-3) 0)', 'var(--danger)', 'Vault full']
+    }[q];
+    return { theme: this.props.theme ?? 'dark', ringBg: map[0], ringFg: map[1], ringLabel: map[2] };
+  }
+}
+</script>
+</body>
+</html>

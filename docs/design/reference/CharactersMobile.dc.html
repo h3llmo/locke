@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Characters, mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}}" style="position: relative; width: 390px; height: 844px; overflow: hidden; background: var(--bg)">
+
+  <header style="padding: 47px 16px 0; height: 103px; display: flex; align-items: center; gap: 8px">
+    <h1 class="t-title-l" style="flex: 1">Characters</h1>
+    <a class="jobpill" href="JobsMobile.dc.html"><span class="dot" style="color: var(--info)"></span><span class="t-num">2 running · 3 queued</span></a>
+  </header>
+
+  <sc-if value="{{isEmpty}}" hint-placeholder-val="{{false}}">
+    <main style="padding: 48px 32px 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px">
+      <div style="position: relative; width: 220px; height: 150px" aria-hidden="true">
+        <div class="tile" style="position: absolute; left: 0; top: 24px; width: 96px; height: 120px; border-radius: 14px; transform: rotate(-6deg); box-shadow: var(--e2)"><img src="/_blob/d424b7bc2418aaeb0000494dde022456" alt=""></div>
+        <div class="tile" style="position: absolute; right: 0; top: 24px; width: 96px; height: 120px; border-radius: 14px; transform: rotate(6deg); box-shadow: var(--e2)"><img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt=""></div>
+        <div class="tile" style="position: absolute; left: 62px; top: 0; width: 96px; height: 120px; border-radius: 14px; box-shadow: var(--e3)"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="" style="object-position: 50% 35%"></div>
+        <span style="position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 40px; height: 40px; border-radius: 50%; background: var(--info-border); color: var(--bg); display: flex; align-items: center; justify-content: center; box-shadow: var(--e2)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"></path></svg></span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <h2 class="t-title-m">Keep the same face across all your images.</h2>
+        <p class="t-body c2">Add up to 8 photos of someone, then use them in Create and face swap so your story's cast stays recognisable.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 100%">
+        <button class="btn btn-primary btn-lg btn-block"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg>Create a character</button>
+        <button class="btn btn-ghost btn-block">Pick photos from my vault</button>
+      </div>
+      <span class="lockcue"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z M8 11V8a4 4 0 1 1 8 0v3"></path></svg>Face photos are encrypted and never shared</span>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{isGrid}}" hint-placeholder-val="{{true}}">
+    <main style="padding: 0 16px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; gap: 8px; align-items: center">
+        <button class="chip chip-sm"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16 M4 17l3 3 3-3 M14 6h6 M14 12h4 M14 18h2"></path></svg>Recently used</button>
+        <span style="flex: 1"></span>
+        <span class="t-caption t-num">24</span>
+        <button class="icon-btn" aria-label="Search characters"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M20 20l-4-4"></path></svg></button>
+        <a href="CharacterEditMobile.dc.html" class="icon-btn" aria-label="New character" style="background: var(--accent); color: var(--on-accent)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg></a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 12px" role="list">
+        <a role="listitem" href="CharacterEditMobile.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: var(--text)"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 38%"><span style="text-align: center"><span class="t-label" style="display: block">Rose</span><span class="t-caption t-num">5 faces · 12 uses</span></span></a>
+        <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: var(--text)"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 35%"><span style="text-align: center"><span class="t-label" style="display: block">Ana</span><span class="t-caption t-num">8 faces · 31 uses</span></span></a>
+        <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: var(--text)"><img src="/_blob/615333cb7a7451c46b14f19e5d1cc710" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 38%"><span style="text-align: center"><span class="t-label" style="display: block">Milo</span><span class="t-caption t-num">6 faces · 9 uses</span></span></a>
+        <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: var(--text)"><span style="position: relative"><img src="/_blob/603ff0cb7d029ea8f9a5e95b09cda895" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 38%; display: block"><span style="position: absolute; right: 2px; bottom: 2px; width: 26px; height: 26px; border-radius: 50%; background: var(--warning); color: var(--bg); display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg)" aria-label="Needs more faces"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 14px; height: 14px; stroke-width: 2.5"><path d="M12 7v6 M12 17h.01"></path></svg></span></span><span style="text-align: center"><span class="t-label" style="display: block">Jun</span><span class="t-caption t-num" style="color: var(--warning)">1 face · add more</span></span></a>
+        <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: var(--text)"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 30%; filter: grayscale(1)"><span style="text-align: center; min-width: 0; width: 100%"><span class="t-label clamp1" style="display: block">Captain Ilse Vandermeer</span><span class="t-caption t-num">4 faces</span></span></a>
+        <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: var(--text)"><img src="/_blob/615333cb7a7451c46b14f19e5d1cc710" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 28%; filter: sepia(.4)"><span style="text-align: center"><span class="t-label" style="display: block">Theo</span><span class="t-caption t-num">3 faces</span></span></a>
+        <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: var(--text)"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 45%; filter: hue-rotate(160deg)"><span style="text-align: center"><span class="t-label" style="display: block">Mara</span><span class="t-caption t-num">7 faces</span></span></a>
+        <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: var(--text)"><img src="/_blob/603ff0cb7d029ea8f9a5e95b09cda895" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 45%; filter: hue-rotate(200deg)"><span style="text-align: center"><span class="t-label" style="display: block">Kip</span><span class="t-caption t-num">5 faces</span></span></a>
+        <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: var(--text)"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 45%; filter: hue-rotate(90deg)"><span style="text-align: center"><span class="t-label" style="display: block">Odile</span><span class="t-caption t-num">8 faces</span></span></a>
+      </div>
+    </main>
+  </sc-if>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0">
+    <dc-import name="MobileNav" active="characters" theme="{{theme}}" hint-size="390px,112px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"state":{"editor":"enum","options":["grid","empty"],"default":"grid"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.props.state ?? 'grid';
+    return { theme: this.props.theme ?? 'dark', isGrid: s === 'grid', isEmpty: s === 'empty' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Edit character, mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}}" style="position: relative; width: 390px; height: 844px; overflow: hidden; background: var(--bg)">
+  <div aria-hidden="true" style="position: absolute; inset: 0"><dc-import name="CharactersMobile" theme="{{theme}}" hint-size="390px,844px"></dc-import></div>
+  <div class="scrim" style="position: absolute; inset: 0"></div>
+
+  <section class="dialog" role="dialog" aria-labelledby="ce-name" style="position: absolute; left: 12px; right: 12px; top: 64px; padding: 20px 18px 18px; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; align-items: center; gap: 8px">
+      <h2 id="ce-name" class="t-title-m" style="flex: 1">Rose</h2>
+      <button class="icon-btn" aria-label="Rename" style="width: 36px; height: 36px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4l6 6-9 9H5v-6z"></path></svg></button>
+      <button class="icon-btn" aria-label="Delete character" style="width: 36px; height: 36px; background: var(--danger-soft); color: var(--danger)"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16 M10 11v6 M14 11v6 M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12 M9 7V4h6v3"></path></svg></button>
+    </div>
+    <p class="t-body-s c2">Clear, front-facing photos of the face. Up to 8 — private to you.</p>
+
+    <div class="opt-row">
+      <span class="opt-label">Gender</span>
+      <div class="seg" role="group" aria-label="Gender"><button aria-pressed="false">Any</button><button aria-pressed="true">Woman</button><button aria-pressed="false">Man</button></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span class="opt-label">Age</span>
+      <div class="seg" role="group" aria-label="Age"><button aria-pressed="false">Any</button><button aria-pressed="false">Child</button><button aria-pressed="false">Teen</button><button aria-pressed="false">Young</button><button aria-pressed="false">Adult</button><button aria-pressed="true">Senior</button></div>
+    </div>
+    <p class="t-caption" style="margin: 0">Helps pick the right face when an image shows several people. "Any" = no filter.</p>
+
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <span class="opt-label">Faces</span>
+      <span class="t-label t-num"><span>5</span><span class="c3"> / 8</span></span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px" role="list">
+      <div role="listitem" class="tile" style="aspect-ratio: 1; outline: 2px solid var(--info-border); outline-offset: 2px"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="Face 1, main" style="object-position: 50% 40%"><span class="tile-tag" style="left: 4px; top: 4px; padding: 0 5px" aria-label="Main face"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 11px; height: 11px; fill: currentColor"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8L3.5 9.7l5.9-.9z"></path></svg></span></div>
+      <div role="listitem" class="tile" style="aspect-ratio: 1"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="Face 2" style="object-position: 40% 35%; transform: scale(1.3)"><button class="icon-btn on-image" aria-label="Remove face 2" style="position: absolute; right: 4px; top: 4px; width: 24px; height: 24px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M6 6l12 12 M18 6 6 18"></path></svg></button></div>
+      <div role="listitem" class="tile" style="aspect-ratio: 1"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="Face 3, blurry" style="object-position: 55% 45%; filter: blur(2.5px)"><span class="tile-tag" style="top: auto; bottom: 4px; left: 4px; background: var(--warning); color: var(--bg)">Blurry</span></div>
+      <div role="listitem" class="tile" style="aspect-ratio: 1"><img src="/_blob/b98f848812490c10d9dfbf0ebffcc2f1" alt="Face 4, two people" style="transform: scale(1.4)"><span class="tile-tag" style="top: auto; bottom: 4px; left: 4px; background: var(--warning); color: var(--bg)">Crop</span></div>
+      <div role="listitem" class="tile" style="aspect-ratio: 1"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="Face 5" style="object-position: 45% 30%; transform: scale(1.15) scaleX(-1)"></div>
+      <button class="tile" style="aspect-ratio: 1; border: 1.5px dashed var(--border-strong); background: transparent; color: var(--text-2); display: flex; align-items: center; justify-content: center; cursor: pointer" aria-label="Add photos, 3 left"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg></button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 6px">
+      <div style="display: flex; gap: 8px; justify-content: space-between">
+        <button class="btn btn-secondary">Add photos</button>
+        <button class="btn btn-primary" style="padding: 0 28px">Done</button>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.theme ?? 'dark' };
+  }
+}
+</script>
+</body>
+</html>

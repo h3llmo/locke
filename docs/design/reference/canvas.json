@@ -1,0 +1,488 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-07T21:05:00Z"
+  },
+  "title": "Locke — AI photo studio",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 2240,
+      "title": "Foundations — tokens (dark + light)"
+    },
+    "Components.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 2640,
+      "title": "Components — dark"
+    },
+    "Components-light.dc.html": {
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 2640,
+      "title": "Components — light"
+    },
+    "Layout.dc.html": {
+      "x": 4560,
+      "y": 0,
+      "w": 1440,
+      "h": 1480,
+      "title": "Layout, shells & breakpoints"
+    },
+    "MobileNav.dc.html": {
+      "x": 6080,
+      "y": 0,
+      "w": 390,
+      "h": 112,
+      "title": "Mobile tab bar (component)"
+    },
+    "DesktopSidebar.dc.html": {
+      "x": 6550,
+      "y": 0,
+      "w": 248,
+      "h": 900,
+      "title": "Desktop sidebar (component)"
+    },
+    "CreateMobile.dc.html": {
+      "x": 0,
+      "y": 2980,
+      "w": 390,
+      "h": 844,
+      "title": "Create · prompt editor — mobile, dark · list mode"
+    },
+    "CreateMobile-light.dc.html": {
+      "x": 470,
+      "y": 2980,
+      "w": 390,
+      "h": 844,
+      "title": "Create · prompt editor — mobile, light · raw text, negative"
+    },
+    "ScheduleMobile.dc.html": {
+      "x": 940,
+      "y": 2980,
+      "w": 390,
+      "h": 844,
+      "title": "Run or schedule + references — mobile, dark"
+    },
+    "CreateDesktop.dc.html": {
+      "x": 1880,
+      "y": 2980,
+      "w": 1440,
+      "h": 960,
+      "title": "Create · prompt editor — desktop, dark",
+      "expand": "fill"
+    },
+    "CreateDesktop-light.dc.html": {
+      "x": 3400,
+      "y": 2980,
+      "w": 1440,
+      "h": 960,
+      "title": "Create · prompt editor — desktop, light · just scheduled",
+      "expand": "fill"
+    },
+    "JobsMobile.dc.html": {
+      "x": 0,
+      "y": 4320,
+      "w": 390,
+      "h": 844,
+      "title": "Jobs — mobile, dark · GPU offline"
+    },
+    "JobsMobile-light.dc.html": {
+      "x": 470,
+      "y": 4320,
+      "w": 390,
+      "h": 844,
+      "title": "Jobs · scheduled — mobile, light"
+    },
+    "JobResultMobile.dc.html": {
+      "x": 940,
+      "y": 4320,
+      "w": 390,
+      "h": 844,
+      "title": "Job result · full-screen viewer — dark"
+    },
+    "JobResultMobile-light.dc.html": {
+      "x": 1410,
+      "y": 4320,
+      "w": 390,
+      "h": 844,
+      "title": "Job result · variants grid — light"
+    },
+    "JobsDesktop.dc.html": {
+      "x": 1880,
+      "y": 4320,
+      "w": 1440,
+      "h": 1000,
+      "title": "Jobs + result — desktop, dark",
+      "expand": "fill"
+    },
+    "JobsDesktop-light.dc.html": {
+      "x": 3400,
+      "y": 4320,
+      "w": 1440,
+      "h": 1000,
+      "title": "Jobs + result — desktop, light",
+      "expand": "fill"
+    },
+    "EditorPickMobile.dc.html": {
+      "x": 0,
+      "y": 5700,
+      "w": 390,
+      "h": 844,
+      "title": "Editor · pick — mobile, dark"
+    },
+    "EditorPickMobile-light.dc.html": {
+      "x": 470,
+      "y": 5700,
+      "w": 390,
+      "h": 844,
+      "title": "Editor · pick — mobile, light · vault almost full"
+    },
+    "EditorMobile.dc.html": {
+      "x": 940,
+      "y": 5700,
+      "w": 390,
+      "h": 844,
+      "title": "Editor · face swap — mobile, dark"
+    },
+    "EditorMobile-light.dc.html": {
+      "x": 1410,
+      "y": 5700,
+      "w": 390,
+      "h": 844,
+      "title": "Editor · blur applied, removable — mobile, light"
+    },
+    "EditorDesktop.dc.html": {
+      "x": 1880,
+      "y": 5700,
+      "w": 1440,
+      "h": 960,
+      "title": "Editor · blur applied, compare before blur — desktop, dark",
+      "expand": "fill"
+    },
+    "EditorDesktop-light.dc.html": {
+      "x": 3400,
+      "y": 5700,
+      "w": 1440,
+      "h": 960,
+      "title": "Editor · blur applied, compare before blur — desktop, light",
+      "expand": "fill"
+    },
+    "EditorPickDesktop.dc.html": {
+      "x": 4920,
+      "y": 5700,
+      "w": 1440,
+      "h": 960,
+      "title": "Editor · pick from a source — desktop, dark · partial load",
+      "expand": "fill"
+    },
+    "CharactersMobile.dc.html": {
+      "x": 0,
+      "y": 7040,
+      "w": 390,
+      "h": 844,
+      "title": "Characters — mobile, dark · 24 characters"
+    },
+    "CharactersMobile-light.dc.html": {
+      "x": 470,
+      "y": 7040,
+      "w": 390,
+      "h": 844,
+      "title": "Characters — mobile, light · empty state"
+    },
+    "CharacterEditMobile.dc.html": {
+      "x": 940,
+      "y": 7040,
+      "w": 390,
+      "h": 844,
+      "title": "Character edit — mobile, dark"
+    },
+    "CharacterEditMobile-light.dc.html": {
+      "x": 1410,
+      "y": 7040,
+      "w": 390,
+      "h": 844,
+      "title": "Character edit — mobile, light"
+    },
+    "CharactersDesktop.dc.html": {
+      "x": 1880,
+      "y": 7040,
+      "w": 1440,
+      "h": 1000,
+      "title": "Characters + edit — desktop, dark",
+      "expand": "fill"
+    },
+    "CharactersDesktop-light.dc.html": {
+      "x": 3400,
+      "y": 7040,
+      "w": 1440,
+      "h": 1000,
+      "title": "Characters + edit — desktop, light",
+      "expand": "fill"
+    },
+    "SettingsMobile.dc.html": {
+      "x": 0,
+      "y": 8420,
+      "w": 390,
+      "h": 844,
+      "title": "Settings — mobile, dark"
+    },
+    "SettingsMobile-light.dc.html": {
+      "x": 470,
+      "y": 8420,
+      "w": 390,
+      "h": 844,
+      "title": "Settings — mobile, light"
+    },
+    "SettingsDesktop.dc.html": {
+      "x": 940,
+      "y": 8420,
+      "w": 1440,
+      "h": 900,
+      "title": "Settings — desktop, dark",
+      "expand": "fill"
+    },
+    "SettingsDesktop-light.dc.html": {
+      "x": 2460,
+      "y": 8420,
+      "w": 1440,
+      "h": 900,
+      "title": "Settings — desktop, light",
+      "expand": "fill"
+    },
+    "WorkflowsMobile.dc.html": {
+      "x": 0,
+      "y": 9700,
+      "w": 390,
+      "h": 844,
+      "title": "Automate · workflows — mobile, dark"
+    },
+    "WorkflowsMobile-light.dc.html": {
+      "x": 470,
+      "y": 9700,
+      "w": 390,
+      "h": 844,
+      "title": "Automate · workflows — mobile, light"
+    },
+    "WorkflowEditMobile.dc.html": {
+      "x": 940,
+      "y": 9700,
+      "w": 390,
+      "h": 844,
+      "title": "Workflow builder — mobile, dark"
+    },
+    "WorkflowEditMobile-light.dc.html": {
+      "x": 1410,
+      "y": 9700,
+      "w": 390,
+      "h": 844,
+      "title": "Workflow builder — mobile, light"
+    },
+    "WorkflowsDesktop.dc.html": {
+      "x": 1880,
+      "y": 9700,
+      "w": 1440,
+      "h": 1000,
+      "title": "Automate · list + builder — desktop, dark",
+      "expand": "fill"
+    },
+    "WorkflowsDesktop-light.dc.html": {
+      "x": 3400,
+      "y": 9700,
+      "w": 1440,
+      "h": 1000,
+      "title": "Automate · list + builder — desktop, light",
+      "expand": "fill"
+    },
+    "States.dc.html": {
+      "x": 0,
+      "y": 11080,
+      "w": 1440,
+      "h": 2080,
+      "title": "Key states — empty, loading, offline, quota, errors, long text"
+    },
+    "Spec.dc.html": {
+      "x": 1520,
+      "y": 11080,
+      "w": 1440,
+      "h": 2200,
+      "title": "Interaction spec"
+    },
+    "ReferencesMobile.dc.html": {
+      "x": 1410,
+      "y": 2980,
+      "w": 390,
+      "h": 844,
+      "title": "References picker — mobile, light"
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Components.dc.html",
+    "Components-light.dc.html",
+    "Layout.dc.html",
+    "MobileNav.dc.html",
+    "DesktopSidebar.dc.html",
+    "CreateMobile.dc.html",
+    "CreateMobile-light.dc.html",
+    "ScheduleMobile.dc.html",
+    "ReferencesMobile.dc.html",
+    "CreateDesktop.dc.html",
+    "CreateDesktop-light.dc.html",
+    "JobsMobile.dc.html",
+    "JobsMobile-light.dc.html",
+    "JobResultMobile.dc.html",
+    "JobResultMobile-light.dc.html",
+    "JobsDesktop.dc.html",
+    "JobsDesktop-light.dc.html",
+    "EditorPickMobile.dc.html",
+    "EditorPickMobile-light.dc.html",
+    "EditorMobile.dc.html",
+    "EditorMobile-light.dc.html",
+    "EditorDesktop.dc.html",
+    "EditorDesktop-light.dc.html",
+    "EditorPickDesktop.dc.html",
+    "CharactersMobile.dc.html",
+    "CharactersMobile-light.dc.html",
+    "CharacterEditMobile.dc.html",
+    "CharacterEditMobile-light.dc.html",
+    "CharactersDesktop.dc.html",
+    "CharactersDesktop-light.dc.html",
+    "SettingsMobile.dc.html",
+    "SettingsMobile-light.dc.html",
+    "SettingsDesktop.dc.html",
+    "SettingsDesktop-light.dc.html",
+    "WorkflowsMobile.dc.html",
+    "WorkflowsMobile-light.dc.html",
+    "WorkflowEditMobile.dc.html",
+    "WorkflowEditMobile-light.dc.html",
+    "WorkflowsDesktop.dc.html",
+    "WorkflowsDesktop-light.dc.html",
+    "States.dc.html",
+    "Spec.dc.html"
+  ],
+  "notes": {
+    "tFound": {
+      "x": 0,
+      "y": -300,
+      "text": "Locke — foundations & components",
+      "kind": "title1",
+      "maxW": 6800
+    },
+    "tCreate": {
+      "x": 0,
+      "y": 2680,
+      "text": "1 · Create — prompt editor, references, run or schedule",
+      "kind": "title1",
+      "maxW": 4840
+    },
+    "tJobs": {
+      "x": 0,
+      "y": 4020,
+      "text": "2 · Jobs & results",
+      "kind": "title1",
+      "maxW": 4840
+    },
+    "tEditor": {
+      "x": 0,
+      "y": 5400,
+      "text": "3 · Editor",
+      "kind": "title1",
+      "maxW": 6360
+    },
+    "tChars": {
+      "x": 0,
+      "y": 6740,
+      "text": "4 · Characters",
+      "kind": "title1",
+      "maxW": 4840
+    },
+    "tSettings": {
+      "x": 0,
+      "y": 8120,
+      "text": "5 · Settings",
+      "kind": "title1",
+      "maxW": 3900
+    },
+    "tAuto": {
+      "x": 0,
+      "y": 9400,
+      "text": "6 · Automate — workflows on vault sources",
+      "kind": "title1",
+      "maxW": 4840
+    },
+    "tStates": {
+      "x": 0,
+      "y": 10780,
+      "text": "States & interaction spec",
+      "kind": "title1",
+      "maxW": 2960
+    },
+    "sAssist": {
+      "x": 6080,
+      "y": 1000,
+      "w": 420,
+      "text": "Assistant corner: the bottom-right 88 × 88 px (plus safe area) belongs to the platform's assistant button on every breakpoint. Mobile tab bar stops 88 px short; desktop content keeps a clear corner; toasts sit bottom-left / centre.",
+      "fill": "blue",
+      "size": "m"
+    },
+    "sColour": {
+      "x": 6080,
+      "y": 1600,
+      "w": 420,
+      "text": "v2 colour rule: MINT = do (primary actions, toggles, sliders). BLUE = chosen or in progress (selected pills, running jobs). Everything else is neutral navy-grey.",
+      "fill": "teal",
+      "size": "m"
+    },
+    "sCreate": {
+      "x": 4920,
+      "y": 2980,
+      "w": 380,
+      "text": "Create is a prompt editor: list (toggle each fragment) or raw text, flip to negative, save and reuse, references, then Run now or Schedule. Scheduled runs become named vault sources.",
+      "fill": "teal",
+      "size": "m"
+    },
+    "sJobs": {
+      "x": 4920,
+      "y": 4320,
+      "w": 380,
+      "text": "No generation preview (jobs are sealed on the partner side): running = style thumbnail + progress only. GPU offline is calm and neutral.",
+      "fill": "teal",
+      "size": "m"
+    },
+    "sEditor": {
+      "x": 6440,
+      "y": 5700,
+      "w": 380,
+      "text": "Tools: Enhance (one tap), Face swap (pick one or more characters — matched by gender/age), Blur (strength, always the last step), Edit (soon). History is a single line; the only rollback is \"Remove blur\", which restores the image just before blur.",
+      "fill": "teal",
+      "size": "m"
+    },
+    "sChars": {
+      "x": 4920,
+      "y": 7040,
+      "w": 380,
+      "text": "Gender and age are matching hints for the partner (\"Any\" = no filter). Inline pills, no form fields.",
+      "fill": "teal",
+      "size": "m"
+    },
+    "sAuto": {
+      "x": 4920,
+      "y": 9700,
+      "w": 380,
+      "text": "A workflow watches sources (scheduled prompts, iCloud album, Generated…) and runs its steps on each new image: one result per image. Blur is pinned last and keeps the pre-blur copy, so it can be removed afterwards.",
+      "fill": "teal",
+      "size": "m"
+    }
+  },
+  "designSystems": []
+}

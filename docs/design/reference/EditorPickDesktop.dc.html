@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Editor, pick from a source, desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}} shell" style="min-height: 960px">
+  <div class="shell-nav"><dc-import name="DesktopSidebar" active="editor" theme="{{theme}}" hint-size="100%,960px"></dc-import></div>
+
+  <main class="shell-main" style="position: relative">
+    <div style="padding: 32px 40px 160px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h1 class="t-display">Editor</h1>
+          <p class="t-body c2">Pick from your vault or a source.</p>
+        </div>
+        <button class="btn btn-secondary"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9 M7 14l5-5 5 5 M5 4h14"></path></svg>Upload from computer</button>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Image source">
+        <button role="tab" aria-selected="false"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z M8 11V8a4 4 0 1 1 8 0v3"></path></svg>Vault <span class="t-num c3">12</span></button>
+        <button role="tab" aria-selected="true"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1 0 9z"></path></svg>iCloud album · Story refs</button>
+        <button role="tab" aria-selected="false"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path></svg>Documents</button>
+        <button role="tab" aria-selected="false"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"></path></svg>Scheduled · Morning lighthouse</button>
+        <button role="tab" aria-selected="false"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"></path></svg>Generated</button>
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+        <div style="position: relative; flex: 0 1 320px">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="position: absolute; left: 12px; top: 12px; color: var(--text-3)"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M20 20l-4-4"></path></svg>
+          <label for="pd-search" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search this album</label>
+          <input id="pd-search" class="input" placeholder="Search this album" style="padding-left: 42px; font-size: 15px">
+        </div>
+        <button class="chip chip-sm" style="min-height: 44px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M4 10h16 M8 3v4 M16 3v4"></path></svg>Oct 1 – Nov 7, 2026<svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+        <button class="chip chip-sm" style="min-height: 44px">Newest first<svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+        <span style="flex: 1"></span>
+        <span class="lockcue">Copies into your vault</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px">
+        <div class="tile" style="aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: transparent; border: 1.5px dashed var(--border-strong); color: var(--text-2); text-align: center; padding: 12px">
+          <svg class="ic ic-24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9 M7 14l5-5 5 5 M5 4h14"></path></svg>
+          <span class="t-body-s">Drop images here</span>
+        </div>
+        <button class="tile is-on" style="aspect-ratio: 1; border: 0; padding: 0; cursor: pointer" aria-pressed="true" aria-label="Café scene, selected"><img src="/_blob/b98f848812490c10d9dfbf0ebffcc2f1" alt=""><span style="position: absolute; right: 8px; top: 8px; width: 24px; height: 24px; border-radius: 50%; background: var(--info-border); color: var(--bg); display: flex; align-items: center; justify-content: center"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width: 2.5"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0; cursor: pointer" aria-pressed="false" aria-label="Coast, already in vault"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt=""><span class="tile-tag">In vault</span></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0; cursor: pointer" aria-pressed="false" aria-label="Forest"><img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt=""></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0; cursor: pointer" aria-pressed="false" aria-label="Portrait of Jun"><img src="/_blob/603ff0cb7d029ea8f9a5e95b09cda895" alt="" style="object-position: 50% 30%"></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0; cursor: pointer" aria-pressed="false" aria-label="Dunes"><img src="/_blob/13c380256699ac3f901e2eb726da7630" alt=""></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0; cursor: pointer" aria-pressed="false" aria-label="City at night"><img src="/_blob/45841a3c0c37777adabfb8651c5d55db" alt=""></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0; cursor: pointer" aria-pressed="false" aria-label="Portrait of Rose"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="" style="object-position: 50% 30%"></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0; cursor: pointer" aria-pressed="false" aria-label="Still life"><img src="/_blob/d424b7bc2418aaeb0000494dde022456" alt=""></button>
+        <div class="skel" style="aspect-ratio: 1; border-radius: 12px"></div>
+        <div class="skel" style="aspect-ratio: 1; border-radius: 12px"></div>
+        <div class="skel" style="aspect-ratio: 1; border-radius: 12px"></div>
+        <div class="skel" style="aspect-ratio: 1; border-radius: 12px"></div>
+        <div class="skel" style="aspect-ratio: 1; border-radius: 12px"></div>
+      </div>
+      <span class="t-caption" role="status">Loading more from iCloud · 8 of 46 shown</span>
+    </div>
+
+    <div style="position: absolute; left: 40px; right: 112px; bottom: 24px; padding: 12px 12px 12px 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border-strong); box-shadow: var(--e2); display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+      <img src="/_blob/b98f848812490c10d9dfbf0ebffcc2f1" alt="" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover">
+      <div style="flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <span class="t-label">1 selected · Café scene · 2.4 MB</span>
+        <div style="display: flex; align-items: center; gap: 10px"><span class="ring" style="width: 28px; height: 28px; background: conic-gradient(var(--text-2) 45%, var(--surface-3) 0)"><span style="width: 20px; height: 20px; background: var(--surface-2)"></span></span><span class="t-caption t-num">+2.4 MB · 141 MB free after</span></div>
+      </div>
+      <button class="btn btn-ghost">Clear</button>
+      <button class="btn btn-primary">Copy to vault and edit</button>
+    </div>
+
+    <button class="assist" aria-label="Open assistant" style="position: absolute; right: 24px; bottom: 24px"><svg class="ic ic-24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"></path></svg></button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.theme ?? 'dark' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Interaction spec</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}}" style="width: 1440px; min-height: 1900px; padding: 72px 80px 96px; display: flex; flex-direction: column; gap: 48px; background: var(--bg)">
+
+  <header style="display: flex; flex-direction: column; gap: 8px">
+    <span class="t-overline">Locke · behaviour</span>
+    <h1 class="t-display" style="font-size: 44px; line-height: 52px">Interaction spec</h1>
+    <p class="t-body c2" style="max-width: 760px">How people move around, what they see while a job travels from submit to result, and how touch, keyboard and assistive tech drive it.</p>
+  </header>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 class="t-title-l">1 · Navigation</h2>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+      <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; border-color: var(--accent)">
+        <span class="t-title-s">Create</span>
+        <span class="t-body-s c2">→ Jobs (toast "View", indicator)</span>
+        <span class="t-body-s c2">→ Characters (picker, "New")</span>
+        <span class="t-caption">Landing tab. Keeps the last prompt and settings.</span>
+      </div>
+      <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; border-color: var(--accent)">
+        <span class="t-title-s">Jobs</span>
+        <span class="t-body-s c2">→ Job result → full-screen viewer</span>
+        <span class="t-body-s c2">→ Editor ("Use in editor")</span>
+        <span class="t-body-s c2">→ Create, prefilled ("Run again", "More like this")</span>
+      </div>
+      <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; border-color: var(--accent)">
+        <span class="t-title-s">Editor</span>
+        <span class="t-body-s c2">Pick (vault / source / upload) → item workspace</span>
+        <span class="t-body-s c2">→ Jobs (pending version links to its job)</span>
+        <span class="t-body-s c2">→ Characters (face swap "New")</span>
+      </div>
+      <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; border-color: var(--accent)">
+        <span class="t-title-s">Characters</span>
+        <span class="t-body-s c2">Grid → edit (dialog on mobile, panel on desktop)</span>
+        <span class="t-body-s c2">"Used in" → Jobs filtered by character</span>
+        <span class="t-body-s c2">"Create with…" → Create, preselected</span>
+      </div>
+      <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px">
+        <span class="t-title-s">Settings</span>
+        <span class="t-body-s c2">Mobile: avatar in the header</span>
+        <span class="t-body-s c2">Desktop: sidebar footer</span>
+        <span class="t-body-s c2">"Open vault" leaves to Locke Vault</span>
+      </div>
+      <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; border-color: var(--accent)">
+        <span class="t-title-s">Automate</span>
+        <span class="t-body-s c2">List → workflow builder</span>
+        <span class="t-body-s c2">Sources come from Jobs › Scheduled, iCloud, Generated…</span>
+        <span class="t-body-s c2">One result per image · blur removable</span>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+      <div style="padding: 14px 16px; border-radius: 14px; background: var(--surface-1); border: 1px dashed var(--border-strong)"><span class="t-label">Global job indicator</span><p class="t-body-s c2">Header pill (mobile) / sidebar card (desktop): "2 running · 3 queued". Tap → Jobs, scrolled to the active group. Hidden when nothing is in flight; a dot on the Jobs tab marks unseen results.</p></div>
+      <div style="padding: 14px 16px; border-radius: 14px; background: var(--surface-1); border: 1px dashed var(--border-strong)"><span class="t-label">State survives navigation</span><p class="t-body-s c2">Each tab keeps its scroll position and draft. Leaving Create mid-prompt never loses text; the draft is stored encrypted, on the device.</p></div>
+      <div style="padding: 14px 16px; border-radius: 14px; background: var(--surface-1); border: 1px dashed var(--border-strong)"><span class="t-label">Deep links</span><p class="t-body-s c2">/jobs/:id, /editor/:itemId?v=3, /characters/:id. Notifications open the exact job result.</p></div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 class="t-title-l">2 · Job lifecycle feedback</h2>
+    <div style="display: flex; align-items: stretch; gap: 8px">
+      <div class="card" style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <span class="pill pill-accent" style="align-self: flex-start">Submit</span>
+        <p class="t-body-s c2">Button press 120 ms, then reset at once. Toast "Queued · 3rd in line · View". Form keeps its values. Indicator +1. Focus stays on the prompt.</p>
+      </div>
+      <div style="display: flex; align-items: center; color: var(--text-3)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14 M13 6l6 6-6 6"></path></svg></div>
+      <div class="card" style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <span class="pill" style="align-self: flex-start"><span class="dot dot-hollow"></span>Queued</span>
+        <p class="t-body-s c2">Row enters at the top (fade + 8 px rise, 200 ms). Shows position in line, updated live. No toast for position changes.</p>
+      </div>
+      <div style="display: flex; align-items: center; color: var(--text-3)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14 M13 6l6 6-6 6"></path></svg></div>
+      <div class="card" style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <span class="pill" style="align-self: flex-start"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2v4 M15 2v4 M7 6h10v4a5 5 0 0 1-10 0z M12 15v7"></path></svg>Waiting for GPU</span>
+        <p class="t-body-s c2">Only if the worker is offline. One calm card on Jobs; rows say "Waiting". No toast, no badge, no red. Resumes on its own.</p>
+      </div>
+      <div style="display: flex; align-items: center; color: var(--text-3)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14 M13 6l6 6-6 6"></path></svg></div>
+      <div class="card" style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <span class="pill pill-accent" style="align-self: flex-start"><span class="dot"></span>Running</span>
+        <p class="t-body-s c2">Percent when the worker reports steps; otherwise indeterminate bar + "Running". No image preview — jobs are sealed on the partner side; the thumbnail stays the style or source image.</p>
+      </div>
+      <div style="display: flex; align-items: center; color: var(--text-3)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14 M13 6l6 6-6 6"></path></svg></div>
+      <div class="card" style="flex: 1.2; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap"><span class="pill pill-success">Done</span><span class="pill pill-danger">Failed</span><span class="pill pill-muted">Expired</span></div>
+        <p class="t-body-s c2"><strong>Done:</strong> toast with thumbnail + "Open"; dot on Jobs tab; push notification only if Locke is in the background. <strong>Failed:</strong> toast with the plain-language reason + "Retry"; nothing was changed. <strong>Expired:</strong> after the keep period; row stays with parameters and "Run again".</p>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+      <div style="padding: 14px 16px; border-radius: 14px; background: var(--surface-1); border: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z M8 11V8a4 4 0 1 1 8 0v3"></path></svg>
+        <p class="t-body-s c2"><strong style="color: var(--text)">Private notifications.</strong> Push and lock-screen text never contains the prompt, a character name or an image: "Locke · 4 results are ready". Opt-in, asked after the first finished job — not at launch.</p>
+      </div>
+      <div style="padding: 14px 16px; border-radius: 14px; background: var(--surface-1); border: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6 M4 16l4-4 4 4 M17 3l4 4-7 7h-4v-4z"></path></svg>
+        <p class="t-body-s c2"><strong style="color: var(--text)">One line of history, reversible blur.</strong> Enhance and face swap always apply in order. Blur is always the last step: the image just before blur is kept, so "Remove blur" is a one-tap rollback. A tool run on a blurred image applies underneath, then blur is re-applied.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px">
+    <div style="display: flex; flex-direction: column; gap: 16px">
+      <h2 class="t-title-l">3 · Mobile gestures</h2>
+      <div class="card" style="display: flex; flex-direction: column">
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border)"><span class="t-label">Swipe ← →</span><span class="t-body-s c2">Next / previous variant in the viewer; follows the finger, snaps at 30 % or a fast flick. Off while zoomed.</span></div>
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border)"><span class="t-label">Pinch · double-tap</span><span class="t-body-s c2">Zoom 1× – 4× around the fingers; double-tap toggles 1× / 2.5×. One finger pans when zoomed. Same on the editor canvas.</span></div>
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border)"><span class="t-label">Swipe down</span><span class="t-body-s c2">Closes the full-screen viewer (image shrinks back into its tile).</span></div>
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border)"><span class="t-label">Bottom sheets</span><span class="t-body-s c2">Detents at 45 % and 92 %. Drag the grabber or content top; swipe down or tap the scrim to dismiss. Editor tools sheet never fully closes — it collapses to its tool tabs.</span></div>
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border)"><span class="t-label">Long-press</span><span class="t-body-s c2">Tiles and job rows: enter multi-select. Face photos: lift to reorder. Prompt excerpts: show full text.</span></div>
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border)"><span class="t-label">Compare</span><span class="t-body-s c2">Drag anywhere on the image to move the split; press and hold the compare button to peek at the original.</span></div>
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px"><span class="t-label">Edge swipe</span><span class="t-body-s c2">iOS back gesture is preserved in standalone mode; pull-to-refresh only on Jobs.</span></div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px">
+      <h2 class="t-title-l">4 · Keyboard &amp; assistive tech</h2>
+      <div class="card" style="display: flex; flex-direction: column">
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border)"><span class="t-label t-num">Ctrl / ⌘ + Enter</span><span class="t-body-s c2">Generate from the prompt field.</span></div>
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border)"><span class="t-label">← →  ·  Esc</span><span class="t-body-s c2">Variants in the viewer; Esc closes viewer, sheets and dialogs and returns focus to the trigger.</span></div>
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border)"><span class="t-label">K · D · Delete</span><span class="t-body-s c2">Keep, download, discard the focused variant (discard has 5 s Undo).</span></div>
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border)"><span class="t-label">Live regions</span><span class="t-body-s c2">Polite announcements: "Job queued, 3rd in line", "4 results ready", "GPU offline, 3 jobs waiting". Progress percent is not announced continuously.</span></div>
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border)"><span class="t-label">Characters</span><span class="t-body-s c2">Bubbles are toggle buttons ("Ana, selected"). Face matching is automatic on the partner side, using each character's gender and age.</span></div>
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border)"><span class="t-label">Compare slider</span><span class="t-body-s c2">role="slider"; arrow keys move 10 %, Home / End jump to before / after.</span></div>
+        <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 16px; padding: 14px 18px"><span class="t-label">Toasts</span><span class="t-body-s c2">Never steal focus; 5 s, paused on hover or focus; the action is also reachable from Jobs.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 class="t-title-l">5 · Prompts, schedules &amp; workflows</h2>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+      <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px"><span class="t-label">Prompt editor</span><p class="t-body-s c2">List mode splits on commas: each fragment is numbered, toggled with a switch, drag-reordered, edited in place. Raw mode is the same text, joined. Flip moves the selected fragment (or the whole view) to the negative prompt. Saving names the prompt; saved prompts keep their schedule.</p></div>
+      <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px"><span class="t-label">References &amp; run</span><p class="t-body-s c2">Up to 4 references from the vault or an upload, numbered in order. "Run now" queues one job; "Schedule" asks for a name and a cadence (every minute, hourly, daily, weekly). Each schedule appears in Jobs › Scheduled and as a vault source named after it.</p></div>
+      <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px"><span class="t-label">Workflows</span><p class="t-body-s c2">A workflow watches one or more sources and runs its steps in order on every new image — one result per image. Blur, if on, is pinned as the last step and keeps the pre-blur copy, so it can be removed later on any result. A failing image never stops the workflow; it shows in Activity with Retry.</p></div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 class="t-title-l">6 · Tablet behaviour</h2>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+      <div class="card" style="padding: 16px"><span class="t-label">Portrait (768–1023)</span><p class="t-body-s c2">Nav rail. Create is one column with presets in a 4-column grid. Job result opens full page; editor tools are a right side sheet over the canvas.</p></div>
+      <div class="card" style="padding: 16px"><span class="t-label">Landscape (1024+)</span><p class="t-body-s c2">Desktop layout with the collapsed 72 px rail; Jobs list + result split; editor tools panel docked.</p></div>
+      <div class="card" style="padding: 16px"><span class="t-label">Input</span><p class="t-body-s c2">Touch sizes stay 44 px even in the desktop layout on tablets; the "sm" pointer sizes switch on only with <code>(pointer: fine)</code>.</p></div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.theme ?? 'dark' };
+  }
+}
+</script>
+</body>
+</html>

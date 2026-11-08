@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+<defs>
+<linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9d3cf"/><stop offset="1" stop-color="#7e928b"/></linearGradient>
+<linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dfe6e2" stop-opacity="0"/><stop offset="1" stop-color="#dfe6e2" stop-opacity=".7"/></linearGradient>
+</defs>
+<rect width="800" height="800" fill="url(#s)"/>
+<g fill="#8fa39b"><path d="M60 600 L100 300 L140 600Z"/><path d="M240 600 L290 250 L340 600Z"/><path d="M500 600 L540 280 L580 600Z"/><path d="M680 600 L730 230 L780 600Z"/></g>
+<rect y="380" width="800" height="240" fill="url(#f)"/>
+<g fill="#4e665d"><path d="M0 700 L60 330 L120 700Z"/><path d="M150 700 L200 380 L250 700Z"/><path d="M380 700 L440 300 L500 700Z"/><path d="M590 700 L640 360 L690 700Z"/></g>
+<rect y="520" width="800" height="200" fill="url(#f)" opacity=".7"/>
+<g fill="#22302b"><path d="M-20 800 L60 420 L140 800Z"/><path d="M260 800 L330 470 L400 800Z"/><path d="M520 800 L600 400 L680 800Z"/><path d="M700 800 L770 480 L840 800Z"/></g>
+<rect y="740" width="800" height="60" fill="#1a2420"/>
+</svg>

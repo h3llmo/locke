@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+<defs>
+<pattern id="d" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="6" cy="6" r="2.4" fill="#1a1a1a"/></pattern>
+</defs>
+<rect width="800" height="800" fill="#f3efe6"/>
+<g stroke="#1a1a1a" stroke-width="3" opacity=".55">
+<path d="M400 360 L0 40 M400 360 L180 0 M400 360 L560 0 M400 360 L800 80 M400 360 L800 300 M400 360 L0 260 M400 360 L760 0 M400 360 L40 0"/>
+</g>
+<rect y="560" width="800" height="240" fill="url(#d)" opacity=".5"/>
+<path d="M230 800 C250 650 320 600 400 600 C480 600 550 650 570 800Z" fill="#1a1a1a"/>
+<path d="M360 540 h80 v80 h-80Z" fill="#f3efe6" stroke="#1a1a1a" stroke-width="6"/>
+<ellipse cx="400" cy="440" rx="96" ry="116" fill="#f3efe6" stroke="#1a1a1a" stroke-width="7"/>
+<path d="M290 420 L270 300 L330 350 L340 250 L390 330 L420 230 L450 330 L500 260 L500 350 L550 310 L520 430 C500 370 460 350 400 350 C340 350 300 370 290 420Z" fill="#1a1a1a"/>
+<path d="M350 450 q15 -12 30 0 M420 450 q15 -12 30 0" stroke="#1a1a1a" stroke-width="7" fill="none" stroke-linecap="round"/>
+<path d="M380 510 q20 10 40 0" stroke="#1a1a1a" stroke-width="5" fill="none" stroke-linecap="round"/>
+<rect x="8" y="8" width="784" height="784" fill="none" stroke="#1a1a1a" stroke-width="10"/>
+</svg>

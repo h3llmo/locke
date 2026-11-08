@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Create, prompt editor, mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}}" style="position: relative; width: 390px; height: 844px; overflow: hidden; background: var(--bg)">
+
+  <header style="padding: 47px 12px 0 16px; height: 103px; display: flex; align-items: center; gap: 6px">
+    <h1 class="t-title-l" style="flex: 1">Create</h1>
+    <a class="jobpill" href="JobsMobile.dc.html" aria-label="Jobs: 2 running, 3 queued"><span class="dot" style="color: var(--info)"></span><span class="t-num">2 · 3</span></a>
+    <button class="icon-btn" aria-label="Saved prompts" aria-haspopup="dialog"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4z"></path></svg></button>
+  </header>
+
+  <main style="padding: 0 16px; display: flex; flex-direction: column; gap: 12px">
+    <section class="card" aria-label="Prompt" style="padding: 10px 12px 6px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <div class="toolbar" role="group" aria-label="Editing mode">
+          <button class="icon-btn {{listOn}}" aria-label="List" aria-pressed="{{isList}}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11 M9 12h11 M9 18h11 M4.5 6h.01 M4.5 12h.01 M4.5 18h.01" style="stroke-width: 2"></path></svg></button>
+          <button class="icon-btn {{rawOn}}" aria-label="Raw text" aria-pressed="{{isRaw}}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14 M5 12h14 M5 17h9"></path></svg></button>
+        </div>
+        <span class="t-label t-num c3">{{count}}</span>
+        <span style="flex: 1"></span>
+        <button class="icon-btn {{negOn}}" aria-label="Flip to negative prompt" aria-pressed="{{isNeg}}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14 M14 4l4 4-4 4 M20 16H6 M10 12l-4 4 4 4"></path></svg></button>
+        <button class="icon-btn" aria-label="Prompt actions: save, duplicate, clear"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width: 3"><path d="M5 12h.01 M12 12h.01 M19 12h.01"></path></svg></button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <span class="pill {{posPill}}">Positive · 9</span>
+        <span class="pill {{negPill}}">Negative · 5</span>
+        <span style="flex: 1"></span>
+        <span class="lockcue"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z M8 11V8a4 4 0 1 1 8 0v3"></path></svg>Private</span>
+      </div>
+
+      <sc-if value="{{isList}}" hint-placeholder-val="{{true}}">
+        <div class="toklist" role="list" style="height: 322px; overflow: hidden">
+          <sc-for list="{{toks}}" as="t" hint-placeholder-count="7">
+            <div role="listitem" class="tok {{t.cls}}">
+              <span class="tok-num">{{t.n}}</span>
+              <span class="tok-text clamp1">{{t.text}}</span>
+              <span class="switch {{t.sw}}" role="switch" aria-checked="{{t.on}}" aria-label="Include {{t.text}}"></span>
+            </div>
+          </sc-for>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="align-self: flex-start; color: var(--text-2); padding-left: 4px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg>Add fragment</button>
+      </sc-if>
+      <sc-if value="{{isRaw}}" hint-placeholder-val="{{false}}">
+        <div class="input is-focus" role="textbox" aria-multiline="true" aria-label="{{rawLabel}}" style="min-height: 200px; white-space: pre-wrap">{{raw}}</div>
+        <span class="t-caption" style="padding-bottom: 8px">Commas split the text into fragments for list mode.</span>
+      </sc-if>
+    </section>
+
+    <div class="hscroll" role="group" aria-label="Generation settings" style="margin: 0 -16px; padding: 0 16px; gap: 8px">
+      <button class="chip" style="padding-left: 4px"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover">Photography</button>
+      <button class="chip" aria-pressed="true" style="padding-left: 4px"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; object-position: 50% 38%">Rose</button>
+      <button class="chip" aria-pressed="true" style="padding-left: 4px"><span style="display: flex"><img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt="" style="width: 26px; height: 30px; border-radius: 8px; object-fit: cover"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="" style="width: 26px; height: 30px; border-radius: 8px; object-fit: cover; margin-left: -10px; border: 2px solid var(--bg)"></span>2 refs</button>
+      <button class="chip"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v18H7z"></path></svg>×4</button>
+      <button class="chip">Fast</button>
+    </div>
+  </main>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 104px; padding: 20px 16px 8px; background: linear-gradient(to top, var(--bg) 70%, transparent); display: flex; flex-direction: column; gap: 10px">
+    <sc-if value="{{submitted}}" hint-placeholder-val="{{false}}">
+      <div class="toast" role="status"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg><span style="flex: 1">Queued · 3rd in line</span><a href="JobsMobile.dc.html">View</a></div>
+    </sc-if>
+    <div style="display: flex; gap: 8px">
+      <a href="ScheduleMobile.dc.html" class="btn btn-secondary btn-lg" style="flex: 0 0 auto; padding: 0 18px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"></path></svg>Schedule</a>
+      <button class="btn btn-primary btn-lg" style="flex: 1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"></path></svg>Run now</button>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0">
+    <dc-import name="MobileNav" active="create" theme="{{theme}}" hint-size="390px,112px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"mode":{"editor":"enum","options":["list","raw"],"default":"list"},"polarity":{"editor":"enum","options":["positive","negative"],"default":"positive"},"submitted":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const mode = this.props.mode ?? 'list';
+    const neg = (this.props.polarity ?? 'positive') === 'negative';
+    const pos = [
+      ['an old lighthouse keeper', true], ['reading by lamplight', true], ['rain streaking the window', true],
+      ['wool sweater', false], ['35mm film', true], ['warm tungsten light', true], ['shallow depth of field', true],
+      ['film grain', false], ['detailed face', true]
+    ];
+    const ng = [['text', true], ['watermark', true], ['extra fingers', true], ['blurry', true], ['deformed hands', false]];
+    const src = neg ? ng : pos;
+    const toks = src.map(([text, on], i) => ({
+      n: String(i + 1), text, on: on ? 'true' : 'false', sw: on ? 'is-on' : '',
+      cls: (on ? '' : 'is-off') + (neg ? ' is-neg' : '')
+    }));
+    const onCount = src.filter((x) => x[1]).length;
+    return {
+      theme: this.props.theme ?? 'dark',
+      submitted: this.props.submitted ?? false,
+      isList: mode === 'list', isRaw: mode === 'raw',
+      listOn: mode === 'list' ? 'is-on' : '', rawOn: mode === 'raw' ? 'is-on' : '',
+      isNeg: neg ? 'true' : 'false', negOn: neg ? 'is-on' : '',
+      posPill: neg ? '' : 'pill-info', negPill: neg ? 'pill-danger' : '',
+      count: onCount + ' / ' + src.length,
+      toks,
+      rawLabel: neg ? 'Negative prompt' : 'Prompt',
+      raw: src.map((x) => x[0]).join(', ')
+    };
+  }
+}
+</script>
+</body>
+</html>

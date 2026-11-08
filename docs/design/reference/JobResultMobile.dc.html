@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Job result, mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}}" style="position: relative; width: 390px; height: 844px; overflow: hidden; background: var(--bg)">
+
+  <sc-if value="{{isViewer}}" hint-placeholder-val="{{true}}">
+    <div style="position: absolute; inset: 0; background: #0A0A0B; color: #F3F4F6">
+      <div style="position: absolute; left: 0; right: 0; top: 47px; height: 56px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between">
+        <a href="JobResultMobile-light.dc.html" class="icon-btn on-image" aria-label="Close viewer" style="border-radius: 50%"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12 M18 6 6 18"></path></svg></a>
+        <span class="t-label t-num" style="color: #F3F4F6">2 of 4</span>
+        <button class="icon-btn on-image" aria-label="Variant details" style="border-radius: 50%"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 11v5 M12 8h.01"></path></svg></button>
+      </div>
+
+      <div style="position: absolute; left: 0; right: 0; top: 116px; height: 488px; display: flex; gap: 0">
+        <img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="" style="width: 390px; height: 488px; object-fit: cover; flex: none; margin-left: -390px; opacity: .5" aria-hidden="true">
+        <img src="/_blob/13c380256699ac3f901e2eb726da7630" alt="Variant 2 of 4: dunes under a pale sky" style="width: 390px; height: 488px; object-fit: cover; flex: none">
+        <img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt="" style="width: 390px; height: 488px; object-fit: cover; flex: none; opacity: .5" aria-hidden="true">
+      </div>
+      <div style="position: absolute; left: 0; right: 0; top: 616px; display: flex; justify-content: center; gap: 6px" aria-hidden="true">
+        <span style="width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.35)"></span>
+        <span style="width: 18px; height: 6px; border-radius: 3px; background: #FFFFFF"></span>
+        <span style="width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.35)"></span>
+        <span style="width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.35)"></span>
+      </div>
+      <div style="position: absolute; left: 16px; right: 16px; top: 640px; display: flex; justify-content: center">
+        <span style="display: inline-flex; align-items: center; gap: 6px; font: 500 12px/16px var(--font-ui); color: #B7BAC1"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"></path></svg>Not kept yet · removed in 7 days</span>
+      </div>
+
+      <div style="position: absolute; left: 16px; right: 88px; bottom: 50px; display: flex; gap: 8px; align-items: center">
+        <button class="btn btn-lg" style="flex: 1; background: #F3F4F6; color: #131417"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v4H4z M5 9v10h14V9 M12 12v5 M9.5 14.5 12 17l2.5-2.5"></path></svg>Keep</button>
+        <button class="icon-btn on-image" aria-label="Download"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11 M7 10l5 5 5-5 M5 20h14"></path></svg></button>
+        <button class="icon-btn on-image" aria-label="Discard"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16 M10 11v6 M14 11v6 M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12 M9 7V4h6v3"></path></svg></button>
+        <button class="icon-btn on-image" aria-label="More actions" aria-haspopup="dialog"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width: 3"><path d="M5 12h.01 M12 12h.01 M19 12h.01"></path></svg></button>
+      </div>
+      <button class="assist" aria-label="Open assistant" style="bottom: 44px"><svg class="ic ic-24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"></path></svg></button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isGrid}}" hint-placeholder-val="{{false}}">
+    <header style="padding: 47px 8px 0; display: flex; align-items: center; height: 103px; gap: 4px">
+      <a href="JobsMobile.dc.html" class="btn btn-ghost" style="padding: 0 8px; color: var(--text-2)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Jobs</a>
+      <span style="flex: 1"></span>
+      <button class="btn btn-secondary btn-sm" style="min-height: 40px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3 M20 4v5h-5 M20 12a8 8 0 0 1-14 5.3 M4 20v-5h5"></path></svg>Run again</button>
+      <button class="icon-btn" aria-label="More"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width: 3"><path d="M5 12h.01 M12 12h.01 M19 12h.01"></path></svg></button>
+    </header>
+    <main style="padding: 0 16px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <h1 class="t-title-m clamp2">Quiet places at the edge of the day</h1>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <span class="pill pill-success"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Done · 1 h ago</span>
+          <span class="pill">Photography</span><span class="pill">Portrait</span><span class="pill">Fast</span>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+        <a href="JobResultMobile.dc.html" class="tile" style="aspect-ratio: 4 / 5"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="Variant 1"><span class="tile-tag"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z M8 11V8a4 4 0 1 1 8 0v3"></path></svg>In vault</span></a>
+        <a href="JobResultMobile.dc.html" class="tile" style="aspect-ratio: 4 / 5"><img src="/_blob/13c380256699ac3f901e2eb726da7630" alt="Variant 2"></a>
+        <a href="JobResultMobile.dc.html" class="tile" style="aspect-ratio: 4 / 5"><img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt="Variant 3"></a>
+        <div class="tile" style="aspect-ratio: 4 / 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: var(--surface-2); border: 1px dashed var(--border-strong)">
+          <span class="t-body-s c3">Variant 4 discarded</span>
+          <button class="btn btn-ghost btn-sm" style="color: var(--accent-text)">Undo</button>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="t-caption" style="display: inline-flex; align-items: center; gap: 6px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"></path></svg>Unkept results go in 7 days</span>
+        <button class="btn btn-secondary btn-sm" style="min-height: 40px">Keep remaining 2</button>
+      </div>
+    </main>
+    <div style="position: absolute; left: 0; right: 0; bottom: 0">
+      <dc-import name="MobileNav" active="jobs" theme="{{theme}}" hint-size="390px,112px"></dc-import>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"view":{"editor":"enum","options":["viewer","grid"],"default":"viewer"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const view = this.props.view ?? 'viewer';
+    return { theme: this.props.theme ?? 'dark', isViewer: view === 'viewer', isGrid: view === 'grid' };
+  }
+}
+</script>
+</body>
+</html>

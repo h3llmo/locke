@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Automate, workflows, mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}}" style="position: relative; width: 390px; height: 844px; overflow: hidden; background: var(--bg)">
+
+  <header style="padding: 47px 12px 0 16px; height: 103px; display: flex; align-items: center; gap: 6px">
+    <h1 class="t-title-l" style="flex: 1">Automate</h1>
+    <a href="WorkflowEditMobile.dc.html" class="icon-btn" aria-label="New workflow" style="background: var(--accent); color: var(--on-accent)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg></a>
+  </header>
+
+  <main style="padding: 0 16px; display: flex; flex-direction: column; gap: 12px">
+
+    <a href="WorkflowEditMobile.dc.html" class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: var(--text)">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <div style="flex: 1; min-width: 0"><div class="t-title-s">Portraits</div><div class="t-caption">18 new today · 2 min ago</div></div>
+        <span class="switch is-on" role="switch" aria-checked="true" aria-label="Portraits active"></span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+        <span class="pill"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"></path></svg>Morning lighthouse</span>
+        <span class="pill"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1 0 9z"></path></svg>Story refs</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+        <span class="pill pill-info">Enhance</span>
+        <svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M9 6l6 6-6 6"></path></svg>
+        <span class="pill pill-info" style="padding-left: 3px"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="" style="width: 18px; height: 18px; border-radius: 50%; object-fit: cover">Rose</span>
+        <svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M9 6l6 6-6 6"></path></svg>
+        <span class="pill pill-info">Blur</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px">
+        <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt=""></div>
+        <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="" style="object-position: 30% 40%; filter: blur(1.5px) sepia(.2)"></div>
+        <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px"><img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt=""></div>
+        <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px"><img src="/_blob/13c380256699ac3f901e2eb726da7630" alt="" style="filter: blur(1.5px)"></div>
+        <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt=""></div>
+        <div class="tile" style="aspect-ratio: 4 / 5; border-radius: 10px; background: var(--surface-3); display: flex; align-items: center; justify-content: center"><span class="t-label t-num c2">+67</span></div>
+      </div>
+    </a>
+
+    <a href="#" class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: var(--text)">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <div style="flex: 1; min-width: 0"><div class="t-title-s">Family album</div><div class="t-caption" style="display: flex; align-items: center; gap: 4px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M9 2v4 M15 2v4 M7 6h10v4a5 5 0 0 1-10 0z M12 15v7"></path></svg>4 waiting for the GPU</div></div>
+        <span class="switch is-on" role="switch" aria-checked="true" aria-label="Family album active"></span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+        <span class="pill"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1 0 9z"></path></svg>Family 2026</span>
+        <svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M9 6l6 6-6 6"></path></svg>
+        <span class="pill pill-info">Enhance</span>
+        <svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M9 6l6 6-6 6"></path></svg>
+        <span class="pill pill-info">Face swap · 2</span>
+      </div>
+    </a>
+
+    <a href="#" class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: var(--text)">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <div style="flex: 1; min-width: 0"><div class="t-title-s c2">Manga cleanup</div><div class="t-caption">Paused · last ran Tue</div></div>
+        <span class="switch" role="switch" aria-checked="false" aria-label="Manga cleanup active"></span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+        <span class="pill"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"></path></svg>Generated · Manga</span>
+        <svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M9 6l6 6-6 6"></path></svg>
+        <span class="pill">Enhance</span>
+      </div>
+    </a>
+  </main>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0">
+    <dc-import name="MobileNav" active="automate" theme="{{theme}}" hint-size="390px,112px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.theme ?? 'dark' };
+  }
+}
+</script>
+</body>
+</html>

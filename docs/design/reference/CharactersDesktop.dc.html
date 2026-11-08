@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Characters, desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}} shell" style="min-height: 1000px">
+  <div class="shell-nav"><dc-import name="DesktopSidebar" active="characters" theme="{{theme}}" hint-size="100%,1000px"></dc-import></div>
+
+  <main class="shell-main" style="position: relative">
+    <div class="split" style="display: flex; gap: 32px; padding: 32px 40px 96px; align-items: flex-start">
+
+      <section style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 18px" aria-labelledby="cd-title">
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <h1 id="cd-title" class="t-display">Characters</h1>
+            <p class="t-body c2">Keep the same face across all your images.</p>
+          </div>
+          <button class="btn btn-primary"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg>New character</button>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+          <div style="position: relative; flex: 0 1 300px">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="position: absolute; left: 12px; top: 12px; color: var(--text-3)"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M20 20l-4-4"></path></svg>
+            <label for="cd-search" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search characters</label>
+            <input id="cd-search" class="input" placeholder="Search 24 characters" style="padding-left: 42px; font-size: 15px">
+          </div>
+          <button class="chip chip-sm" style="min-height: 44px">Recently used<svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 20px 14px" role="list">
+          <a role="listitem" href="#" aria-current="true" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 8px; border-radius: 16px; text-decoration: none; color: var(--text); background: var(--info-soft); box-shadow: inset 0 0 0 1px var(--info-border)"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 35%"><span style="text-align: center"><span class="t-label" style="display: block">Ana</span><span class="t-caption t-num">8 faces</span></span></a>
+          <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 8px; border-radius: 16px; text-decoration: none; color: var(--text)"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 38%"><span style="text-align: center"><span class="t-label" style="display: block">Rose</span><span class="t-caption t-num">5 faces</span></span></a>
+          <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 8px; border-radius: 16px; text-decoration: none; color: var(--text)"><img src="/_blob/615333cb7a7451c46b14f19e5d1cc710" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 38%"><span style="text-align: center"><span class="t-label" style="display: block">Milo</span><span class="t-caption t-num">6 faces</span></span></a>
+          <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 8px; border-radius: 16px; text-decoration: none; color: var(--text)"><img src="/_blob/603ff0cb7d029ea8f9a5e95b09cda895" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 38%"><span style="text-align: center"><span class="t-label" style="display: block">Jun</span><span class="t-caption t-num" style="color: var(--warning)">1 face · add more</span></span></a>
+          <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 8px; border-radius: 16px; text-decoration: none; color: var(--text); min-width: 0"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 30%; filter: grayscale(1)"><span style="text-align: center; width: 100%; min-width: 0"><span class="t-label clamp2" style="display: block">Captain Ilse Vandermeer</span><span class="t-caption t-num">4 faces</span></span></a>
+          <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 8px; border-radius: 16px; text-decoration: none; color: var(--text)"><img src="/_blob/615333cb7a7451c46b14f19e5d1cc710" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 28%; filter: sepia(.4)"><span style="text-align: center"><span class="t-label" style="display: block">Theo</span><span class="t-caption t-num">3 faces</span></span></a>
+          <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 8px; border-radius: 16px; text-decoration: none; color: var(--text)"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 45%; filter: hue-rotate(160deg)"><span style="text-align: center"><span class="t-label" style="display: block">Mara</span><span class="t-caption t-num">7 faces</span></span></a>
+          <a role="listitem" href="#" style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 8px; border-radius: 16px; text-decoration: none; color: var(--text)"><img src="/_blob/603ff0cb7d029ea8f9a5e95b09cda895" alt="" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; object-position: 50% 45%; filter: hue-rotate(200deg)"><span style="text-align: center"><span class="t-label" style="display: block">Kip</span><span class="t-caption t-num">5 faces</span></span></a>
+          <div class="skel" style="height: 150px; border-radius: 16px"></div>
+          <div class="skel" style="height: 150px; border-radius: 16px"></div>
+        </div>
+      </section>
+
+      <aside class="card" aria-labelledby="ce-title" style="flex: 0 1 420px; min-width: 320px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+        <div style="display: flex; align-items: center; gap: 14px">
+          <img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; object-position: 50% 35%">
+          <div style="flex: 1; min-width: 0"><h2 id="ce-title" class="t-title-l">Ana</h2><span class="lockcue"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z M8 11V8a4 4 0 1 1 8 0v3"></path></svg>Private · created Sep 12</span></div>
+          <button class="icon-btn" aria-label="Close panel" style="width: 36px; height: 36px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12 M18 6 6 18"></path></svg></button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div class="opt-row"><span class="opt-label">Gender</span><div class="seg seg-sm" role="group" aria-label="Gender"><button aria-pressed="false">Any</button><button aria-pressed="true">Woman</button><button aria-pressed="false">Man</button></div></div>
+          <div class="opt-row"><span class="opt-label">Age</span><div class="seg seg-sm" role="group" aria-label="Age"><button aria-pressed="false">Any</button><button aria-pressed="false">Child</button><button aria-pressed="false">Teen</button><button aria-pressed="true">Young</button><button aria-pressed="false">Adult</button><button aria-pressed="false">Senior</button></div></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; align-items: baseline; justify-content: space-between">
+            <h3 class="t-title-s">Face photos</h3>
+            <span class="pill pill-success t-num">8 / 8 · full</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px" role="list">
+            <div role="listitem" class="tile" style="aspect-ratio: 1; outline: 2px solid var(--info-border); outline-offset: 2px"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="Face 1, main" style="object-position: 50% 38%"><span class="tile-tag" style="background: var(--accent); color: var(--on-accent)">Main</span></div>
+            <div role="listitem" class="tile" style="aspect-ratio: 1"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="Face 2" style="object-position: 45% 40%; transform: scale(1.25)"></div>
+            <div role="listitem" class="tile" style="aspect-ratio: 1"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="Face 3" style="object-position: 55% 45%; transform: scale(1.4); filter: brightness(.9)"></div>
+            <div role="listitem" class="tile" style="aspect-ratio: 1; position: relative"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="Face 4" style="object-position: 50% 30%; filter: saturate(.7)"><div style="position: absolute; inset: 0; background: rgba(10,11,13,.4); display: flex; align-items: flex-start; justify-content: space-between; padding: 4px"><span class="icon-btn on-image" style="width: 28px; height: 28px; border-radius: 8px" aria-hidden="true"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width: 3"><path d="M9 6h.01 M9 12h.01 M9 18h.01 M15 6h.01 M15 12h.01 M15 18h.01"></path></svg></span><button class="icon-btn on-image" aria-label="Remove face 4" style="width: 28px; height: 28px; border-radius: 8px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12 M18 6 6 18"></path></svg></button></div></div>
+            <div role="listitem" class="tile" style="aspect-ratio: 1"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="Face 5, small" style="object-fit: contain; background: #2A4A47; transform: scale(.6)"><span class="tile-tag" style="top: auto; bottom: 6px; background: var(--warning); color: var(--bg)">Small</span></div>
+            <div role="listitem" class="tile" style="aspect-ratio: 1"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="Face 6" style="object-position: 40% 42%; transform: scale(1.2) scaleX(-1)"></div>
+            <div role="listitem" class="tile" style="aspect-ratio: 1"><img src="/_blob/b98f848812490c10d9dfbf0ebffcc2f1" alt="Face 7, cropped from café scene" style="object-position: 30% 35%; transform: scale(2.2)"></div>
+            <div role="listitem" class="tile" style="aspect-ratio: 1"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="Face 8" style="object-position: 50% 50%; transform: scale(1.6); filter: contrast(1.1)"></div>
+          </div>
+          <span class="t-caption">Drag to reorder · double-click to set main · remove one to add another</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; align-items: baseline; justify-content: space-between"><h3 class="t-title-s">Used in</h3><a href="#" class="t-label ca" style="text-decoration: none">31 images</a></div>
+          <div style="display: flex; gap: 6px">
+            <img src="/_blob/b98f848812490c10d9dfbf0ebffcc2f1" alt="" style="width: 64px; height: 48px; border-radius: 8px; object-fit: cover">
+            <img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="" style="width: 64px; height: 48px; border-radius: 8px; object-fit: cover">
+            <img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt="" style="width: 64px; height: 48px; border-radius: 8px; object-fit: cover">
+            <span style="width: 64px; height: 48px; border-radius: 8px; background: var(--surface-3); display: flex; align-items: center; justify-content: center" class="t-label t-num c2">+28</span>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap">
+            <a href="CreateDesktop.dc.html" class="btn btn-secondary btn-sm"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"></path></svg>Create with Ana</a>
+            <button class="btn btn-ghost btn-sm" style="color: var(--danger); margin-left: auto">Delete character</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <button class="assist" aria-label="Open assistant" style="position: absolute; right: 24px; bottom: 24px"><svg class="ic ic-24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"></path></svg></button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.theme ?? 'dark' };
+  }
+}
+</script>
+</body>
+</html>

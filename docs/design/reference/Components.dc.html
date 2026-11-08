@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Components</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}}" style="width: 1440px; min-height: 2640px; padding: 72px 80px 96px; display: flex; flex-direction: column; gap: 40px; background: var(--bg)">
+
+  <header style="display: flex; align-items: flex-end; justify-content: space-between">
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span class="t-overline">Locke design system</span>
+      <h1 class="t-display" style="font-size: 44px; line-height: 52px">Components</h1>
+    </div>
+    <p class="t-body-s c3" style="max-width: 420px; text-align: right">All built from locke.css tokens. Touch targets 44 px; the 36 px "sm" sizes are for pointer-only desktop toolbars.</p>
+  </header>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start">
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 20px">
+      <h2 class="t-title-s">Buttons</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+        <button class="btn btn-primary">Generate</button>
+        <button class="btn btn-secondary">Run again</button>
+        <button class="btn btn-ghost">Cancel</button>
+        <button class="btn btn-danger">Delete</button>
+        <button class="btn btn-primary focus-demo">Focused</button>
+        <button class="btn btn-primary" disabled="">Disabled</button>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+        <button class="btn btn-primary btn-lg"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"></path></svg>Generate · 4</button>
+        <button class="btn btn-secondary"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v4H4z M5 9v10h14V9 M12 12v5 M9.5 14.5 12 17l2.5-2.5"></path></svg>Keep</button>
+        <button class="btn btn-secondary btn-sm">Small · desktop</button>
+        <button class="icon-btn" aria-label="More"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width: 3"><path d="M5 12h.01 M12 12h.01 M19 12h.01"></path></svg></button>
+        <button class="icon-btn" aria-label="Download"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11 M7 10l5 5 5-5 M5 20h14"></path></svg></button>
+      </div>
+      <div class="tile" style="height: 120px">
+        <img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="Coast at dusk">
+        <div style="position: absolute; right: 12px; top: 12px; display: flex; gap: 8px">
+          <button class="icon-btn on-image" aria-label="Compare"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18 M8 6H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3 M16 6h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3"></path></svg></button>
+          <button class="icon-btn on-image" aria-label="Full screen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5 M20 9V4h-5 M4 15v5h5 M20 15v5h-5"></path></svg></button>
+        </div>
+        <span class="tile-tag" style="top: auto; bottom: 10px">On-image controls stay dark-glass in both themes</span>
+      </div>
+    </section>
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 20px">
+      <h2 class="t-title-s">Inputs</h2>
+      <div class="field">
+        <label class="field-label" for="cp">Prompt</label>
+        <textarea id="cp" class="input is-focus" rows="3">A lighthouse keeper reading by lamplight, rain on the window, 35mm film</textarea>
+        <div style="display: flex; justify-content: space-between"><span class="lockcue"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z M8 11V8a4 4 0 1 1 8 0v3"></path></svg>Encrypted, only you can read it</span><span class="t-caption t-num">74 / 1,000</span></div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+        <div class="field">
+          <label class="field-label" for="cn">Name</label>
+          <input id="cn" class="input is-error" value="">
+          <span class="hint hint-error">Give this character a name.</span>
+        </div>
+        <div class="field">
+          <label class="field-label" for="cs">Search</label>
+          <div style="position: relative">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="position: absolute; left: 12px; top: 12px; color: var(--text-3)"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M20 20l-4-4"></path></svg>
+            <input id="cs" class="input" placeholder="Search vault" style="padding-left: 42px">
+          </div>
+          <span class="hint">Searches names and prompts.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 20px">
+      <h2 class="t-title-s">Chips &amp; segmented controls</h2>
+      <div class="field">
+        <span class="field-label">Aspect ratio</span>
+        <div class="seg" role="group" aria-label="Aspect ratio">
+          <button aria-pressed="false"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5z"></path></svg>Square</button>
+          <button aria-pressed="true"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v18H7z"></path></svg>Portrait</button>
+          <button aria-pressed="false"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18v10H3z"></path></svg>Landscape</button>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+        <div class="field">
+          <span class="field-label">Results</span>
+          <div class="seg" role="group" aria-label="Number of results"><button aria-pressed="false">1</button><button aria-pressed="false">2</button><button aria-pressed="false">3</button><button aria-pressed="true">4</button></div>
+        </div>
+        <div class="field">
+          <span class="field-label">Mode</span>
+          <div class="seg" role="group" aria-label="Speed or quality"><button aria-pressed="true">Fast</button><button aria-pressed="false">Best quality</button></div>
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <button class="chip" aria-pressed="true">All</button>
+        <button class="chip" aria-pressed="false">Running</button>
+        <button class="chip" aria-pressed="false">Done</button>
+        <button class="chip" aria-pressed="false">Failed</button>
+        <button class="chip chip-sm" aria-pressed="false"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M4 10h16 M8 3v4 M16 3v4"></path></svg>Last 30 days</button>
+      </div>
+    </section>
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 20px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 class="t-title-s">Style preset cards</h2><span class="t-caption">4:5 preview · label below · selected = 2 px accent ring + check</span></div>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px">
+        <button class="preset is-on" aria-pressed="true" style="position: relative"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt=""><span style="position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 50%; background: var(--info-border); color: var(--bg); display: flex; align-items: center; justify-content: center"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width: 2.5"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span>Photography</button>
+        <button class="preset" aria-pressed="false"><img src="/_blob/ca494b0bfe456651a08cc89949f6a17a" alt="">Manga</button>
+        <button class="preset" aria-pressed="false"><img src="/_blob/d424b7bc2418aaeb0000494dde022456" alt="">Artistic</button>
+        <button class="preset" aria-pressed="false"><img src="/_blob/45841a3c0c37777adabfb8651c5d55db" alt="">Cinematic</button>
+        <button class="preset" aria-pressed="false"><img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt="">Soft film</button>
+      </div>
+    </section>
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px; grid-column: span 2">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 class="t-title-s">Job row — every status</h2><span class="t-caption">Thumb 56 · type + style · prompt (1 line, ellipsis) · status pill + relative time · one contextual action</span></div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border)">
+          <div class="tile" style="width: 56px; height: 56px; border-radius: 10px; flex: none; opacity: .55"><img src="/_blob/ca494b0bfe456651a08cc89949f6a17a" alt=""></div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; gap: 6px; align-items: center"><span class="t-label">Generate</span><span class="t-caption">· Manga · ×4</span></div>
+            <span class="t-body-s c2 clamp1">A girl on a rooftop at noon, wind in her scarf, speed lines</span>
+            <span class="t-caption">3rd in line</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px"><span class="pill"><span class="dot dot-hollow"></span>Queued</span><span class="t-caption">just now</span></div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border)">
+          <div class="tile" style="width: 56px; height: 56px; border-radius: 10px; flex: none; opacity: .55"><img src="/_blob/615333cb7a7451c46b14f19e5d1cc710" alt=""></div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; gap: 6px; align-items: center"><span class="t-label">Enhance</span><span class="t-caption">· Balanced</span></div>
+            <span class="t-body-s c2 clamp1">Milo portrait · v1</span>
+            <span class="t-caption">Starts automatically when the GPU is back</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px"><span class="pill"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2v4 M15 2v4 M7 6h10v4a5 5 0 0 1-10 0z M12 15v7"></path></svg>Waiting for GPU</span><span class="t-caption">12 min</span></div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border)">
+          <div class="tile" style="width: 56px; height: 56px; border-radius: 10px; flex: none"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt=""></div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <div style="display: flex; gap: 6px; align-items: center"><span class="t-label">Generate</span><span class="t-caption">· Photography · ×2</span></div>
+            <span class="t-body-s c2 clamp1">Harbour at dusk, fishing boats, warm sodium light</span>
+            <div class="progress"><span style="width: 42%"></span></div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px"><span class="pill pill-accent t-num"><span class="dot"></span>42%</span><span class="t-caption">~40 s left</span></div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border)">
+          <div class="tile" style="width: 56px; height: 56px; border-radius: 10px; flex: none"><img src="/_blob/b98f848812490c10d9dfbf0ebffcc2f1" alt=""></div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <div style="display: flex; gap: 6px; align-items: center"><span class="t-label">Face swap</span><span class="t-caption">· 2 faces</span></div>
+            <span class="t-body-s c2 clamp1">Café scene · Ana → left, Milo → right</span>
+            <div class="progress progress-indet"><span></span></div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px"><span class="pill pill-accent"><span class="dot"></span>Running</span><span class="t-caption">1 min</span></div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border)">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 56px; height: 56px; border-radius: 10px; overflow: hidden; flex: none">
+            <img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="" style="width: 100%; height: 100%; object-fit: cover"><img src="/_blob/13c380256699ac3f901e2eb726da7630" alt="" style="width: 100%; height: 100%; object-fit: cover"><img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt="" style="width: 100%; height: 100%; object-fit: cover"><img src="/_blob/45841a3c0c37777adabfb8651c5d55db" alt="" style="width: 100%; height: 100%; object-fit: cover">
+          </div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; gap: 6px; align-items: center"><span class="t-label">Generate</span><span class="t-caption">· Photography · ×4</span></div>
+            <span class="t-body-s c2 clamp1">Quiet places at the edge of the day</span>
+            <span class="t-caption">Kept for 6 more days</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px"><span class="pill pill-success"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Done</span><span class="t-caption">1 h</span></div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border)">
+          <div class="tile" style="width: 56px; height: 56px; border-radius: 10px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--danger-soft); color: var(--danger)"><svg class="ic ic-24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5 M12 16.5h.01 M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"></path></svg></div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; gap: 6px; align-items: center"><span class="t-label">Face swap</span><span class="t-caption">· Rose</span></div>
+            <span class="t-body-s c2 clamp1">No face matched Rose (woman · senior)</span>
+            <span class="t-caption">Your image wasn't changed</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px"><span class="pill pill-danger">Failed</span><button class="btn btn-secondary btn-sm"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7 M20 4v5h-5"></path></svg>Retry</button></div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: transparent; border: 1px dashed var(--border-strong)">
+          <div class="tile" style="width: 56px; height: 56px; border-radius: 10px; flex: none; background: var(--surface-2); display: flex; align-items: center; justify-content: center; color: var(--text-3)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"></path></svg></div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; gap: 6px; align-items: center"><span class="t-label c3">Generate</span><span class="t-caption">· Artistic</span></div>
+            <span class="t-body-s c3 clamp1">Still life with oranges, Dutch golden age</span>
+            <span class="t-caption">Results weren't kept · parameters saved</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px"><span class="pill pill-muted">Expired</span><button class="btn btn-ghost btn-sm">Run again</button></div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border)">
+          <span class="t-overline">Worker status</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <span class="pill pill-success"><span class="dot"></span>GPU online · idle</span>
+            <span class="pill pill-accent"><span class="dot"></span>GPU busy · 3 waiting</span>
+            <span class="pill"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2v4 M15 2v4 M7 6h10v4a5 5 0 0 1-10 0z M12 15v7"></path></svg>GPU offline · 5 waiting</span>
+          </div>
+          <span class="t-caption">Always paired with the count of waiting jobs. Offline uses neutral grey.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 20px">
+      <h2 class="t-title-s">Progress &amp; vault quota</h2>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="display: flex; justify-content: space-between"><span class="t-label">Determinate</span><span class="t-caption t-num">68%</span></div><div class="progress"><span style="width: 68%"></span></div></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="display: flex; justify-content: space-between"><span class="t-label">Indeterminate</span><span class="t-caption">Running</span></div><div class="progress progress-indet"><span></span></div></div>
+      <div class="hr"></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="display: flex; justify-content: space-between"><span class="t-label">Vault</span><span class="t-caption t-num">112 MB of 256 MB</span></div><div class="quota"><span style="width: 44%"></span></div></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="display: flex; justify-content: space-between"><span class="t-label">Almost full</span><span class="t-caption t-num" style="color: var(--warning)">231 MB of 256 MB</span></div><div class="quota is-warn"><span style="width: 90%"></span></div><span class="hint">25 MB left — about 8 more images.</span></div>
+      <div style="display: flex; flex-direction: column; gap: 8px"><div style="display: flex; justify-content: space-between"><span class="t-label">Full</span><span class="t-caption t-num" style="color: var(--danger)">256 MB of 256 MB</span></div><div class="quota is-full"><span style="width: 100%"></span></div><span class="hint">Free space to keep new results. <a href="#" style="color: var(--accent-text)">Manage vault</a></span></div>
+    </section>
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <h2 class="t-title-s">Toasts</h2>
+      <p class="t-body-s c3">Inverse surface, bottom-centre on mobile (above tab bar), bottom-left on desktop — never in the assistant corner. 5 s, paused on hover/focus; one action max.</p>
+      <div class="toast"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg><span style="flex: 1">Queued · 3rd in line</span><a href="#">View</a></div>
+      <div class="toast"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover"><span style="flex: 1">4 results ready · Harbour at dusk</span><a href="#">Open</a></div>
+      <div class="toast"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5 M12 16.5h.01 M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"></path></svg><span style="flex: 1">Couldn't keep — vault is full</span><a href="#">Manage</a></div>
+    </section>
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <h2 class="t-title-s">Before / after slider</h2>
+      <div class="tile" style="height: 300px; border-radius: 14px">
+        <img src="/_blob/615333cb7a7451c46b14f19e5d1cc710" alt="Milo, enhanced" style="object-position: 50% 30%">
+        <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 55%; overflow: hidden">
+          <img src="/_blob/615333cb7a7451c46b14f19e5d1cc710" alt="" style="position: absolute; left: 0; top: 0; width: 517px; height: 300px; object-fit: cover; object-position: 50% 30%; filter: saturate(.55) contrast(.85) blur(1.2px)">
+        </div>
+        <div class="compare-line" style="left: 55%"><div class="compare-knob" style="left: 1px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l-5 5 5 5 M15 7l5 5-5 5"></path></svg></div></div>
+        <span class="tile-tag">Original</span>
+        <span class="tile-tag" style="left: auto; right: 8px">Enhanced</span>
+      </div>
+      <span class="t-caption">Drag anywhere or use ← → (10 %) · knob is a slider with aria-valuenow</span>
+    </section>
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 18px">
+      <h2 class="t-title-s">Prompt fragments · character bubbles · slider · ring</h2>
+      <div class="toklist" role="list">
+        <div role="listitem" class="tok"><span class="tok-num">1</span><span class="tok-text">a man 40 years old</span><span class="switch is-on" role="switch" aria-checked="true" aria-label="Include fragment 1"></span></div>
+        <div role="listitem" class="tok is-off"><span class="tok-num">2</span><span class="tok-text">black pilosity</span><span class="switch" role="switch" aria-checked="false" aria-label="Include fragment 2"></span></div>
+        <div role="listitem" class="tok is-neg"><span class="tok-num">3</span><span class="tok-text">extra fingers <span class="pill pill-danger" style="min-height: 20px; font-size: 11px">negative</span></span><span class="switch is-on" role="switch" aria-checked="true" aria-label="Include fragment 3"></span></div>
+      </div>
+      <div style="display: flex; gap: 4px">
+        <button class="bubble" aria-pressed="true"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="" style="object-position: 50% 35%"><span class="bubble-check"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px; stroke-width: 3"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span>Ana</button>
+        <button class="bubble" aria-pressed="true"><img src="/_blob/615333cb7a7451c46b14f19e5d1cc710" alt=""><span class="bubble-check"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px; stroke-width: 3"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span>Milo</button>
+        <button class="bubble" aria-pressed="false"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt="">Rose</button>
+        <button class="bubble" aria-pressed="false"><img src="/_blob/603ff0cb7d029ea8f9a5e95b09cda895" alt="">Jun</button>
+      </div>
+      <div class="opt-row"><span class="opt-label">Blur</span><div class="range" style="max-width: 260px" role="slider" aria-label="Blur strength" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" tabindex="0"><span class="range-track"></span><span class="range-fill" style="width: 60%"></span><span class="range-thumb" style="left: 60%"></span></div></div>
+      <div style="display: flex; gap: 16px; align-items: center">
+        <span class="ring" style="background: conic-gradient(var(--text-2) 44%, var(--surface-3) 0)" aria-label="Vault 44% used"><span style="background: var(--surface-1)">44%</span></span>
+        <span class="ring" style="background: conic-gradient(var(--warning) 90%, var(--surface-3) 0)" aria-label="Vault 90% used"><span style="background: var(--surface-1)">90%</span></span>
+        <span class="ring" style="background: conic-gradient(var(--danger) 100%, var(--surface-3) 0)" aria-label="Vault full"><span style="background: var(--surface-1)">Full</span></span>
+        <span class="t-caption">Vault ring: grey, then amber from 85 %, red when full</span>
+      </div>
+    </section>
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 12px">
+      <h2 class="t-title-s">History · blur always last</h2>
+      <div class="version" style="opacity: 1"><img src="/_blob/b98f848812490c10d9dfbf0ebffcc2f1" alt="" style="width: 56px; height: 40px; border-radius: 8px; object-fit: cover"><div style="flex: 1; min-width: 0"><div class="t-label">Original</div><div class="t-caption">From iCloud · 2.4 MB</div></div><span class="t-caption">Oct 28</span></div>
+      <div class="version"><img src="/_blob/b98f848812490c10d9dfbf0ebffcc2f1" alt="" style="width: 56px; height: 40px; border-radius: 8px; object-fit: cover; filter: contrast(1.1) saturate(1.15)"><div style="flex: 1; min-width: 0"><div class="t-label">Enhanced</div><div class="t-caption">3.1 MB</div></div><span class="t-caption">Oct 28</span></div>
+      <div class="version is-on"><img src="/_blob/b98f848812490c10d9dfbf0ebffcc2f1" alt="" style="width: 56px; height: 40px; border-radius: 8px; object-fit: cover; filter: contrast(1.1) saturate(1.15)"><div style="flex: 1; min-width: 0"><div class="t-label">Ana + Milo</div><div class="t-caption">Ana, Milo · 3.2 MB</div></div><span class="pill pill-info">Viewing</span></div>
+      <div class="version" style="border: 1px dashed var(--border-strong)"><div class="skel" style="width: 56px; height: 40px"></div><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px"><div class="t-label">Blur</div><div class="progress progress-indet"><span></span></div></div><span class="t-caption">Running</span></div>
+    </section>
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <h2 class="t-title-s">Character card &amp; tiles</h2>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+        <div style="display: flex; flex-direction: column; gap: 8px"><div class="tile" style="aspect-ratio: 1; border-radius: 50%"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="" style="object-position: 50% 35%"></div><div style="text-align: center"><div class="t-label">Ana</div><div class="t-caption t-num">6 faces</div></div></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><div class="tile" style="aspect-ratio: 1"><img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt=""><span class="tile-tag">v3</span></div><span class="t-caption">Version badge</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><div class="tile is-on" style="aspect-ratio: 1"><img src="/_blob/13c380256699ac3f901e2eb726da7630" alt=""><span style="position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 50%; background: var(--info-border); color: var(--bg); display: flex; align-items: center; justify-content: center"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width: 2.5"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span></div><span class="t-caption">Selected</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><div class="skel" style="aspect-ratio: 1; border-radius: 12px"></div><span class="t-caption">Loading</span></div>
+      </div>
+    </section>
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <h2 class="t-title-s">Bottom sheet (mobile) · Dialog (desktop)</h2>
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px">
+        <div style="position: relative; height: 300px; border-radius: 14px; overflow: hidden; background: var(--image-bg)">
+          <img src="/_blob/45841a3c0c37777adabfb8651c5d55db" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block">
+          <div class="scrim" style="position: absolute; inset: 0"></div>
+          <div class="sheet" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px">
+            <div class="grabber"></div>
+            <span class="t-title-s">Variant 2</span>
+            <button class="btn btn-ghost" style="justify-content: flex-start; padding: 0 4px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6 M4 16l4-4 4 4 M17 3l4 4-7 7h-4v-4z"></path></svg>Use in editor</button>
+            <button class="btn btn-ghost" style="justify-content: flex-start; padding: 0 4px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"></path></svg>Generate more like this</button>
+          </div>
+        </div>
+        <div style="position: relative; height: 300px; border-radius: 14px; overflow: hidden; background: var(--surface-2); display: flex; align-items: center; justify-content: center">
+          <div class="scrim" style="position: absolute; inset: 0"></div>
+          <div class="dialog" role="dialog" aria-labelledby="dlg-t" style="position: relative; width: 300px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+            <h3 id="dlg-t" class="t-title-s">Remove blur?</h3>
+            <p class="t-body-s c2">Goes back to the image just before blur. You can blur it again any time.</p>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px"><button class="btn btn-ghost btn-sm">Cancel</button><button class="btn btn-primary btn-sm">Remove blur</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px; grid-column: span 2">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 class="t-title-s">Navigation</h2><span class="t-caption">Tab bar (mobile) · sidebar items + job indicator (desktop) · tabs</span></div>
+      <div style="display: grid; grid-template-columns: 390px minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start">
+        <div style="border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: var(--bg)">
+          <dc-import name="MobileNav" active="jobs" theme="{{theme}}" hint-size="390px,112px"></dc-import>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 16px; background: var(--surface-1); border: 1px solid var(--border)">
+          <a class="nav-item" href="#"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"></path></svg>Create</a>
+          <a class="nav-item" href="#" aria-current="page"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 7.5 12 12l9-4.5L12 3z M3 12l9 4.5 9-4.5 M3 16.5 12 21l9-4.5"></path></svg><span style="flex: 1">Jobs</span><span class="badge-count">2</span></a>
+          <a class="jobpill" href="#" style="margin-top: 8px; align-self: flex-start"><span class="dot" style="color: var(--info)"></span>2 running · 3 queued</a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <div class="tabs" role="tablist"><button role="tab" aria-selected="true">Vault</button><button role="tab" aria-selected="false">iCloud album</button><button role="tab" aria-selected="false">Documents</button><button role="tab" aria-selected="false">Generated</button></div>
+          <div style="display: flex; align-items: center; gap: 12px"><span class="switch is-on" role="switch" aria-checked="true" aria-label="Example switch"></span><span class="t-body-s">Switch · on</span><span class="switch" role="switch" aria-checked="false" aria-label="Example switch off"></span><span class="t-body-s">off</span></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":2640}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.theme ?? 'dark' };
+  }
+}
+</script>
+</body>
+</html>

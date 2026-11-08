@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Foundations</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#A9B2FF}a:hover{color:#C3C9FF}
+</style>
+</helmet>
+<div class="lk lk-dark" style="width: 1440px; min-height: 2240px; padding: 72px 80px 96px; display: flex; flex-direction: column; gap: 72px; background: var(--bg)">
+
+  <header style="display: flex; flex-direction: column; gap: 32px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--info-border); color: var(--bg); display: flex; align-items: center; justify-content: center">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a3.5 3.5 0 0 0-1.6 6.6L9.5 18h5l-.9-6.4A3.5 3.5 0 0 0 12 5z" fill="currentColor"></path></svg>
+        </div>
+        <span style="font: 600 28px/32px var(--font-display); letter-spacing: -.01em">Locke</span>
+      </div>
+      <span class="t-caption">Design system · v1.0 · Foundations</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px; max-width: 820px">
+      <h1 class="t-display" style="font-size: 48px; line-height: 56px">A calm studio for private image making.</h1>
+      <p class="t-body c2" style="font-size: 17px; line-height: 26px">Dark-first, image-first. Quiet navy-grey surfaces, pill-shaped controls, mint for what you do and blue for what you chose, and small lock cues instead of alarms. Every value below is a CSS custom property in <code style="font-size: 15px; color: var(--text)">locke.css</code>; switching theme is one class on the root.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+      <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 8px">
+        <span class="t-overline">01</span>
+        <h3 class="t-title-s">Images are the hero</h3>
+        <p class="t-body-s c2">Chrome recedes: neutral surfaces, thin borders, controls float over images only when needed.</p>
+      </div>
+      <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 8px">
+        <span class="t-overline">02</span>
+        <h3 class="t-title-s">Waiting is normal</h3>
+        <p class="t-body-s c2">Jobs run in the background. Submit, leave, come back. No blocking spinners, ever.</p>
+      </div>
+      <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 8px">
+        <span class="t-overline">03</span>
+        <h3 class="t-title-s">Private, quietly</h3>
+        <p class="t-body-s c2">Small lock cues where data lives: prompts, vault, characters. Never banners, never fear.</p>
+      </div>
+      <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 8px">
+        <span class="t-overline">04</span>
+        <h3 class="t-title-s">Mint to do, blue for chosen</h3>
+        <p class="t-body-s c2">Mint = primary actions and toggles. Blue = selected pills and work in progress. Nothing else is coloured.</p>
+      </div>
+    </div>
+  </header>
+
+  <section style="display: flex; flex-direction: column; gap: 24px">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <h2 class="t-title-l">Colour</h2>
+      <span class="t-caption">Contrast ratios computed against the surface noted · all body text ≥ 4.5:1</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+
+      <div class="lk lk-dark" style="padding: 28px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg); display: flex; flex-direction: column; gap: 20px">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <h3 class="t-title-m">Dark <span class="c3" style="font-weight: 500">· default</span></h3>
+          <span class="pill pill-accent">lk-dark</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border-strong)"></div><span class="t-label">bg</span><span class="t-caption">#0D1117</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--surface-1); border: 1px solid var(--border)"></div><span class="t-label">surface-1</span><span class="t-caption">#131922</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border)"></div><span class="t-label">surface-2</span><span class="t-caption">#19202A</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--surface-3); border: 1px solid var(--border)"></div><span class="t-label">surface-3</span><span class="t-caption">#222A35</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--border)"></div><span class="t-label">border</span><span class="t-caption">#242D39</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--border-input)"></div><span class="t-label">border-input</span><span class="t-caption">#5A6676 · 3:1</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--text)"></div><span class="t-label">text</span><span class="t-caption">#EEF2F6 · 17:1</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--text-2)"></div><span class="t-label">text-2</span><span class="t-caption">#AEB8C4 · 9:1</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--text-3)"></div><span class="t-label">text-3</span><span class="t-caption">#8893A0 · 5.3:1</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--accent)"></div><span class="t-label">accent</span><span class="t-caption">#5EDCB0 · do</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--on-accent); border: 1px solid var(--border)"></div><span class="t-label">on-accent</span><span class="t-caption">#06271C · 9:1</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--accent-soft); border: 1px solid var(--border)"></div><span class="t-label">accent-soft</span><span class="t-caption">accent 14%</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--success)"></div><span class="t-label">success</span><span class="t-caption">#5EDCB0</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--warning)"></div><span class="t-label">warning</span><span class="t-caption">#F0B866</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--danger)"></div><span class="t-label">danger</span><span class="t-caption">#FF8F85</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--info)"></div><span class="t-label">info</span><span class="t-caption">#7CC6F2 · chosen</span></div>
+        </div>
+        <div class="hr"></div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <span class="t-overline">Job status mapping</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <span class="pill"><span class="dot dot-hollow"></span>Queued</span>
+            <span class="pill"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2v4 M15 2v4 M7 6h10v4a5 5 0 0 1-10 0z M12 15v7"></path></svg>Waiting for GPU</span>
+            <span class="pill pill-accent"><span class="dot"></span>Running · 42%</span>
+            <span class="pill pill-success"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Done</span>
+            <span class="pill pill-danger"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5 M12 16.5h.01 M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"></path></svg>Failed</span>
+            <span class="pill pill-muted">Expired</span>
+          </div>
+          <p class="t-body-s c3">Waiting for GPU is deliberately neutral: it is a pause, not a problem. Each status also carries an icon or shape, never colour alone.</p>
+        </div>
+      </div>
+
+      <div class="lk lk-light" style="padding: 28px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg); display: flex; flex-direction: column; gap: 20px">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <h3 class="t-title-m">Light</h3>
+          <span class="pill pill-accent">lk-light</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border-strong)"></div><span class="t-label">bg</span><span class="t-caption">#F3F5F8</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--surface-1); border: 1px solid var(--border)"></div><span class="t-label">surface-1</span><span class="t-caption">#FFFFFF</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border)"></div><span class="t-label">surface-2</span><span class="t-caption">#ECEFF3</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--surface-3); border: 1px solid var(--border)"></div><span class="t-label">surface-3</span><span class="t-caption">#E0E5EB</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--border)"></div><span class="t-label">border</span><span class="t-caption">#D6DCE3</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--border-input)"></div><span class="t-label">border-input</span><span class="t-caption">#84909C · 3.3:1</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--text)"></div><span class="t-label">text</span><span class="t-caption">#10151B · 17:1</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--text-2)"></div><span class="t-label">text-2</span><span class="t-caption">#414A55 · 9.4:1</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--text-3)"></div><span class="t-label">text-3</span><span class="t-caption">#5A6470 · 5.4:1</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--accent)"></div><span class="t-label">accent</span><span class="t-caption">#0E7A56 · do</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--on-accent); border: 1px solid var(--border)"></div><span class="t-label">on-accent</span><span class="t-caption">#FFFFFF · 5.3:1</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--accent-soft); border: 1px solid var(--border)"></div><span class="t-label">accent-soft</span><span class="t-caption">accent 10%</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--success)"></div><span class="t-label">success</span><span class="t-caption">#1C7A4F</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--warning)"></div><span class="t-label">warning</span><span class="t-caption">#8A5800</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--danger)"></div><span class="t-label">danger</span><span class="t-caption">#BF3328</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 56px; border-radius: 10px; background: var(--info)"></div><span class="t-label">info</span><span class="t-caption">#1F6FA3 · chosen</span></div>
+        </div>
+        <div class="hr"></div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <span class="t-overline">Job status mapping</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <span class="pill"><span class="dot dot-hollow"></span>Queued</span>
+            <span class="pill"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2v4 M15 2v4 M7 6h10v4a5 5 0 0 1-10 0z M12 15v7"></path></svg>Waiting for GPU</span>
+            <span class="pill pill-accent"><span class="dot"></span>Running · 42%</span>
+            <span class="pill pill-success"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Done</span>
+            <span class="pill pill-danger"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5 M12 16.5h.01 M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"></path></svg>Failed</span>
+            <span class="pill pill-muted">Expired</span>
+          </div>
+          <p class="t-body-s c3">Light surfaces stay near-neutral so photos read true. Shadows replace the darker surface steps of the dark theme.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 48px">
+    <div style="display: flex; flex-direction: column; gap: 20px">
+      <h2 class="t-title-l">Typography</h2>
+      <div class="card" style="display: flex; flex-direction: column">
+        <div style="display: grid; grid-template-columns: 140px 200px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">display</span><span class="t-caption">Space Grotesk 600 · 32/40</span><span class="t-display">Keep the same face</span></div>
+        <div style="display: grid; grid-template-columns: 140px 200px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">title-l</span><span class="t-caption">Space Grotesk 600 · 24/32</span><span class="t-title-l">Characters</span></div>
+        <div style="display: grid; grid-template-columns: 140px 200px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">title-m</span><span class="t-caption">Inter 600 · 20/28</span><span class="t-title-m">Harbour at dusk</span></div>
+        <div style="display: grid; grid-template-columns: 140px 200px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">title-s</span><span class="t-caption">Inter 600 · 17/24</span><span class="t-title-s">Style</span></div>
+        <div style="display: grid; grid-template-columns: 140px 200px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">body</span><span class="t-caption">Inter 400 · 15/22</span><span class="t-body">Results are kept for 7 days unless you keep them.</span></div>
+        <div style="display: grid; grid-template-columns: 140px 200px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">input</span><span class="t-caption">Inter 400 · 16/22</span><span class="t-body" style="font-size: 16px">16 px minimum stops iOS zooming on focus</span></div>
+        <div style="display: grid; grid-template-columns: 140px 200px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">body-s</span><span class="t-caption">Inter 400 · 13/18</span><span class="t-body-s c2">Face too small — try a closer crop.</span></div>
+        <div style="display: grid; grid-template-columns: 140px 200px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">label</span><span class="t-caption">Inter 500 · 13/16</span><span class="t-label">Aspect ratio</span></div>
+        <div style="display: grid; grid-template-columns: 140px 200px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">caption</span><span class="t-caption">Inter 500 · 12/16</span><span class="t-caption">2 min ago · 1024 × 1280</span></div>
+        <div style="display: grid; grid-template-columns: 140px 200px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px 20px"><span class="t-label">overline</span><span class="t-caption">Inter 600 · 11/16 · +8%</span><span class="t-overline">Recent</span></div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 20px; padding-top: 52px">
+      <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 14px">
+        <h3 class="t-title-s">Rules</h3>
+        <p class="t-body-s c2">Inter carries all UI text: wide Latin coverage (French accents, ligatures), tabular figures for counts, sizes and times.</p>
+        <p class="t-body-s c2">Space Grotesk only for screen titles and display — never for buttons or body.</p>
+        <p class="t-body-s c2">Overline is the only uppercase style. Buttons and tabs stay sentence case so translations don't shout.</p>
+        <p class="t-body-s c2">Labels may wrap to 2 lines; nothing is fixed-width. Budget +40% length for French.</p>
+        <p class="t-body-s c2">Dates, sizes and counts come from <code>Intl.DateTimeFormat</code>, <code>Intl.NumberFormat</code> and <code>Intl.RelativeTimeFormat</code> — "2 min ago" / "il y a 2 min".</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px">
+    <div style="display: flex; flex-direction: column; gap: 20px">
+      <h2 class="t-title-l">Spacing</h2>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: center; gap: 12px"><span class="t-caption t-num" style="width: 64px">sp-1 · 4</span><div style="width: 4px; height: 16px; border-radius: 2px; background: var(--accent)"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span class="t-caption t-num" style="width: 64px">sp-2 · 8</span><div style="width: 8px; height: 16px; border-radius: 2px; background: var(--accent)"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span class="t-caption t-num" style="width: 64px">sp-3 · 12</span><div style="width: 12px; height: 16px; border-radius: 2px; background: var(--accent)"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span class="t-caption t-num" style="width: 64px">sp-4 · 16</span><div style="width: 16px; height: 16px; border-radius: 2px; background: var(--accent)"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span class="t-caption t-num" style="width: 64px">sp-5 · 20</span><div style="width: 20px; height: 16px; border-radius: 2px; background: var(--accent)"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span class="t-caption t-num" style="width: 64px">sp-6 · 24</span><div style="width: 24px; height: 16px; border-radius: 2px; background: var(--accent)"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span class="t-caption t-num" style="width: 64px">sp-8 · 32</span><div style="width: 32px; height: 16px; border-radius: 2px; background: var(--accent)"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span class="t-caption t-num" style="width: 64px">sp-10 · 40</span><div style="width: 40px; height: 16px; border-radius: 2px; background: var(--accent)"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span class="t-caption t-num" style="width: 64px">sp-12 · 48</span><div style="width: 48px; height: 16px; border-radius: 2px; background: var(--accent)"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span class="t-caption t-num" style="width: 64px">sp-16 · 64</span><div style="width: 64px; height: 16px; border-radius: 2px; background: var(--accent)"></div></div>
+      </div>
+      <p class="t-body-s c3">Mobile gutter 16 · tablet 24 · desktop 32. Touch targets 44 × 44 minimum; 8 between adjacent targets.</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 20px">
+      <h2 class="t-title-l">Radius</h2>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 6px; background: var(--surface-3); border: 1px solid var(--border-strong)"></div><span class="t-caption">xs · 6 · tags</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 8px; background: var(--surface-3); border: 1px solid var(--border-strong)"></div><span class="t-caption">sm · 8 · thumbs</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 12px; background: var(--surface-3); border: 1px solid var(--border-strong)"></div><span class="t-caption">md · 12 · buttons, tiles</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 16px; background: var(--surface-3); border: 1px solid var(--border-strong)"></div><span class="t-caption">lg · 16 · cards</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 24px; background: var(--surface-3); border: 1px solid var(--border-strong)"></div><span class="t-caption">xl · 24 · sheets</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 72px; border-radius: 999px; background: var(--surface-3); border: 1px solid var(--border-strong)"></div><span class="t-caption">pill · chips</span></div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 20px">
+      <h2 class="t-title-l">Elevation</h2>
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <div style="padding: 16px; border-radius: 16px; background: var(--surface-1); border: 1px solid var(--border); box-shadow: var(--e1)"><span class="t-label">e1 · resting</span><p class="t-body-s c3">Cards, selected segment. Dark: surface step + border.</p></div>
+        <div style="padding: 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border); box-shadow: var(--e2)"><span class="t-label">e2 · floating</span><p class="t-body-s c3">Tab bar, toasts, menus, popovers.</p></div>
+        <div style="padding: 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border-strong); box-shadow: var(--e3)"><span class="t-label">e3 · modal</span><p class="t-body-s c3">Bottom sheets, dialogs — always with scrim.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px">
+    <div style="display: flex; flex-direction: column; gap: 20px">
+      <h2 class="t-title-l">Motion</h2>
+      <div class="card" style="display: flex; flex-direction: column">
+        <div style="display: grid; grid-template-columns: 120px 80px minmax(0, 1fr); gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">fast</span><span class="t-caption t-num">120 ms</span><span class="t-body-s c2">Hover, press, toggles, chip selection</span></div>
+        <div style="display: grid; grid-template-columns: 120px 80px minmax(0, 1fr); gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">base</span><span class="t-caption t-num">200 ms</span><span class="t-body-s c2">Fades, toasts, new job row entering (8 px rise)</span></div>
+        <div style="display: grid; grid-template-columns: 120px 80px minmax(0, 1fr); gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">slow</span><span class="t-caption t-num">320 ms</span><span class="t-body-s c2">Bottom sheets, dialogs, full-screen viewer</span></div>
+        <div style="display: grid; grid-template-columns: 120px 80px minmax(0, 1fr); gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">standard</span><span class="t-caption">ease</span><span class="t-body-s c2">cubic-bezier(.2, 0, 0, 1) — most transitions</span></div>
+        <div style="display: grid; grid-template-columns: 120px 80px minmax(0, 1fr); gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--border)"><span class="t-label">enter</span><span class="t-caption">ease</span><span class="t-body-s c2">cubic-bezier(.05, .7, .1, 1) — sheets arriving</span></div>
+        <div style="display: grid; grid-template-columns: 120px 80px minmax(0, 1fr); gap: 16px; padding: 14px 20px"><span class="t-label">exit</span><span class="t-caption">ease</span><span class="t-body-s c2">cubic-bezier(.3, 0, .8, .15) — dismissals</span></div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 20px">
+      <h2 class="t-title-l">Reduced motion</h2>
+      <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <p class="t-body-s c2">Slides, zooms and sheet travel become a 120 ms crossfade.</p>
+        <p class="t-body-s c2">Indeterminate progress becomes a static, half-opacity bar plus the text "Running".</p>
+        <p class="t-body-s c2">Skeleton shimmer is off; skeletons stay as flat shapes.</p>
+        <p class="t-body-s c2">Swipe between variants still works, but snaps without momentum animation.</p>
+        <p class="t-body-s c2">Result arrival never bounces or pulses: a 200 ms fade-in of the thumbnail and a toast.</p>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px">
+          <div class="progress progress-indet"><span></span></div>
+          <span class="t-caption">Indeterminate · animates only without prefers-reduced-motion</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <h2 class="t-title-l">Icons</h2>
+      <span class="t-caption">24 px grid · 1.75 stroke · round caps and joins · currentColor · 20 px in UI, 16 px in pills</span>
+    </div>
+    <div class="card" style="padding: 24px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px 12px">
+      <sc-for list="{{icons}}" as="i" hint-placeholder-count="36">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px">
+          <svg class="ic ic-24" viewBox="0 0 24 24" aria-hidden="true"><path d="{{i.d}}"></path></svg>
+          <span class="t-caption" style="text-align: center">{{i.n}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      icons: [
+        { n: 'create', d: 'M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z' },
+        { n: 'jobs', d: 'M12 3 3 7.5 12 12l9-4.5L12 3z M3 12l9 4.5 9-4.5 M3 16.5 12 21l9-4.5' },
+        { n: 'editor', d: 'M20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6 M4 16l4-4 4 4 M17 3l4 4-7 7h-4v-4z' },
+        { n: 'characters', d: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1 M16 3.5a4 4 0 0 1 0 7 M22 21v-1a6 6 0 0 0-4-5.6' },
+        { n: 'lock', d: 'M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z M8 11V8a4 4 0 1 1 8 0v3' },
+        { n: 'gpu', d: 'M7 7h10v10H7z M9 3v4 M15 3v4 M9 17v4 M15 17v4 M3 9h4 M3 15h4 M17 9h4 M17 15h4' },
+        { n: 'offline', d: 'M9 2v4 M15 2v4 M7 6h10v4a5 5 0 0 1-10 0z M12 15v7' },
+        { n: 'enhance', d: 'M12 3v2 M12 19v2 M3 12h2 M19 12h2 M5.6 5.6 7 7 M17 17l1.4 1.4 M5.6 18.4 7 17 M17 7l1.4-1.4 M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
+        { n: 'face swap', d: 'M7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M17 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M13 6h4a2 2 0 0 1 2 2v3 M11 18H7a2 2 0 0 1-2-2v-3 M17 9l2 2 2-2 M3 15l2-2 2 2' },
+        { n: 'edit (soon)', d: 'M14 4l6 6-9 9H5v-6z M12 6l6 6' },
+        { n: 'keep', d: 'M4 5h16v4H4z M5 9v10h14V9 M12 12v5 M9.5 14.5 12 17l2.5-2.5' },
+        { n: 'download', d: 'M12 4v11 M7 10l5 5 5-5 M5 20h14' },
+        { n: 'discard', d: 'M6 6l12 12 M18 6 6 18' },
+        { n: 'delete', d: 'M4 7h16 M10 11v6 M14 11v6 M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12 M9 7V4h6v3' },
+        { n: 'retry', d: 'M20 12a8 8 0 1 1-2.3-5.7 M20 4v5h-5' },
+        { n: 'run again', d: 'M4 12a8 8 0 0 1 14-5.3 M20 4v5h-5 M20 12a8 8 0 0 1-14 5.3 M4 20v-5h5' },
+        { n: 'history', d: 'M4 12a8 8 0 1 0 2.3-5.7 M4 4v5h5 M12 8v4l3 2' },
+        { n: 'compare', d: 'M12 3v18 M8 6H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3 M16 6h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3' },
+        { n: 'image', d: 'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z M4 16l5-5 5 5 M14 14l2-2 4 4 M15.5 8.5h.01' },
+        { n: 'upload', d: 'M12 20V9 M7 14l5-5 5 5 M5 4h14' },
+        { n: 'camera', d: 'M4 8h3l2-3h6l2 3h3v11H4z M12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z' },
+        { n: 'iCloud', d: 'M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1 0 9z' },
+        { n: 'documents', d: 'M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z' },
+        { n: 'search', d: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M20 20l-4-4' },
+        { n: 'calendar', d: 'M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M4 10h16 M8 3v4 M16 3v4' },
+        { n: 'filter', d: 'M4 6h16 M7 12h10 M10 18h4' },
+        { n: 'main face', d: 'M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8L3.5 9.7l5.9-.9z' },
+        { n: 'crop', d: 'M6 2v14a2 2 0 0 0 2 2h14 M2 6h14a2 2 0 0 1 2 2v14' },
+        { n: 'reorder', d: 'M9 6h.01 M9 12h.01 M9 18h.01 M15 6h.01 M15 12h.01 M15 18h.01' },
+        { n: 'zoom', d: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M20 20l-4-4 M11 8v6 M8 11h6' },
+        { n: 'fullscreen', d: 'M4 9V4h5 M20 9V4h-5 M4 15v5h5 M20 15v5h-5' },
+        { n: 'plus', d: 'M12 5v14 M5 12h14' },
+        { n: 'check', d: 'M5 12.5l4.5 4.5L19 7' },
+        { n: 'info', d: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 11v5 M12 8h.01' },
+        { n: 'language', d: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M3 12h18 M12 3a14 14 0 0 1 0 18 M12 3a14 14 0 0 0 0 18' },
+        { n: 'theme', d: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

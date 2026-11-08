@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Settings, mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}}" style="position: relative; width: 390px; height: 844px; overflow: hidden; background: var(--bg)">
+
+  <header style="padding: 47px 8px 0; height: 103px; display: flex; align-items: center; gap: 4px">
+    <a href="CreateMobile.dc.html" class="icon-btn" aria-label="Back"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+    <h1 class="t-title-l" style="flex: 1">Settings</h1>
+  </header>
+
+  <main style="padding: 0 16px; display: flex; flex-direction: column; gap: 22px">
+    <section style="display: flex; flex-direction: column; gap: 8px" aria-labelledby="s-app">
+      <h2 id="s-app" class="t-overline">Appearance</h2>
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 14px">
+        <div class="field">
+          <span class="field-label">Theme</span>
+          <div class="seg" role="group" aria-label="Theme"><button aria-pressed="false">System</button><button aria-pressed="{{darkOn}}">Dark</button><button aria-pressed="{{lightOn}}">Light</button></div>
+        </div>
+        <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; text-decoration: none; color: var(--text); border-top: 1px solid var(--border); padding-top: 10px">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M3 12h18 M12 3a14 14 0 0 1 0 18 M12 3a14 14 0 0 0 0 18"></path></svg>
+          <span class="t-body" style="flex: 1">Language</span><span class="t-body-s c3">English</span>
+          <svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M9 6l6 6-6 6"></path></svg>
+        </a>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 8px" aria-labelledby="s-def">
+      <h2 id="s-def" class="t-overline">Defaults for new images</h2>
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 14px">
+        <a href="#" style="display: flex; align-items: center; gap: 12px; min-height: 44px; text-decoration: none; color: var(--text)">
+          <img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="" style="width: 28px; height: 34px; border-radius: 6px; object-fit: cover">
+          <span class="t-body" style="flex: 1">Style</span><span class="t-body-s c3">Photography</span>
+          <svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M9 6l6 6-6 6"></path></svg>
+        </a>
+        <div class="field" style="border-top: 1px solid var(--border); padding-top: 12px">
+          <span class="field-label">Quality</span>
+          <div class="seg" role="group" aria-label="Default quality"><button aria-pressed="true">Fast</button><button aria-pressed="false">Best quality</button></div>
+        </div>
+        <div class="field" style="border-top: 1px solid var(--border); padding-top: 12px">
+          <span class="field-label">Keep unkept results for</span>
+          <div class="seg" role="group" aria-label="Keep unkept results for"><button aria-pressed="false">1 day</button><button aria-pressed="true">7 days</button><button aria-pressed="false">30 days</button></div>
+          <span class="hint">After that, results you didn't keep are deleted. Kept images stay in your vault.</span>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 8px" aria-labelledby="s-vault">
+      <h2 id="s-vault" class="t-overline">Vault &amp; account</h2>
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 12px">
+        <a href="#" style="display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--text)">
+          <span style="display: flex; align-items: center; gap: 8px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z M8 11V8a4 4 0 1 1 8 0v3"></path></svg><span class="t-body" style="flex: 1">Open Locke Vault</span><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M7 17 17 7 M9 7h8v8"></path></svg></span>
+          <span style="display: flex; align-items: center; gap: 10px; padding-left: 32px"><span class="quota" style="flex: 1"><span style="width: 44%"></span></span><span class="t-caption t-num">112 of 256 MB</span></span>
+        </a>
+        <button class="btn btn-ghost" style="justify-content: flex-start; padding: 0; border-top: 1px solid var(--border); border-radius: 0; padding-top: 4px; color: var(--danger); margin-right: 72px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h4v16h-4 M10 8l-4 4 4 4 M6 12h10"></path></svg>Sign out</button>
+      </div>
+    </section>
+  </main>
+
+  <button class="assist" aria-label="Open assistant" style="bottom: 44px"><svg class="ic ic-24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"></path></svg></button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    return { theme, darkOn: theme === 'dark' ? 'true' : 'false', lightOn: theme === 'light' ? 'true' : 'false' };
+  }
+}
+</script>
+</body>
+</html>

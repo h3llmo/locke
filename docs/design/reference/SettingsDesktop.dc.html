@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Settings, desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}} shell">
+  <div class="shell-nav"><dc-import name="DesktopSidebar" active="settings" theme="{{theme}}" hint-size="100%,900px"></dc-import></div>
+
+  <main class="shell-main" style="position: relative">
+    <div style="padding: 32px 40px 96px; max-width: 820px; display: flex; flex-direction: column; gap: 28px">
+      <h1 class="t-display">Settings</h1>
+
+      <section class="card" aria-labelledby="sd-app" style="padding: 8px 24px">
+        <h2 id="sd-app" class="t-overline" style="padding: 16px 0 4px">Appearance</h2>
+        <div style="display: flex; align-items: center; gap: 24px; padding: 14px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap">
+          <div style="flex: 1 1 240px"><div class="t-body" style="font-weight: 500">Theme</div><div class="t-body-s c3">System follows your device.</div></div>
+          <div class="seg" role="group" aria-label="Theme" style="flex: 0 1 320px"><button aria-pressed="false">System</button><button aria-pressed="{{darkOn}}">Dark</button><button aria-pressed="{{lightOn}}">Light</button></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 24px; padding: 14px 0; flex-wrap: wrap">
+          <div style="flex: 1 1 240px"><div class="t-body" style="font-weight: 500">Language</div><div class="t-body-s c3">Dates and numbers follow this language.</div></div>
+          <button class="input" style="flex: 0 1 320px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 15px">English<svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M6 9l6 6 6-6"></path></svg></button>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="sd-def" style="padding: 8px 24px">
+        <h2 id="sd-def" class="t-overline" style="padding: 16px 0 4px">Defaults for new images</h2>
+        <div style="display: flex; align-items: center; gap: 24px; padding: 14px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap">
+          <div style="flex: 1 1 240px"><div class="t-body" style="font-weight: 500">Style</div><div class="t-body-s c3">Preselected on Create.</div></div>
+          <button class="input" style="flex: 0 1 320px; display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px; padding-left: 8px"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="" style="width: 26px; height: 30px; border-radius: 6px; object-fit: cover"><span style="flex: 1; text-align: left">Photography</span><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3)"><path d="M6 9l6 6 6-6"></path></svg></button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 24px; padding: 14px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap">
+          <div style="flex: 1 1 240px"><div class="t-body" style="font-weight: 500">Quality</div><div class="t-body-s c3">Best quality takes about 3× longer.</div></div>
+          <div class="seg" role="group" aria-label="Default quality" style="flex: 0 1 320px"><button aria-pressed="true">Fast</button><button aria-pressed="false">Best quality</button></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 24px; padding: 14px 0; flex-wrap: wrap">
+          <div style="flex: 1 1 240px"><div class="t-body" style="font-weight: 500">Keep unkept results for</div><div class="t-body-s c3">Then they're deleted. Kept images stay in your vault.</div></div>
+          <div class="seg" role="group" aria-label="Keep unkept results for" style="flex: 0 1 320px"><button aria-pressed="false">1 day</button><button aria-pressed="true">7 days</button><button aria-pressed="false">30 days</button></div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="sd-vault" style="padding: 8px 24px">
+        <h2 id="sd-vault" class="t-overline" style="padding: 16px 0 4px">Vault &amp; account</h2>
+        <div style="display: flex; align-items: center; gap: 24px; padding: 14px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap">
+          <div style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 8px">
+            <div class="t-body" style="font-weight: 500">Locke Vault</div>
+            <div style="display: flex; align-items: center; gap: 10px"><div class="quota" style="flex: 0 1 220px"><span style="width: 44%"></span></div><span class="t-caption t-num">112 of 256 MB</span></div>
+            <span class="lockcue"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z M8 11V8a4 4 0 1 1 8 0v3"></path></svg>Prompts, images, characters and results are encrypted and private to you.</span>
+          </div>
+          <a href="#" class="btn btn-secondary btn-sm">Open vault<svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7 M9 7h8v8"></path></svg></a>
+        </div>
+        <div style="display: flex; align-items: center; gap: 24px; padding: 14px 0; flex-wrap: wrap">
+          <div style="flex: 1 1 240px"><div class="t-body" style="font-weight: 500">Sign out</div><div class="t-body-s c3">Running jobs continue; results wait for you.</div></div>
+          <button class="btn btn-danger btn-sm"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h4v16h-4 M10 8l-4 4 4 4 M6 12h10"></path></svg>Sign out</button>
+        </div>
+      </section>
+    </div>
+
+    <button class="assist" aria-label="Open assistant" style="position: absolute; right: 24px; bottom: 24px"><svg class="ic ic-24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"></path></svg></button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    return { theme, darkOn: theme === 'dark' ? 'true' : 'false', lightOn: theme === 'light' ? 'true' : 'false' };
+  }
+}
+</script>
+</body>
+</html>

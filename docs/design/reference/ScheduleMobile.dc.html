@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Schedule or references sheet, mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}}" style="position: relative; width: 390px; height: 844px; overflow: hidden; background: var(--bg)">
+  <div aria-hidden="true" style="position: absolute; inset: 0"><dc-import name="CreateMobile" theme="{{theme}}" hint-size="390px,844px"></dc-import></div>
+  <div class="scrim" style="position: absolute; inset: 0"></div>
+
+  <sc-if value="{{isSchedule}}" hint-placeholder-val="{{true}}">
+    <section class="sheet" role="dialog" aria-labelledby="sch-t" style="position: absolute; left: 0; right: 0; bottom: 0; height: 600px; padding: 0 16px; display: flex; flex-direction: column; gap: 14px">
+      <div class="grabber"></div>
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <h2 id="sch-t" class="t-title-m">Schedule</h2>
+        <button class="icon-btn" aria-label="Close"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12 M18 6 6 18"></path></svg></button>
+      </div>
+      <label class="sr" for="sch-name">Schedule name</label>
+      <input id="sch-name" class="input" value="Morning lighthouse" style="font-weight: 500">
+
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span class="t-label c2">Repeat</span>
+        <div class="seg" role="group" aria-label="Repeat">
+          <button aria-pressed="false">Every minute</button><button aria-pressed="false">Hourly</button><button aria-pressed="true">Daily</button><button aria-pressed="false">Weekly</button>
+        </div>
+      </div>
+      <div class="opt-row">
+        <span class="opt-label">At</span>
+        <div class="seg"><button aria-pressed="true" class="t-num">07:00</button><button aria-pressed="false">+ time</button></div>
+      </div>
+      <div class="opt-row">
+        <span class="opt-label">Each run</span>
+        <span class="t-body-s c2">4 images · Photography · Rose · 2 refs</span>
+      </div>
+      <div class="opt-row">
+        <span class="opt-label">Keep results in vault</span>
+        <span class="switch" role="switch" aria-checked="false" aria-label="Keep results in vault"></span>
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 16px; background: var(--surface-2)">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--info-text)"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path></svg>
+        <span class="t-body-s" style="flex: 1">Results appear as a source: <strong>Scheduled · Morning lighthouse</strong></span>
+      </div>
+
+      <div style="margin-top: auto; padding: 0 88px 40px 0">
+        <button class="btn btn-primary btn-lg btn-block">Start schedule</button>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isRefs}}" hint-placeholder-val="{{false}}">
+    <section class="sheet" role="dialog" aria-labelledby="ref-t" style="position: absolute; left: 0; right: 0; bottom: 0; height: 640px; padding: 0 16px; display: flex; flex-direction: column; gap: 12px">
+      <div class="grabber"></div>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <h2 id="ref-t" class="t-title-m" style="flex: 1">References <span class="c3 t-num" style="font-weight: 500">2 / 4</span></h2>
+        <button class="icon-btn" aria-label="Upload a reference"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9 M7 14l5-5 5 5 M5 4h14"></path></svg></button>
+        <button class="icon-btn" aria-label="Sort and filter"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16 M7 12h10 M10 18h4"></path></svg></button>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Source">
+        <button role="tab" aria-selected="true">Vault</button><button role="tab" aria-selected="false">Generated</button><button role="tab" aria-selected="false">iCloud</button>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+        <button class="tile is-on" style="aspect-ratio: 1; border: 0; padding: 0" aria-pressed="true" aria-label="Forest, reference 1"><img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt=""><span class="bubble-check" style="right: 6px; top: 6px; border: 0">1</span></button>
+        <button class="tile is-on" style="aspect-ratio: 1; border: 0; padding: 0" aria-pressed="true" aria-label="Coast, reference 2"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt=""><span class="bubble-check" style="right: 6px; top: 6px; border: 0">2</span></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0" aria-pressed="false" aria-label="City"><img src="/_blob/45841a3c0c37777adabfb8651c5d55db" alt=""></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0" aria-pressed="false" aria-label="Still life"><img src="/_blob/d424b7bc2418aaeb0000494dde022456" alt=""></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0" aria-pressed="false" aria-label="Dunes"><img src="/_blob/13c380256699ac3f901e2eb726da7630" alt=""></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0" aria-pressed="false" aria-label="Café scene"><img src="/_blob/b98f848812490c10d9dfbf0ebffcc2f1" alt=""></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0" aria-pressed="false" aria-label="Manga"><img src="/_blob/ca494b0bfe456651a08cc89949f6a17a" alt=""></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0" aria-pressed="false" aria-label="Portrait of Jun"><img src="/_blob/603ff0cb7d029ea8f9a5e95b09cda895" alt="" style="object-position: 50% 30%"></button>
+        <button class="tile" style="aspect-ratio: 1; border: 0; padding: 0" aria-pressed="false" aria-label="Portrait of Milo"><img src="/_blob/615333cb7a7451c46b14f19e5d1cc710" alt="" style="object-position: 50% 30%"></button>
+      </div>
+      <div style="margin-top: auto; padding: 0 88px 40px 0">
+        <button class="btn btn-primary btn-lg btn-block">Use 2 references</button>
+      </div>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"sheet":{"editor":"enum","options":["schedule","references"],"default":"schedule"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.props.sheet ?? 'schedule';
+    return { theme: this.props.theme ?? 'dark', isSchedule: s === 'schedule', isRefs: s === 'references' };
+  }
+}
+</script>
+</body>
+</html>

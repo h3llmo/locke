@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Desktop sidebar</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<aside class="lk lk-{{theme}} sidebar" aria-label="Main">
+  <a href="#" style="display: flex; align-items: center; gap: 10px; padding: 4px 12px 20px; text-decoration: none; color: var(--text)">
+    <span style="width: 32px; height: 32px; border-radius: 10px; background: var(--info-border); color: var(--bg); display: flex; align-items: center; justify-content: center; flex: none">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a3.5 3.5 0 0 0-1.6 6.6L9.5 18h5l-.9-6.4A3.5 3.5 0 0 0 12 5z" fill="currentColor"></path></svg>
+    </span>
+    <span style="font: 600 20px/24px var(--font-display); letter-spacing: -.01em">Locke</span>
+  </a>
+
+  <nav style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-width: 0">
+    <sc-for list="{{items}}" as="t" hint-placeholder-count="4">
+      <a class="nav-item" href="#" aria-current="{{t.cur}}">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="{{t.d}}"></path></svg>
+        <span style="flex: 1">{{t.label}}</span>
+        <sc-if value="{{t.badge}}" hint-placeholder-val="{{false}}"><span class="badge-count">{{t.badge}}</span></sc-if>
+      </a>
+    </sc-for>
+  </nav>
+
+  <a class="sb-extra" href="#" style="margin-top: 16px; padding: 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--text)">
+    <span style="display: flex; align-items: center; gap: 8px" class="t-label"><span class="dot" style="color: var(--info)"></span><span class="t-num">2 running · 3 queued</span></span>
+    <span style="display: flex; align-items: center; gap: 6px" class="t-caption"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7z M9 3v4 M15 3v4 M9 17v4 M15 17v4 M3 9h4 M3 15h4 M17 9h4 M17 15h4"></path></svg>GPU busy</span>
+    <span style="display: flex; align-items: center; gap: 6px" class="t-caption"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"></path></svg>2 schedules · next 07:00</span>
+  </a>
+
+  <div class="sb-extra" style="margin-top: auto; display: flex; flex-direction: column; gap: 14px; padding: 0 12px">
+    <a href="#" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text)" aria-label="Vault: 112 of 256 MB used, encrypted">
+      <span class="ring" style="background: conic-gradient(var(--text-2) 44%, var(--surface-3) 0)"><span style="background: var(--surface-1)">44%</span></span>
+      <span style="display: flex; flex-direction: column"><span class="t-label">Vault</span><span class="lockcue">Encrypted · 144 MB free</span></span>
+    </a>
+  </div>
+  <a class="nav-item" href="#" aria-current="{{settingsCur}}" style="margin-top: 12px">
+    <span style="width: 28px; height: 28px; border-radius: 50%; background: var(--surface-3); border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center; flex: none; margin-left: -4px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M5 20a7 7 0 0 1 14 0"></path></svg></span>
+    <span>Settings</span>
+  </a>
+</aside>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["create","jobs","editor","characters","settings"],"default":"create"},"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":248,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'create';
+    const items = [
+      { key: 'create', label: 'Create', d: 'M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z' },
+      { key: 'jobs', label: 'Jobs', d: 'M12 3 3 7.5 12 12l9-4.5L12 3z M3 12l9 4.5 9-4.5 M3 16.5 12 21l9-4.5', badge: '2' },
+      { key: 'editor', label: 'Editor', d: 'M20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6 M4 16l4-4 4 4 M17 3l4 4-7 7h-4v-4z' },
+      { key: 'automate', label: 'Automate', d: 'M13 3 5 13h6l-1 8 8-10h-6z', badge: false },
+      { key: 'characters', label: 'Characters', d: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1 M16 3.5a4 4 0 0 1 0 7 M22 21v-1a6 6 0 0 0-4-5.6' }
+    ].map((t) => ({ ...t, cur: t.key === active ? 'page' : 'false', badge: t.badge || false }));
+    return { theme: this.props.theme ?? 'dark', items, settingsCur: active === 'settings' ? 'page' : 'false' };
+  }
+}
+</script>
+</body>
+</html>

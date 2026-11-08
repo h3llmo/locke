@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Mobile tab bar</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}}" style="position: relative; width: 390px; height: 112px; background: linear-gradient(to top, var(--bg) 55%, transparent)">
+  <nav class="dock" aria-label="Main" style="position: absolute; left: 12px; right: 88px; top: 8px">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+      <a href="#" aria-current="{{t.cur}}">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="{{t.d}}"></path></svg>
+        <span class="dock-label">{{t.label}}</span>
+        <sc-if value="{{t.badge}}" hint-placeholder-val="{{false}}">
+          <span class="badge-count" style="position: absolute; top: 2px; right: 2px">{{t.badge}}</span>
+        </sc-if>
+      </a>
+    </sc-for>
+  </nav>
+  <button class="assist" aria-label="Open assistant" style="bottom: 44px">
+    <svg class="ic ic-24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"></path></svg>
+  </button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["create","jobs","editor","automate","characters"],"default":"create"},"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":390,"height":112}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'create';
+    const tabs = [
+      { key: 'create', label: 'Create', d: 'M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z' },
+      { key: 'jobs', label: 'Jobs', d: 'M12 3 3 7.5 12 12l9-4.5L12 3z M3 12l9 4.5 9-4.5 M3 16.5 12 21l9-4.5', badge: '2' },
+      { key: 'editor', label: 'Editor', d: 'M20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6 M4 16l4-4 4 4 M17 3l4 4-7 7h-4v-4z' },
+      { key: 'automate', label: 'Automate', d: 'M13 3 5 13h6l-1 8 8-10h-6z' },
+      { key: 'characters', label: 'Characters', d: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1 M16 3.5a4 4 0 0 1 0 7 M22 21v-1a6 6 0 0 0-4-5.6' }
+    ].map((t) => ({ ...t, cur: t.key === active ? 'page' : 'false', badge: t.badge || false }));
+    return { theme: this.props.theme ?? 'dark', tabs };
+  }
+}
+</script>
+</body>
+</html>

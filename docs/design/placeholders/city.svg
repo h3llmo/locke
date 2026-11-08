@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+<defs>
+<linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a0e1f"/><stop offset=".7" stop-color="#25264a"/><stop offset="1" stop-color="#4a2f4f"/></linearGradient>
+<pattern id="win" width="18" height="22" patternUnits="userSpaceOnUse"><rect x="4" y="5" width="8" height="10" fill="#f6c870" opacity=".75"/></pattern>
+<pattern id="win2" width="14" height="18" patternUnits="userSpaceOnUse"><rect x="3" y="4" width="6" height="8" fill="#9fd3ff" opacity=".55"/></pattern>
+</defs>
+<rect width="800" height="800" fill="url(#s)"/>
+<circle cx="640" cy="140" r="26" fill="#e9e6da" opacity=".9"/>
+<rect x="30" y="300" width="120" height="400" fill="#11131f"/><rect x="30" y="300" width="120" height="400" fill="url(#win)"/>
+<rect x="170" y="200" width="100" height="500" fill="#151829"/><rect x="170" y="200" width="100" height="500" fill="url(#win2)"/>
+<rect x="290" y="340" width="150" height="360" fill="#0f111b"/><rect x="290" y="340" width="150" height="360" fill="url(#win)"/>
+<rect x="460" y="160" width="110" height="540" fill="#171a2c"/><rect x="460" y="160" width="110" height="540" fill="url(#win2)"/>
+<rect x="590" y="280" width="180" height="420" fill="#10121d"/><rect x="590" y="280" width="180" height="420" fill="url(#win)"/>
+<rect y="700" width="800" height="100" fill="#07080e"/>
+<path d="M60 730 h80 M220 745 h50 M330 735 h90 M490 750 h60 M640 735 h100" stroke="#f6c870" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"/>
+</svg>

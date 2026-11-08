@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Locke — Create, prompt editor, desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="locke.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="lk lk-{{theme}} shell" style="min-height: 960px">
+  <div class="shell-nav"><dc-import name="DesktopSidebar" active="create" theme="{{theme}}" hint-size="100%,960px"></dc-import></div>
+
+  <main class="shell-main" style="position: relative">
+    <div class="split" style="display: flex; gap: 24px; padding: 28px 32px 96px; align-items: flex-start">
+
+      <aside style="flex: 0 1 240px; min-width: 200px; display: flex; flex-direction: column; gap: 10px" aria-labelledby="cp-lib">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="cp-lib" class="t-title-s">Saved prompts</h2>
+          <div style="display: flex"><button class="icon-btn" aria-label="Search prompts" style="width: 36px; height: 36px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M20 20l-4-4"></path></svg></button><button class="icon-btn" aria-label="New prompt" style="width: 36px; height: 36px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg></button></div>
+        </div>
+        <div role="list" style="display: flex; flex-direction: column; gap: 2px">
+          <a role="listitem" href="#" aria-current="true" style="display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border-radius: 14px; text-decoration: none; color: var(--text); background: var(--info-soft); box-shadow: inset 0 0 0 1px var(--info-border)">
+            <span class="t-label" style="font-size: 14px">Lighthouse keeper</span>
+            <span class="t-caption clamp1">an old lighthouse keeper, reading by…</span>
+            <span class="pill pill-info" style="align-self: flex-start; min-height: 20px; font-size: 11px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"></path></svg>Daily 07:00</span>
+          </a>
+          <a role="listitem" href="#" style="display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border-radius: 14px; text-decoration: none; color: var(--text)">
+            <span class="t-label" style="font-size: 14px">Pascual · business portrait</span>
+            <span class="t-caption clamp1">a man 40 years old, blue suit, in front of…</span>
+          </a>
+          <a role="listitem" href="#" style="display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border-radius: 14px; text-decoration: none; color: var(--text)">
+            <span class="t-label" style="font-size: 14px">Rooftop manga panel</span>
+            <span class="t-caption clamp1">a girl on a rooftop at noon, speed lines…</span>
+            <span class="pill" style="align-self: flex-start; min-height: 20px; font-size: 11px">Every hour · paused</span>
+          </a>
+          <a role="listitem" href="#" style="display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border-radius: 14px; text-decoration: none; color: var(--text)">
+            <span class="t-label" style="font-size: 14px">Quiet edges of the day</span>
+            <span class="t-caption clamp1">empty shoreline, misty pines, dunes…</span>
+          </a>
+          <a role="listitem" href="#" style="display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border-radius: 14px; text-decoration: none; color: var(--text)">
+            <span class="t-label" style="font-size: 14px">Negatives · hands &amp; text</span>
+            <span class="t-caption clamp1">Negative only · 5 fragments</span>
+          </a>
+        </div>
+      </aside>
+
+      <section class="card" aria-labelledby="cp-name" style="flex: 1.3 1 380px; min-width: 0; padding: 14px 16px 10px; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <h1 id="cp-name" class="t-title-m clamp1" style="flex: 1">Lighthouse keeper</h1>
+          <button class="icon-btn" aria-label="Save prompt" style="width: 36px; height: 36px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4z"></path></svg></button>
+          <button class="icon-btn" aria-label="Duplicate prompt" style="width: 36px; height: 36px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9h11v11H9z M5 15H4V4h11v1"></path></svg></button>
+          <button class="icon-btn" aria-label="More" style="width: 36px; height: 36px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width: 3"><path d="M5 12h.01 M12 12h.01 M19 12h.01"></path></svg></button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <div class="toolbar" role="group" aria-label="Editing mode">
+            <button class="icon-btn is-on" aria-label="List" aria-pressed="true"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11 M9 12h11 M9 18h11 M4.5 6h.01 M4.5 12h.01 M4.5 18h.01" style="stroke-width: 2"></path></svg></button>
+            <button class="icon-btn" aria-label="Raw text" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14 M5 12h14 M5 17h9"></path></svg></button>
+          </div>
+          <div class="seg seg-sm" role="group" aria-label="Prompt side"><button aria-pressed="true">Positive · 9</button><button aria-pressed="false">Negative · 5</button></div>
+          <span style="flex: 1"></span>
+          <span class="t-label t-num c3">7 / 9</span>
+          <button class="icon-btn" aria-label="Flip selected fragment to negative" style="width: 36px; height: 36px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14 M14 4l4 4-4 4 M20 16H6 M10 12l-4 4 4 4"></path></svg></button>
+        </div>
+        <div class="toklist" role="list">
+          <div role="listitem" class="tok"><span class="tok-num">1</span><span class="tok-text">an old lighthouse keeper</span><span class="switch is-on" role="switch" aria-checked="true" aria-label="Include fragment 1"></span></div>
+          <div role="listitem" class="tok"><span class="tok-num">2</span><span class="tok-text">reading by lamplight</span><span class="switch is-on" role="switch" aria-checked="true" aria-label="Include fragment 2"></span></div>
+          <div role="listitem" class="tok"><span class="tok-num">3</span><span class="tok-text">rain streaking the window</span><span class="switch is-on" role="switch" aria-checked="true" aria-label="Include fragment 3"></span></div>
+          <div role="listitem" class="tok is-off"><span class="tok-num">4</span><span class="tok-text">wool sweater</span><span class="switch" role="switch" aria-checked="false" aria-label="Include fragment 4"></span></div>
+          <div role="listitem" class="tok" style="background: var(--surface-2); border-radius: 14px; margin: 0 -8px; padding: 0 8px"><span class="tok-num">5</span><span class="input is-focus" style="flex: 1; min-height: 36px; padding: 6px 10px; font-size: 15px" role="textbox" aria-label="Edit fragment 5">35mm film</span><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--text-3); stroke-width: 3"><path d="M9 6h.01 M9 12h.01 M9 18h.01 M15 6h.01 M15 12h.01 M15 18h.01"></path></svg><span class="switch is-on" role="switch" aria-checked="true" aria-label="Include fragment 5"></span></div>
+          <div role="listitem" class="tok"><span class="tok-num">6</span><span class="tok-text">warm tungsten light</span><span class="switch is-on" role="switch" aria-checked="true" aria-label="Include fragment 6"></span></div>
+          <div role="listitem" class="tok"><span class="tok-num">7</span><span class="tok-text">shallow depth of field</span><span class="switch is-on" role="switch" aria-checked="true" aria-label="Include fragment 7"></span></div>
+          <div role="listitem" class="tok is-off"><span class="tok-num">8</span><span class="tok-text">film grain</span><span class="switch" role="switch" aria-checked="false" aria-label="Include fragment 8"></span></div>
+          <div role="listitem" class="tok"><span class="tok-num">9</span><span class="tok-text">detailed face</span><span class="switch is-on" role="switch" aria-checked="true" aria-label="Include fragment 9"></span></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="align-self: flex-start; color: var(--text-2); padding-left: 4px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg>Add fragment</button>
+      </section>
+
+      <section style="flex: 1 1 340px; min-width: 300px; display: flex; flex-direction: column; gap: 18px" aria-label="Generation settings">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline"><span class="t-label c2">Style</span><button class="btn btn-ghost btn-sm" style="min-height: 28px; padding: 0 8px; color: var(--accent-text)">All 14</button></div>
+          <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px">
+            <button class="preset is-on" aria-pressed="true" aria-label="Photography"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt=""></button>
+            <button class="preset" aria-pressed="false" aria-label="Cinematic"><img src="/_blob/45841a3c0c37777adabfb8651c5d55db" alt=""></button>
+            <button class="preset" aria-pressed="false" aria-label="Manga"><img src="/_blob/ca494b0bfe456651a08cc89949f6a17a" alt=""></button>
+            <button class="preset" aria-pressed="false" aria-label="Artistic"><img src="/_blob/d424b7bc2418aaeb0000494dde022456" alt=""></button>
+            <button class="preset" aria-pressed="false" aria-label="Analog film"><img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt=""></button>
+          </div>
+          <span class="t-body-s ci">Photography</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span class="t-label c2">Character</span>
+          <div style="display: flex; gap: 4px; flex-wrap: wrap">
+            <button class="bubble" aria-pressed="false"><span class="bubble-face" style="border: 1px dashed var(--border-strong); display: flex; align-items: center; justify-content: center; color: var(--text-3)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path></svg></span>None</button>
+            <button class="bubble" aria-pressed="true"><img src="/_blob/d841ff50912394cbfa20e00483e2fecb" alt=""><span class="bubble-check"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px; stroke-width: 3"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span>Rose</button>
+            <button class="bubble" aria-pressed="false"><img src="/_blob/5d603aae02d27c9370ce9724e81fce7b" alt="" style="object-position: 50% 35%">Ana</button>
+            <button class="bubble" aria-pressed="false"><img src="/_blob/615333cb7a7451c46b14f19e5d1cc710" alt="">Milo</button>
+            <button class="bubble" aria-pressed="false"><img src="/_blob/603ff0cb7d029ea8f9a5e95b09cda895" alt="">Jun</button>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline"><span class="t-label c2">References</span><span class="t-caption t-num">2 / 4</span></div>
+          <div style="display: flex; gap: 8px">
+            <div class="tile" style="width: 64px; height: 64px"><img src="/_blob/749b96d7a90709f1d81a579fc22d00eb" alt="Reference 1, forest"><button class="icon-btn on-image" aria-label="Remove reference 1" style="position: absolute; right: 2px; top: 2px; width: 22px; height: 22px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M6 6l12 12 M18 6 6 18"></path></svg></button></div>
+            <div class="tile" style="width: 64px; height: 64px"><img src="/_blob/49f5c35875d79cdd1f8639ed04b97484" alt="Reference 2, coast"><button class="icon-btn on-image" aria-label="Remove reference 2" style="position: absolute; right: 2px; top: 2px; width: 22px; height: 22px"><svg class="ic ic-16" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M6 6l12 12 M18 6 6 18"></path></svg></button></div>
+            <button class="tile" style="width: 64px; height: 64px; border: 1.5px dashed var(--border-strong); background: transparent; color: var(--text-2); display: flex; align-items: center; justify-content: center; cursor: pointer" aria-label="Add a reference from vault or upload"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M5 12h14"></path></svg></button>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div class="opt-row"><span class="t-label c2">Format</span><div class="seg seg-sm"><button aria-pressed="false">Square</button><button aria-pressed="true">Portrait</button><button aria-pressed="false">Landscape</button></div></div>
+          <div class="opt-row"><span class="t-label c2">Results</span><div class="seg seg-sm"><button aria-pressed="false">1</button><button aria-pressed="false">2</button><button aria-pressed="false">3</button><button aria-pressed="true">4</button></div></div>
+          <div class="opt-row"><span class="t-label c2">Mode</span><div class="seg seg-sm"><button aria-pressed="true">Fast</button><button aria-pressed="false">Best</button></div></div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 18px; background: var(--surface-1); border: 1px solid var(--border)">
+          <div style="display: flex; align-items: center; gap: 8px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--info-text)"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"></path></svg><span class="t-label" style="flex: 1">Daily at 07:00 · next in 9 h</span><span class="switch is-on" role="switch" aria-checked="true" aria-label="Schedule active"></span></div>
+          <div style="display: flex; gap: 8px">
+            <button class="btn btn-secondary" style="flex: 0 0 auto">Edit schedule</button>
+            <button class="btn btn-primary" style="flex: 1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"></path></svg>Run now</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <sc-if value="{{submitted}}" hint-placeholder-val="{{false}}">
+      <div class="toast" role="status" style="position: absolute; left: 32px; bottom: 28px; width: 420px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg><span style="flex: 1">Scheduled · Lighthouse keeper · daily 07:00</span><a href="JobsDesktop.dc.html">View</a></div>
+    </sc-if>
+    <button class="assist" aria-label="Open assistant" style="position: absolute; right: 24px; bottom: 24px"><svg class="ic ic-24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"></path></svg></button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"submitted":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.theme ?? 'dark', submitted: this.props.submitted ?? false };
+  }
+}
+</script>
+</body>
+</html>
