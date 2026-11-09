@@ -63,4 +63,9 @@ npm run build        # dist/web (app) + dist/index.mjs (server)
   generate_images, face_swap (a vault photo), run_saved_prompt, save_result_to_vault, set_schedule_active,
   set_workflow_active, cancel_job and delete_job (both destructive: confirmed in the chat). Like every Ilven app, the
   default preset is empty: an Ilven admin allows tools in Nevli-Web.
-- Not yet: Enhance/Blur in the Editor, push notifications.
+- **Upscale** (workflow step ×2/×4, worker API §5.7 draft): offered once a GPU announces `upscale`; JPEG results of up
+  to 40 MP.
+- Workflows on sources without "new since" (iCloud albums) list the whole collection every 5 minutes and remember what
+  they saw, so a photo added to an album is picked up whatever its date. Each ticked iCloud album (and Favorites,
+  Hidden) is its own collection: one workflow per album.
+- Not yet: Enhance/Blur/Upscale in the Editor, push notifications.

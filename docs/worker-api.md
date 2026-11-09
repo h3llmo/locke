@@ -100,6 +100,7 @@ Request:
     "generate": null,
     "enhance": null,
     "blur": null,
+    "upscale": null,
     "edit": null
   }
 }
@@ -139,7 +140,7 @@ Response `200`:
     "maxInputBytes": 26214400,
     "maxResultBytes": 26214400,
     "rateLimitPerMinute": 120,
-    "maxJobSeconds": { "face_swap": 600, "generate": 1800, "enhance": 600, "blur": 300 }
+    "maxJobSeconds": { "face_swap": 600, "generate": 1800, "enhance": 600, "blur": 300, "upscale": 900 }
   }
 }
 ```
@@ -359,6 +360,20 @@ Capability: `"enhance": { "strengths": ["subtle", "balanced", "strong"], "maxSca
 - `strength` is an integer 0–100: 0 = no visible blur, 100 = the worker's strongest. A linear mapping to the engine's
   blur radius is fine.
 - Same dimensions as the input. Capability: `"blur": {}`.
+
+### 5.7 `upscale` (draft, 2026-11-09)
+```json
+{ "v": 1, "type": "upscale", "image": "in_…", "scale": 2, "maxPixels": 40000000, "output": { "format": "jpeg" } }
+```
+- `scale`: `2` or `4`, one of `capabilities.upscale.scales`. The result is the input's width and height × `scale`,
+  reduced proportionally (same aspect ratio) if width × height would exceed `maxPixels`, and never smaller than the
+  input. One result.
+- `output.format` is `jpeg` (an upscaled PNG would not fit the 25 MB result limit, §6.2). Quality ≥ 90. A worker
+  must list `"jpeg"` in `resultFormats` to receive upscale jobs.
+- Detail is reconstructed (an AI upscaler such as Real-ESRGAN), not just resized. Faces may be restored lightly; the
+  person must stay recognisable.
+- Capability: `"upscale": { "scales": [2, 4] }` (`null` or absent = not offered). Locke uses it in automated
+  workflows (a step "Upscale ×2/×4", in the order the user chose; blur stays last).
 
 ### 5.5 `generate` (v1, frozen 2026-11-08)
 ```json

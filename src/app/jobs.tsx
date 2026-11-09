@@ -6,7 +6,7 @@ import { useAssistantChanges } from "./assistant.ts";
 /** Locke's jobs as the API returns them (server/api.ts toView). Content (prompt, style…) comes from `summary`. */
 export type JobStatus = "queued" | "running" | "done" | "failed" | "cancelled" | "expired";
 export interface Job {
-  id: string; type: "generate" | "face_swap" | "enhance" | "blur"; status: JobStatus; test: boolean;
+  id: string; type: "generate" | "face_swap" | "enhance" | "blur" | "upscale"; status: JobStatus; test: boolean;
   summary: {
     title?: string; style?: string; aspect?: string; mode?: string; count?: number; references?: number;
     positive?: string[]; negative?: string[]; characters?: number; worker?: string;
@@ -21,6 +21,7 @@ export interface Options {
   faceSwap: { genders: string[]; ages: string[]; maxCharacters: number; maxFacesPerCharacter: number } | null;
   enhance: object | null;
   blur: object | null;
+  upscale?: { scales: number[] } | null;
 }
 
 export const API = "/apps/locke/api";

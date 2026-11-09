@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { HttpError, type Caller } from "@ilven/common";
 import { err, newId, purgeJob, readResult, type Ctx } from "./jobs.ts";
-import { faceSwapJob, imageJob } from "./builders.ts";
+import { faceSwapJob, imageJob, upscaleJob } from "./builders.ts";
 import { characterStore, type Auth } from "./characters.ts";
 import { detectFormat, contentType } from "./images.ts";
 import { openRow, sealRow } from "./sealed.ts";
@@ -22,10 +22,13 @@ export const DELEGATION_AUDIENCE = ["locke-vault", "dms", "locke"];
 const MAX_WORKFLOWS = 20;
 const IN_FLIGHT_PER_WORKFLOW = 2;
 const CHECK_EVERY_S = 60;
+const FULL_SCAN_EVERY_S = 300;
+const FULL_SCAN_PAGES = 50; // 5,000 photos per collection at most
 
 const stepSchema = z.discriminatedUnion("op", [
   z.object({ op: z.literal("enhance"), strength: z.enum(["subtle", "balanced", "strong"]).default("balanced") }),
   z.object({ op: z.literal("face_swap"), characters: z.array(z.string().max(64)).min(1).max(4) }),
+  z.object({ op: z.literal("upscale"), scale: z.union([z.literal(2), z.literal(4)]).default(2) }),
 ]);
 export const workflowSchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -38,8 +41,8 @@ export const workflowSchema = z.object({
   blur: z.object({ strength: z.number().int().min(0).max(100) }).nullable().default(null),
 }).refine((w) => w.steps.length > 0 || w.blur, { message: "Add at least one step" });
 export type WorkflowData = z.infer<typeof workflowSchema>;
-type Step = { op: "enhance"; strength: string } | { op: "face_swap"; characters: string[] } | { op: "blur"; strength: number };
-type Cursor = { since?: string; listed?: boolean };
+type Step = { op: "enhance"; strength: string } | { op: "face_swap"; characters: string[] } | { op: "upscale"; scale: 2 | 4 } | { op: "blur"; strength: number };
+type Cursor = { since?: string; listed?: boolean; scannedAt?: string };
 interface WorkflowRow {
   id: string; owner_sub: string; data: string; active: boolean; activated_at: Date | null; cursors: Record<string, Cursor>;
   last_check_at: Date | null; last_error: string | null; created_at: Date; updated_at: Date;
@@ -49,6 +52,7 @@ interface RunRow {
   step: number; job_id: string | null; notes: string[]; failure: string | null; created_at: Date; updated_at: Date;
 }
 
+const STEP_TITLES: Record<Step["op"], string> = { face_swap: "Face swap", enhance: "Enhance", upscale: "Upscale", blur: "Blur" };
 const keyOf = (s: { source: string; collection: string | null }) => `${s.source}|${s.collection ?? ""}`;
 export const stepsOf = (d: WorkflowData): Step[] => [...d.steps, ...(d.blur ? [{ op: "blur" as const, strength: d.blur.strength }] : [])];
 
@@ -289,16 +293,19 @@ async function discover(ctx: Ctx, deps: AutomationDeps, log: (e: unknown, msg: s
           }
           cursors[k] = { since };
         } else {
-          // No "added after" (e.g. iCloud): list the newest and remember refs. The first look is a baseline (not run).
-          const first = !cur.listed;
+          // No "added after" (e.g. iCloud albums, listed by date taken): list the whole collection and remember refs, so
+          // a photo added to an album is found wherever it sits. At most every 5 minutes; the first look is a baseline.
+          // (A cursor from before full scans only knew the newest photos: its first full scan is a baseline too.)
+          const first = !cur.listed || !cur.scannedAt;
+          if (!first && cur.scannedAt && Date.now() - Date.parse(cur.scannedAt) < FULL_SCAN_EVERY_S * 1000) continue;
           let cursor: string | null = null;
-          for (let page = 0; page < (first ? 10 : 1); page++) {
+          for (let page = 0; page < FULL_SCAN_PAGES; page++) {
             const r = await vault.query(src.source, { limit: 100, ...collection, ...(cursor ? { cursor } : {}) });
             await insert(r.items.map((i) => i.ref), first ? "baseline" : "pending");
             cursor = r.cursor;
             if (!cursor) break;
           }
-          cursors[k] = { listed: true };
+          cursors[k] = { listed: true, scannedAt: new Date().toISOString() };
         }
       }
     } catch (e) {
@@ -348,12 +355,14 @@ async function advance(ctx: Ctx, deps: AutomationDeps, log: (e: unknown, msg: st
         if (r.step >= steps.length) { await set({ status: "done" }); tell(r, "done"); continue; }
         const step = steps[r.step]!;
         const image = await vault.content(item);
-        const extra = { workflowRunId: r.id, summary: { title: `${d.name} · ${step.op === "face_swap" ? "Face swap" : step.op === "blur" ? "Blur" : "Enhance"}`, workflow: d.name } };
+        const extra = { workflowRunId: r.id, summary: { title: `${d.name} · ${STEP_TITLES[step.op]}`, workflow: d.name } };
         let jobId: string;
         if (step.op === "face_swap") {
           const cs = [];
           for (const id of step.characters) cs.push(await chars.load(r.owner_sub, id));
           jobId = await faceSwapJob(ctx, r.owner_sub, image, cs, extra);
+        } else if (step.op === "upscale") {
+          jobId = await upscaleJob(ctx, r.owner_sub, image, step.scale, extra);
         } else {
           jobId = await imageJob(ctx, r.owner_sub, step.op, image, step.strength, extra);
         }

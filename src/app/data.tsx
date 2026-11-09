@@ -25,7 +25,7 @@ export interface SavedPrompt {
   count: number; mode: "fast" | "quality"; character: string | null; references: { id: string }[]; schedule: Schedule | null;
   createdAt: string; updatedAt: string;
 }
-export type WorkflowStep = { op: "enhance"; strength: "subtle" | "balanced" | "strong" } | { op: "face_swap"; characters: string[] };
+export type WorkflowStep = { op: "enhance"; strength: "subtle" | "balanced" | "strong" } | { op: "face_swap"; characters: string[] } | { op: "upscale"; scale: 2 | 4 };
 export interface WorkflowData {
   name: string; sources: { source: string; collection: string | null; label: string }[]; steps: WorkflowStep[]; blur: { strength: number } | null;
 }
@@ -43,6 +43,8 @@ export interface VaultItem { id: string; title: string; currentVersion: number |
 export interface VaultSource {
   id: string; available: boolean; name: string; description: string; status: "ready" | "needs_setup" | "not_allowed"; experimental: boolean;
   filters: { collection: boolean; addedAfter: boolean }; collections: { id: string; name: string }[];
+  /** false: the source has no "everything" view (iCloud reads only the albums the user chose); pick a collection. */
+  allCollections?: boolean;
 }
 export interface SourceItem { ref: string; name: string; contentType?: string; date?: string }
 

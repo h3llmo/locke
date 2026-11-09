@@ -30,6 +30,9 @@ export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stag
 
   useEffect(() => { vaultSources(auth).then((s) => setSources(s.filter((x) => x.available && x.status === "ready")), () => setSources([])); }, [auth]);
 
+  const src = sources?.find((s) => s.id === tab);
+  const noAll = src?.allCollections === false && src.collections.length > 0;
+  const coll = collection ?? (noAll ? src!.collections[0]!.id : null);
   const load = async (more: boolean) => {
     setError(null);
     try {
@@ -39,7 +42,7 @@ export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stag
         setItems((x) => (more && x ? [...x, ...list] : list));
         setCursor(r.cursor);
       } else {
-        const r = await sourceQuery(auth, tab, { ...(collection ? { collection } : {}), ...(more && cursor ? { cursor } : {}) });
+        const r = await sourceQuery(auth, tab, { ...(coll ? { collection: coll } : {}), ...(more && cursor ? { cursor } : {}) });
         const list = r.items.filter((i: SourceItem) => !i.contentType || OK_TYPE.test(i.contentType))
           .map((i) => ({ key: `s:${tab}:${i.ref}`, url: sourceItemUrl(tab, i.ref), name: i.name, ref: i.ref }));
         setItems((x) => (more && x ? [...x, ...list] : list));
@@ -50,7 +53,7 @@ export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stag
       if (!more) setItems([]);
     }
   };
-  useEffect(() => { setItems(null); setCursor(null); void load(false); }, [tab, collection]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setItems(null); setCursor(null); void load(false); }, [tab, coll]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = (key: string) => {
     if (max === 1) { setPicked([key]); return; }
@@ -90,7 +93,6 @@ export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stag
     }
   };
 
-  const src = sources?.find((s) => s.id === tab);
   return (
     <Sheet title={t("picker.title")} onClose={onClose} wide footer={
       <div className="app-row">
@@ -108,8 +110,8 @@ export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stag
         ))}
       </div>
       {src && src.filters.collection && src.collections.length > 0 && (
-        <select className="input app-select" value={collection ?? ""} aria-label={t("picker.collection")} onChange={(e) => setCollection(e.target.value || null)}>
-          <option value="">{t("picker.collection.all")}</option>
+        <select className="input app-select" value={coll ?? ""} aria-label={t("picker.collection")} onChange={(e) => setCollection(e.target.value || null)}>
+          {!noAll && <option value="">{t("picker.collection.all")}</option>}
           {src.collections.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       )}

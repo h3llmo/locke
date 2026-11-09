@@ -43,10 +43,10 @@ const until = async (what, fn, ms = 150_000) => {
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
 const CAPS = {
-  maxConcurrency: 1, resultFormats: ["png"],
+  maxConcurrency: 1, resultFormats: ["png", "jpeg"],
   faceSwap: { maxCharacters: 2, maxFacesPerCharacter: 8, genders: ["any", "woman", "man"], ages: ["any", "child", "adult"], distinctFilters: true },
   generate: { styles: [{ id: "e2e-style", label: "E2E" }], counts: [1], character: false },
-  enhance: null, blur: null, edit: null,
+  enhance: null, blur: null, upscale: { scales: [2] }, edit: null,
 };
 const keys = generateWorkerKeyPair();
 let admin, alice, workerId, workerKey;
@@ -171,11 +171,11 @@ test("saved prompt with a reference; a schedule runs it and keeps its results; L
   made.schedule = scheduleId;
 });
 
-test("automation: delegated key from Nevli; a workflow picks up a new image and adds a face swap version in the vault", async () => {
+test("automation: delegated key from Nevli; a workflow picks up a new image and adds face swap and upscale versions in the vault", async () => {
   const before = await call("GET", `${API}/automation`, { auth: alice });
   assert.equal(before.status, 200);
   const wf = await call("POST", `${API}/workflows`, { auth: alice, json: {
-    name: "E2E workflow", sources: [{ source: "locke", collection: made.schedule, label: "E2E" }], steps: [{ op: "face_swap", characters: [made.character] }],
+    name: "E2E workflow", sources: [{ source: "locke", collection: made.schedule, label: "E2E" }], steps: [{ op: "face_swap", characters: [made.character] }, { op: "upscale", scale: 2 }],
   } });
   assert.equal(wf.status, 201, JSON.stringify(wf.body));
   made.workflow = wf.body.id;
@@ -202,6 +202,8 @@ test("automation: delegated key from Nevli; a workflow picks up a new image and 
 
   // The engine stages it into the vault and queues the face swap (age "child": only the e2e worker matches).
   await workOne(["face_swap"], (p) => assert.equal(p.characters[0].age, "child"));
+  // Then the upscale step, on the face-swapped version.
+  await workOne(["upscale"], (p) => { assert.equal(p.scale, 2); assert.equal(p.output.format, "jpeg"); assert.ok(p.maxPixels > 0); });
   const done = await until("the workflow run to finish", async () => {
     const r = await call("GET", `${API}/workflows/${made.workflow}/runs`, { auth: alice });
     return r.body.runs.find((x) => x.status === "done" || x.status === "failed");
@@ -209,7 +211,7 @@ test("automation: delegated key from Nevli; a workflow picks up a new image and 
   assert.equal(done.status, "done", JSON.stringify(done));
   made.items.add(done.itemId);
   const item = await call("GET", `${V}/items/${done.itemId}`, { auth: alice });
-  assert.deepEqual(item.body.versions.map((v) => [v.app, v.operation]), [["vault", "import:locke"], ["locke", "face_swap"]]);
+  assert.deepEqual(item.body.versions.map((v) => [v.app, v.operation]), [["vault", "import:locke"], ["locke", "face_swap"], ["locke", "upscale"]]);
   const w = (await call("GET", `${API}/workflows/${made.workflow}`, { auth: alice })).body;
   assert.equal(w.stats.done, 1);
   assert.equal(w.lastError, null);

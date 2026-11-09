@@ -57,6 +57,7 @@ export function useStepLabel() {
   const { t } = useI18n();
   return (s: WorkflowStep | { op: "blur" }, chars: Character[]) => {
     if (s.op === "face_swap") return `${t("jobs.type.face_swap")} · ${s.characters.map((id) => chars.find((c) => c.id === id)?.name ?? "?").join(", ")}`;
+    if (s.op === "upscale") return `${t("jobs.type.upscale")} ×${s.scale}`;
     return t(s.op === "blur" ? "jobs.type.blur" : "jobs.type.enhance");
   };
 }
@@ -153,6 +154,15 @@ function WorkflowEdit() {
 
   useEffect(() => { vaultSources(auth).then((s) => setSources(s.filter((x) => x.available)), () => setSources("error")); }, [auth]);
   useEffect(() => { if (existing && !d) setD({ name: existing.name, sources: existing.sources, steps: existing.steps, blur: existing.blur }); }, [existing]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A source without an "everything" view (iCloud): an older workflow's "all" meant its first collection.
+  useEffect(() => {
+    if (!d || !Array.isArray(sources)) return;
+    const fixed = d.sources.map((x) => {
+      const s = sources.find((y) => y.id === x.source);
+      return x.collection === null && s?.allCollections === false && s.collections[0] ? { ...x, collection: s.collections[0].id, label: `${s.name} · ${s.collections[0].name}` } : x;
+    });
+    if (fixed.some((x, i) => x !== d.sources[i])) setD({ ...d, sources: fixed });
+  }, [d, sources]);
 
   if (!isNew && workflows !== null && !existing) {
     return <Page title={t("automate.title")}><EmptyState icon="automate" text={t("automate.missing")}><Link className="btn btn-secondary" to="/automate">{t("automate.back")}</Link></EmptyState></Page>;
@@ -255,6 +265,11 @@ function WorkflowEdit() {
                 <span className="hint">{t("automate.faceswap.hint")}</span>
               </>
             )}
+            {s.op === "upscale" && (
+              <div className="seg seg-sm">
+                {([2, 4] as const).map((x) => <button key={x} type="button" aria-pressed={s.scale === x} disabled={!!caps?.upscale && !caps.upscale.scales.includes(x)} onClick={() => setStep(i, { ...s, scale: x })}>×{x}</button>)}
+              </div>
+            )}
             {s.op === "enhance" && (
               <div className="seg seg-sm">
                 {(["subtle", "balanced", "strong"] as const).map((x) => <button key={x} type="button" aria-pressed={s.strength === x} onClick={() => setStep(i, { ...s, strength: x })}>{t(`automate.strength.${x}` as MessageKey)}</button>)}
@@ -265,8 +280,9 @@ function WorkflowEdit() {
         <div className="app-row">
           {d.steps.length < 4 && <button type="button" className="btn btn-secondary btn-sm" disabled={!caps?.faceSwap} onClick={() => setD({ ...d, steps: [...d.steps, { op: "face_swap", characters: [] }] })}><Icon name="plus" size={16} />{t("jobs.type.face_swap")}</button>}
           {d.steps.length < 4 && <button type="button" className="btn btn-secondary btn-sm" disabled={!caps?.enhance} onClick={() => setD({ ...d, steps: [...d.steps, { op: "enhance", strength: "balanced" }] })}><Icon name="plus" size={16} />{t("jobs.type.enhance")}</button>}
+          {d.steps.length < 4 && <button type="button" className="btn btn-secondary btn-sm" disabled={!caps?.upscale} onClick={() => setD({ ...d, steps: [...d.steps, { op: "upscale", scale: caps?.upscale?.scales[0] === 4 ? 4 : 2 }] })}><Icon name="plus" size={16} />{t("jobs.type.upscale")}</button>}
         </div>
-        {(!caps?.enhance || !caps?.blur) && <p className="hint">{t("automate.gpuSoon")}</p>}
+        {(!caps?.enhance || !caps?.blur || !caps?.upscale) && <p className="hint">{t("automate.gpuSoon")}</p>}
 
         <div className="app-wfstep app-wfblur">
           <div className="opt-row">

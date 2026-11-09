@@ -15,12 +15,12 @@ export const SETTINGS = {
   maxInputBytes: 25 * 1024 * 1024,
   maxResultBytes: 25 * 1024 * 1024,
   rateLimitPerMinute: 120,
-  maxJobSeconds: { face_swap: 600, generate: 1800, enhance: 600, blur: 300 } as Record<string, number>,
+  maxJobSeconds: { face_swap: 600, generate: 1800, enhance: 600, blur: 300, upscale: 900 } as Record<string, number>,
 };
 export const MAX_ATTEMPTS = 3;
 export const RETRY_DELAYS_S = [30, 120] as const;
 export const KEEP_UNKEPT_DAYS = 7;
-export const JOB_TYPES = ["face_swap", "generate", "enhance", "blur", "edit"] as const;
+export const JOB_TYPES = ["face_swap", "generate", "enhance", "blur", "upscale", "edit"] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 export const GENDERS = ["any", "woman", "man"] as const;
 export const AGES = ["any", "child", "teen", "young", "adult", "senior"] as const;
@@ -51,10 +51,10 @@ export interface Capabilities {
   resultFormats?: string[];
   faceSwap?: { maxCharacters?: number; maxFacesPerCharacter?: number; genders?: string[]; ages?: string[]; ageAliases?: Record<string, string>; distinctFilters?: boolean } | null;
   generate?: { styles?: { id: string; label?: string }[]; counts?: number[]; character?: boolean } | null;
-  enhance?: unknown; blur?: unknown; edit?: unknown;
+  enhance?: unknown; blur?: unknown; upscale?: { scales?: number[] } | null; edit?: unknown;
 }
 
-const capKey: Record<JobType, keyof Capabilities> = { face_swap: "faceSwap", generate: "generate", enhance: "enhance", blur: "blur", edit: "edit" };
+const capKey: Record<JobType, keyof Capabilities> = { face_swap: "faceSwap", generate: "generate", enhance: "enhance", blur: "blur", upscale: "upscale", edit: "edit" };
 
 export function supportsType(caps: Capabilities | null, type: string): boolean {
   if (!caps || type === "edit") return false;
@@ -85,6 +85,7 @@ export function incompatibility(caps: Capabilities | null, type: string, req: un
     if (r.character && g.character === false) return "values";
     return null;
   }
+  if (type === "upscale") return (caps!.upscale?.scales ?? [2]).includes((req as { scale: number }).scale) ? null : "values";
   if (type !== "face_swap") return null;
   const fs = caps!.faceSwap!;
   const chars = (req as FaceSwapRequirements).characters;

@@ -33,6 +33,7 @@ const capabilitiesSchema = z.object({
   }).loose().nullable().optional(),
   enhance: z.object({}).loose().nullable().optional(),
   blur: z.object({}).loose().nullable().optional(),
+  upscale: z.object({ scales: z.array(z.union([z.literal(2), z.literal(4)])).min(1).optional() }).loose().nullable().optional(),
   edit: z.unknown().optional(),
 }).loose();
 

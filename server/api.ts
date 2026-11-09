@@ -94,6 +94,7 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, d
       } : null,
       enhance: caps.some((c) => !!c.enhance) ? {} : null,
       blur: caps.some((c) => !!c.blur) ? {} : null,
+      upscale: caps.some((c) => !!c.upscale) ? { scales: [...new Set(caps.flatMap((c) => c.upscale?.scales ?? (c.upscale ? [2] : [])))].sort() } : null,
       faceSwap: fss.length ? {
         genders: GENDERS.filter((g) => union(fss.map((f) => f!.genders)).includes(g)),
         ages: AGES.filter((a) => union(fss.map((f) => f!.ages)).includes(a)),

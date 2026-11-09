@@ -87,6 +87,24 @@ export async function imageJob(ctx: Ctx, sub: string, type: "enhance" | "blur", 
   });
 }
 
+/** Most pixels an upscaled result may have (it must also fit the 25 MB result limit, hence JPEG). */
+export const UPSCALE_MAX_PIXELS = 40_000_000;
+
+/** Upscale (draft, worker API §5.7): ×2 or ×4, reduced to stay within UPSCALE_MAX_PIXELS. */
+export async function upscaleJob(ctx: Ctx, sub: string, image: Buffer, scale: 2 | 4, extra: Extra = {}) {
+  const requirements = { scale, format: "jpeg" };
+  await assertSomeWorkerCan(ctx, "upscale", requirements);
+  cleanImage("photo", image);
+  const inputs = new Inputs();
+  const id = inputs.add("photo", image);
+  return createJob(ctx, {
+    ownerSub: sub, type: "upscale", inputs: inputs.list, requirements, maxResults: 1,
+    params: { image: id, scale, maxPixels: UPSCALE_MAX_PIXELS, output: { format: "jpeg" } },
+    summary: { title: `Upscale ×${scale}`, ...extra.summary },
+    scheduleId: extra.scheduleId, keep: extra.keep, workflowRunId: extra.workflowRunId,
+  });
+}
+
 /** Multipart body: a `params` JSON field and image files by field name. */
 export async function readMultipart(req: import("fastify").FastifyRequest): Promise<{ params: unknown; files: Map<string, Buffer> }> {
   if (!req.isMultipart()) throw err(415, "multipart_required", "Send this as multipart/form-data");
