@@ -6,7 +6,8 @@ import fastifyStatic from "@fastify/static";
 import fastifyMultipart from "@fastify/multipart";
 import { ZodError } from "zod";
 import { createDb, env, HttpError, migrate, retry, Sealer, secret } from "@ilven/common";
-import { mountMcp, McpServer } from "@ilven/common/mcp";
+import { mountMcp } from "@ilven/common/mcp";
+import { createLockeMcp } from "./mcp.ts";
 import { migrations } from "./db.ts";
 import { ObjectStore } from "./store.ts";
 import { registerWithNevli, storageFromNevli } from "./nevli.ts";
@@ -97,11 +98,10 @@ app.get(`${PREFIX}/*`, (req, reply) => {
   return reply.sendFile("index.html");
 });
 
-// MCP for Ilven-AI (internal port, never routed by the gateway). Tools come with Locke's MCP step; registering the
-// endpoint now lets Nevli list Locke with an empty default preset.
+// MCP for Ilven-AI (internal port, never routed by the gateway): the user's connex, with their own Ilven API key.
 const mcp = Fastify({ logger, bodyLimit: 1024 * 1024 });
 errors(mcp);
-mountMcp(mcp, "/mcp", () => new McpServer({ name: "locke", version: "0.1.0" }, { capabilities: { tools: {} } }));
+mountMcp(mcp, "/mcp", createLockeMcp(app, deps.vaultUrl));
 
 // Housekeeping: expired leases go back to the queue; unkept results are deleted after their keep date.
 setInterval(() => void reapLeases(ctx).catch((e) => app.log.error({ err: e }, "lease reaper failed")), 5000).unref();
@@ -113,3 +113,6 @@ setInterval(() => void runWorkflows(ctx, deps, (e, msg) => app.log.error({ err: 
 
 await mcp.listen({ host: "0.0.0.0", port: 8081 });
 await app.listen({ host: "0.0.0.0", port: Number(process.env.PORT ?? 8080) });
+// Register again now that the MCP endpoint answers, so Nevli discovers Locke's tools (the first registration, needed
+// for object storage, happens before it listens).
+void registerWithNevli(nevliUrl, appSecret, env("LOCKE_MCP_URL", "http://app-locke:8081/mcp")).catch((e) => app.log.error({ err: e }, "Nevli re-registration failed"));

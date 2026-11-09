@@ -56,4 +56,11 @@ npm run build        # dist/web (app) + dist/index.mjs (server)
 - Tests: unit (`npm test`), `test/e2e.mjs` (queue and worker API) and `test/e2e-features.mjs` (characters, prompts,
   schedules, source, automation). Both use their own worker with values real workers don't announce, so live workers
   can stay live.
-- Not yet: Locke's MCP tools for Ilven-AI, Enhance/Blur in the Editor, push notifications.
+- **Ilven assistant**: the platform's assistant button on every page, with page context (current page, the photo open in
+  the editor, chosen characters); lists reload after it acts. Locke's MCP (internal port 8081) offers 15 tools that call
+  Locke's own REST API in-process with the user's own Ilven API key, so the assistant has exactly the user's rights:
+  get_status, list_jobs, get_job, list_characters, list_saved_prompts, list_workflows, list_vault_photos,
+  generate_images, face_swap (a vault photo), run_saved_prompt, save_result_to_vault, set_schedule_active,
+  set_workflow_active, cancel_job and delete_job (both destructive: confirmed in the chat). Like every Ilven app, the
+  default preset is empty: an Ilven admin allows tools in Nevli-Web.
+- Not yet: Enhance/Blur in the Editor, push notifications.

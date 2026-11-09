@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { IlvenAuth } from "@ilven/web-auth";
 import { useAuth, VAULT_URL } from "./session.tsx";
 import { api, API, ApiError } from "./jobs.tsx";
+import { useAssistantChanges } from "./assistant.ts";
 
 /** Saved characters, prompts and workflows (Locke's API), and what the vault offers (the vault's API). */
 export type Gender = "any" | "woman" | "man";
@@ -54,6 +55,7 @@ function useList<T>(load: (auth: IlvenAuth) => Promise<T>, deps: unknown[] = [])
     try { const x = await load(auth); if (alive.current) setV(x); } catch { if (alive.current) setV((p) => (p && p !== "error" ? p : "error")); }
   }, [auth, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { alive.current = true; void reload(); return () => { alive.current = false; }; }, [reload]);
+  useAssistantChanges(reload);
   return { data: v, reload, set: setV };
 }
 

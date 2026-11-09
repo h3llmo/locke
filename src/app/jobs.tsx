@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { IlvenAuth } from "@ilven/web-auth";
 import { refreshJobsSummary, useAuth, VAULT_URL } from "./session.tsx";
+import { useAssistantChanges } from "./assistant.ts";
 
 /** Locke's jobs as the API returns them (server/api.ts toView). Content (prompt, style…) comes from `summary`. */
 export type JobStatus = "queued" | "running" | "done" | "failed" | "cancelled" | "expired";
@@ -76,6 +77,7 @@ export function useJobs(type?: Job["type"], schedule?: string) {
     void load();
     return () => clearTimeout(timer.current);
   }, [load]);
+  useAssistantChanges(load);
   return { jobs, reload: load };
 }
 
@@ -100,6 +102,7 @@ export function useJob(id: string | undefined) {
     void load();
     return () => clearTimeout(timer.current);
   }, [load]);
+  useAssistantChanges(load);
   return { job, reload: load };
 }
 

@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { initAuth } from "@ilven/web-auth";
 import "./styles/locke.css";
 import { App } from "./app/App.tsx";
+import { mountAssistant } from "./app/assistant.ts";
 import { PrefsProvider, usePrefs } from "./app/prefs.tsx";
 import { SessionProvider } from "./app/session.tsx";
 import { I18nProvider, resolveLang } from "./i18n/index.tsx";
@@ -41,6 +42,7 @@ function fatal(err: unknown) {
 }
 
 const auth = await initAuth({ requireLogin: true }).catch((e: unknown) => { fatal(e); return null; });
+if (auth) mountAssistant(auth);
 if (auth) createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <PrefsProvider>

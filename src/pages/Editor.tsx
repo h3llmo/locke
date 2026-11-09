@@ -4,6 +4,7 @@ import { useI18n } from "../i18n/index.tsx";
 import { useAuth, useIsAdmin } from "../app/session.tsx";
 import { ApiError, submitJob, useJobs, useOptions } from "../app/jobs.tsx";
 import { useCharacters } from "../app/data.tsx";
+import { useAssistantContext } from "../app/assistant.ts";
 import { Page } from "../components/Page.tsx";
 import { Icon } from "../components/Icon.tsx";
 import { CharacterBubbles } from "../components/Shared.tsx";
@@ -41,6 +42,10 @@ export function EditorPage() {
   const setPhoto = (p: Photo | null) => { if (keptPhoto && keptPhoto !== p) URL.revokeObjectURL(keptPhoto.url); keptPhoto = p; setPhotoState(p); };
   const setChosen = (c: string[]) => { keptChars = c; setChosenState(c); };
   const list = Array.isArray(characters) ? characters : [];
+  useAssistantContext("editor", {
+    photo: photo ? (photo.vaultItem ? { vaultPhotoId: photo.vaultItem } : { notInVault: true }) : null,
+    chosenCharacters: chosen.map((id) => ({ id, name: list.find((c) => c.id === id)?.name })),
+  });
   // Forget characters deleted meanwhile.
   useEffect(() => { if (Array.isArray(characters)) { const ok = chosen.filter((id) => characters.some((c) => c.id === id)); if (ok.length !== chosen.length) setChosen(ok); } }, [characters]); // eslint-disable-line react-hooks/exhaustive-deps
 

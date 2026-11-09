@@ -217,6 +217,7 @@ test("automation: delegated key from Nevli; a workflow picks up a new image and 
 
 test("Discord notifications: webhook checked, write-only, sealed; removable", async () => {
   const N = `${API}/notifications`;
+  const adminBefore = (await call("GET", N, { auth: admin })).body; // the admin may have a real webhook: never touched
   assert.equal((await call("PUT", `${N}/discord`, { auth: alice, json: { webhookUrl: "https://evil.example/api/webhooks/1/x", appUrl: "https://x.example/apps/locke" } })).body.error, "invalid_webhook");
   // A well-formed but unknown webhook: saved, never returned, and Discord refuses the test.
   const fake = `https://discord.com/api/webhooks/100000000000000000/${"x".repeat(68)}`;
@@ -228,8 +229,81 @@ test("Discord notifications: webhook checked, write-only, sealed; removable", as
   assert.equal(t.status, 502);
   assert.equal(t.body.error, "webhook_gone");
   assert.equal((await call("GET", N, { auth: alice })).body.discord.lastError, "webhook_gone");
-  assert.equal((await call("GET", N, { auth: admin })).body.discord.configured, false, "per user");
+  assert.deepEqual((await call("GET", N, { auth: admin })).body, adminBefore, "per user");
   assert.equal((await call("DELETE", `${N}/discord`, { auth: alice })).body.discord.configured, false);
+});
+
+test("assistant tools (MCP): listed for Nevli, need the user's key, act as the user with the app's own checks", async () => {
+  const MCP = process.env.LOCKE_MCP_URL ?? "http://app-locke:8081/mcp";
+  const rpc = async (method, params, key) => {
+    const res = await fetch(MCP, {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json, text/event-stream", ...(key ? { authorization: `Bearer ${key}` } : {}) },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+    });
+    return (await res.json()).result;
+  };
+  const tool = async (name, args, key) => {
+    const r = await rpc("tools/call", { name, arguments: args }, key);
+    return { error: r.isError ? r.content[0].text : null, body: r.isError ? null : JSON.parse(r.content[0].text) };
+  };
+  const { tools } = await rpc("tools/list", {});
+  const names = tools.map((x) => x.name).sort();
+  for (const n of ["cancel_job", "delete_job", "face_swap", "generate_images", "get_job", "get_status", "list_characters", "list_jobs", "list_saved_prompts",
+    "list_vault_photos", "list_workflows", "run_saved_prompt", "save_result_to_vault", "set_schedule_active", "set_workflow_active"]) assert.ok(names.includes(n), n);
+  for (const n of ["cancel_job", "delete_job"]) assert.equal(tools.find((x) => x.name === n).annotations.destructiveHint, true, n);
+  assert.match((await tool("list_jobs", {})).error, /API key/, "no key, no call");
+  assert.ok((await tool("list_jobs", {}, "ilv_" + "a".repeat(43))).error, "unknown key refused");
+
+  // Alice's own Ilven API key, as Ilven-AI gets it for her connex: only released while her preset allows a tool.
+  const nevliAdmin = `${BASE}/nevli/api/admin`;
+  const def = (await call("GET", `${nevliAdmin}/apps/locke/presets`, { auth: admin })).body.find((p) => p.isDefault);
+  made.preset = { id: def.id, tools: def.tools };
+  assert.equal((await call("PATCH", `${nevliAdmin}/presets/${def.id}`, { auth: admin, json: { tools: names } })).status, 200);
+  const sub = JSON.parse(Buffer.from(alice.split(".")[1], "base64url").toString()).sub;
+  const internalToken = readFileSync(`${process.env.SECRETS_DIR ?? "/s"}/internal/token`, "utf8").trim();
+  const session = await fetch(`${process.env.NEVLI_INTERNAL_URL ?? "http://nevli:3001"}/internal/ai/session`, {
+    method: "POST", headers: { "content-type": "application/json", "x-ilven-internal-token": internalToken }, body: JSON.stringify({ sub, appId: "locke" }),
+  }).then((r) => r.json());
+  if (session.status !== "ok") { console.log(`  (skipped the calls: assistant session is ${session.status})`); return; }
+  const key = session.apiKey;
+
+  const status = (await tool("get_status", {}, key)).body;
+  assert.ok(status.generate.styles.some((x) => x.id === "e2e-style"));
+  assert.ok((await tool("list_characters", {}, key)).body.characters.some((c) => c.id === made.character && c.photos === 1));
+  assert.match((await tool("generate_images", { prompt: "x", style: "no-such-style" }, key)).error, /style|worker|GPU/i, "the app's own checks apply");
+
+  // Generate → done → keep in the vault as a new photo.
+  const g = await tool("generate_images", { prompt: "an e2e lighthouse", style: "e2e-style" }, key);
+  assert.equal(g.error, null, g.error);
+  made.jobs.add(g.body.id);
+  assert.equal(g.body.status, "queued");
+  const done = await workOne(["generate"], (p) => assert.deepEqual(p.positive, ["an e2e lighthouse"]));
+  assert.equal(done.jobId, g.body.id);
+  assert.equal((await tool("get_job", { id: g.body.id }, key)).body.status, "done");
+  const kept = await tool("save_result_to_vault", { job: g.body.id }, key);
+  assert.equal(kept.body.saved, "new_photo", kept.error);
+  made.items.add(kept.body.photo);
+  assert.ok((await tool("list_vault_photos", {}, key)).body.photos.some((p) => p.id === kept.body.photo));
+
+  // Face swap that vault photo with a saved character → saving adds a version of the same photo.
+  const fs = await tool("face_swap", { photo: kept.body.photo, characters: [made.character] }, key);
+  assert.equal(fs.error, null, fs.error);
+  made.jobs.add(fs.body.id);
+  assert.equal(fs.body.vaultItem, kept.body.photo);
+  await workOne(["face_swap"], (p) => assert.equal(p.characters[0].age, "child"));
+  assert.equal((await tool("save_result_to_vault", { job: fs.body.id }, key)).body.saved, "new_version");
+  assert.equal((await call("GET", `${V}/items/${kept.body.photo}`, { auth: alice })).body.versions.length, 2);
+
+  // Other users' things don't exist for her key; destructive tools work on her own jobs.
+  const theirs = await call("GET", `${API}/jobs?limit=1`, { auth: admin });
+  if (theirs.body.jobs[0]) assert.match((await tool("get_job", { id: theirs.body.jobs[0].id }, key)).error, /not found/i);
+  assert.equal((await tool("delete_job", { id: g.body.id }, key)).body.deleted, g.body.id);
+  assert.ok(!(await tool("list_jobs", { limit: 50 }, key)).body.jobs.some((j) => j.id === g.body.id));
+});
+
+after(async () => {
+  if (made.preset) await call("PATCH", `${BASE}/nevli/api/admin/presets/${made.preset.id}`, { auth: admin, json: { tools: made.preset.tools } });
 });
 
 after(async () => {
