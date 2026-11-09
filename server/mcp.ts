@@ -89,13 +89,13 @@ export function createLockeMcp(app: FastifyInstance, vaultUrl: string) {
       return {
         gpu: w.status, myJobs: { queued: w.queued, running: w.running },
         generate: o.generate ? { styles: o.generate.styles, counts: o.generate.counts, withCharacter: o.generate.character } : null,
-        faceSwap: o.faceSwap, note: "Jobs wait in the queue while the GPU is offline; they run when it comes back.",
+        faceSwap: o.faceSwap, blur: !!o.blur, note: "Jobs wait in the queue while the GPU is offline; they run when it comes back.",
       };
     }));
 
     s.registerTool("list_jobs", {
       title: "List jobs",
-      description: "The user's recent Locke jobs (generations, face swaps), newest first. Results that aren't saved to the vault are deleted after 7 days.",
+      description: "The user's recent Locke jobs (generations, face swaps, blurs), newest first. Results that aren't saved to the vault are deleted after 7 days.",
       inputSchema: { limit: z.int().min(1).max(50).default(10), status: z.enum(["queued", "running", "done", "failed", "cancelled"]).optional() },
       annotations: ro,
     }, async ({ limit, status }) => toolResult(async () => {
@@ -197,6 +197,24 @@ export function createLockeMcp(app: FastifyInstance, vaultUrl: string) {
       const form = new FormData();
       form.set("params", JSON.stringify({ type: "face_swap", image: "target", characters: characters.map((character) => ({ character })), vaultItem: photo }));
       form.set("target", new Blob([await res.arrayBuffer()], { type }), "target");
+      return brief((await call("POST", "/jobs", { form })).json as Job);
+    }));
+
+    s.registerTool("blur_background", {
+      title: "Blur a vault photo's background",
+      description: "Queue a background blur on one photo of the user's vault: the subject stays sharp. Saving the result adds a new version of that photo (undo it in the vault). Default strength 60.",
+      inputSchema: {
+        photo: z.uuid().describe("Vault photo id (list_vault_photos, or the photo open in the editor)"),
+        strength: z.int().min(0).max(100).default(60).describe("0 = barely visible, 100 = strongest"),
+      },
+      annotations: act,
+    }, async ({ photo, strength }) => toolResult(async () => {
+      const res = await vault(`/items/${encodeURIComponent(photo)}/content`);
+      const type = res.headers.get("content-type") ?? "";
+      if (!/^image\/(png|jpeg)/.test(type)) throw err(415, "unsupported_image", "That vault file isn't a PNG or JPEG photo");
+      const form = new FormData();
+      form.set("params", JSON.stringify({ type: "blur", image: "photo", strength, vaultItem: photo }));
+      form.set("photo", new Blob([await res.arrayBuffer()], { type }), "photo");
       return brief((await call("POST", "/jobs", { form })).json as Job);
     }));
 

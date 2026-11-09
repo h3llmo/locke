@@ -10,7 +10,7 @@ export interface Job {
   summary: {
     title?: string; style?: string; aspect?: string; mode?: string; count?: number; references?: number;
     positive?: string[]; negative?: string[]; characters?: number; worker?: string;
-    names?: string[]; character?: string; prompt?: string; schedule?: string; workflow?: string; vaultItem?: string;
+    names?: string[]; character?: string; prompt?: string; schedule?: string; workflow?: string; vaultItem?: string; strength?: number;
   } | null;
   progress: number | null; attempt: number; queuePosition: number | null; failureCode: string | null;
   resultCount: number | null; createdAt: string; startedAt: string | null; finishedAt: string | null;

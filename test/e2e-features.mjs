@@ -217,6 +217,20 @@ test("automation: delegated key from Nevli; a workflow picks up a new image and 
   assert.equal(w.lastError, null);
 });
 
+test("background blur: checked like other edits (the real blur runs on the live GPU, not in this test)", async () => {
+  const blur = (params, file = PNG) => {
+    const form = new FormData();
+    form.set("params", JSON.stringify(params));
+    if (file) form.set("photo", new Blob([file], { type: "image/png" }), "photo.png");
+    return call("POST", `${API}/jobs`, { auth: alice, form });
+  };
+  assert.equal((await blur({ type: "blur", image: "photo", strength: 101 })).status, 400, "strength 0–100");
+  assert.equal((await blur({ type: "blur", image: "other", strength: 60 })).status, 400, "the photo must be sent");
+  assert.equal((await blur({ type: "blur", image: "photo", strength: 60 }, Buffer.from("not an image"))).status, 415);
+  const opts = (await call("GET", `${API}/options`, { auth: alice })).body;
+  assert.ok("blur" in opts);
+});
+
 test("Discord notifications: webhook checked, write-only, sealed; removable", async () => {
   const N = `${API}/notifications`;
   const adminBefore = (await call("GET", N, { auth: admin })).body; // the admin may have a real webhook: never touched
@@ -251,7 +265,7 @@ test("assistant tools (MCP): listed for Nevli, need the user's key, act as the u
   };
   const { tools } = await rpc("tools/list", {});
   const names = tools.map((x) => x.name).sort();
-  for (const n of ["cancel_job", "delete_job", "face_swap", "generate_images", "get_job", "get_status", "list_characters", "list_jobs", "list_saved_prompts",
+  for (const n of ["blur_background", "cancel_job", "delete_job", "face_swap", "generate_images", "get_job", "get_status", "list_characters", "list_jobs", "list_saved_prompts",
     "list_vault_photos", "list_workflows", "run_saved_prompt", "save_result_to_vault", "set_schedule_active", "set_workflow_active"]) assert.ok(names.includes(n), n);
   for (const n of ["cancel_job", "delete_job"]) assert.equal(tools.find((x) => x.name === n).annotations.destructiveHint, true, n);
   assert.match((await tool("list_jobs", {})).error, /API key/, "no key, no call");

@@ -8,7 +8,7 @@ import {
   AGES, createJob, err, GENDERS, incompatibility, newId, purgeJob, readResult, SETTINGS, type Capabilities, type Ctx,
 } from "./jobs.ts";
 import { workerKeyHash } from "./worker-api.ts";
-import { faceSwapJob, generateJob, readMultipart, type CharacterInput } from "./builders.ts";
+import { faceSwapJob, generateJob, imageJob, readMultipart, type CharacterInput } from "./builders.ts";
 import { characterStore, registerCharacterApi } from "./characters.ts";
 import { registerPromptApi } from "./prompts.ts";
 import { registerSourceApi } from "./source.ts";
@@ -122,6 +122,13 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, d
     output: z.object({ format: z.enum(["png", "jpeg"]) }).optional(),
     vaultItem: z.uuid().optional(),
   });
+  // Background blur (worker API §5.4): the subject stays sharp. Keeping the result of a vault photo adds a version.
+  const blurSchema = z.object({
+    type: z.literal("blur"),
+    image: z.string().min(1).max(64),
+    strength: z.number().int().min(0).max(100).default(60),
+    vaultItem: z.uuid().optional(),
+  });
   const fragments = z.array(z.string().trim().min(1).max(500)).max(60);
   const generateSchema = z.object({
     type: z.literal("generate"),
@@ -160,6 +167,13 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, d
       allUsed();
       const ch = p.character ? await characters.load(c.sub, p.character) : null;
       const id = await generateJob(ctx, c.sub, p, refs, ch, { summary: { ...(ch ? { character: ch.name } : {}), ...(p.prompt ? { prompt: p.prompt } : {}) } });
+      return reply.status(201).send(await jobView(id, c.sub));
+    }
+    if ((raw as { type?: unknown } | null)?.type === "blur") {
+      const p = blurSchema.parse(raw);
+      const image = file(p.image);
+      allUsed();
+      const id = await imageJob(ctx, c.sub, "blur", image, p.strength, { summary: { strength: p.strength, ...(p.vaultItem ? { vaultItem: p.vaultItem } : {}) } });
       return reply.status(201).send(await jobView(id, c.sub));
     }
     const p = faceSwapSchema.parse(raw);

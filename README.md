@@ -68,4 +68,6 @@ npm run build        # dist/web (app) + dist/index.mjs (server)
 - Workflows on sources without "new since" (iCloud albums) list the whole collection every 5 minutes and remember what
   they saw, so a photo added to an album is picked up whatever its date. Each ticked iCloud album (and Favorites,
   Hidden) is its own collection: one workflow per album.
-- Not yet: Enhance/Blur/Upscale in the Editor, push notifications.
+- **Editor: background blur** (strength 0–100) next to face swap, on an uploaded or vault photo; keeping a vault photo's
+  result adds a version (undo in the vault). Also an assistant tool (`blur_background`).
+- Not yet: Enhance/Upscale in the Editor, push notifications.
