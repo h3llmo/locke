@@ -149,11 +149,11 @@ function EditCharacter({ character: c, onClose, onChange, reload }: {
         {confirmDelete ? (
           <>
             <span className="t-caption">{t("characters.delete.confirm")}</span>
-            <button type="button" className="btn btn-danger btn-sm" onClick={() => void destroy()}>{t("jobs.delete")}</button>
+            <button type="button" className="btn btn-danger btn-sm" onClick={() => void destroy()}>{t("common.delete")}</button>
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => setConfirmDelete(false)}>{t("workers.cancel")}</button>
           </>
         ) : (
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setConfirmDelete(true)}>{t("jobs.delete")}</button>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setConfirmDelete(true)}>{t("common.delete")}</button>
         )}
         <span className="app-grow-0" />
         <button type="button" className="btn btn-primary" onClick={onClose}>{t("workers.key.done")}</button>

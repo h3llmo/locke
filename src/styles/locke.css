@@ -498,3 +498,4 @@ a.bubble { text-decoration: none; }
 .app-wfstep .icon-btn { width: 36px; height: 36px; }
 .app-up .ic { transform: rotate(90deg); }
 .app-down .ic { transform: rotate(-90deg); }
+.app-ref .tile-tag { top: auto; bottom: 6px; left: 6px; }

@@ -104,6 +104,17 @@ export function GpuNotice() {
   );
 }
 
+/** Title of a job: the prompt for generations, a translated name for edits (workflow name first when automated). */
+export function useJobTitle() {
+  const { t } = useI18n();
+  return (j: Job) => {
+    if (j.type === "generate") return j.summary?.title ?? t("jobs.type.generate");
+    const base = t(`jobs.type.${j.type}` as MessageKey);
+    const who = j.summary?.names?.length ? ` · ${j.summary.names.join(", ")}` : "";
+    return j.summary?.workflow ? `${j.summary.workflow} · ${base}` : `${base}${who}`;
+  };
+}
+
 function JobList() {
   const { t } = useI18n();
   const [params, setParams] = useSearchParams();
@@ -128,6 +139,7 @@ function RecentJobs() {
   const { t } = useI18n();
   const { jobs } = useJobs();
   const meta = useMeta();
+  const title = useJobTitle();
   const when = useDate();
   return (
     <>
@@ -145,7 +157,7 @@ function RecentJobs() {
               <Link className="app-jobrow" to={`/jobs/${j.id}`}>
                 <Thumb job={j} />
                 <span className="app-jobrow-text">
-                  <span className="t-body-s clamp1">{j.summary?.title ?? meta(j)}</span>
+                  <span className="t-body-s clamp1">{title(j)}</span>
                   <span className="t-caption clamp1">{[meta(j), j.summary?.schedule ? t("jobs.fromSchedule") : null, when(j.createdAt)].filter(Boolean).join(" · ")}</span>
                   <JobProgress job={j} />
                 </span>
@@ -230,6 +242,7 @@ function JobResult() {
   const when = useDate();
   const { lang } = useI18n();
   const { job, reload } = useJob(id);
+  const title = useJobTitle();
   const [viewer, setViewer] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [kept, setKept] = useState<Set<number>>(new Set());
@@ -266,7 +279,7 @@ function JobResult() {
       </header>
 
       <div className="app-stack-s">
-        <h1 className="t-title-m clamp2">{s?.title ?? t(`jobs.type.${job.type}` as MessageKey)}</h1>
+        <h1 className="t-title-m clamp2">{title(job)}</h1>
         <div className="app-row app-pills">
           <StatusPill job={job} />
           <span className="t-caption">{when(job.createdAt)}</span>
