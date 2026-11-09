@@ -9,14 +9,17 @@ export interface Job {
   summary: {
     title?: string; style?: string; aspect?: string; mode?: string; count?: number; references?: number;
     positive?: string[]; negative?: string[]; characters?: number; worker?: string;
+    names?: string[]; character?: string; prompt?: string; schedule?: string; workflow?: string; vaultItem?: string;
   } | null;
   progress: number | null; attempt: number; queuePosition: number | null; failureCode: string | null;
   resultCount: number | null; createdAt: string; startedAt: string | null; finishedAt: string | null;
-  expiresAt: string | null; cancelRequested: boolean;
+  expiresAt: string | null; cancelRequested: boolean; scheduleId: string | null; workflow: boolean; kept: boolean;
 }
 export interface Options {
   generate: { styles: { id: string; label: string }[]; counts: number[]; character: boolean; maxReferences: number } | null;
   faceSwap: { genders: string[]; ages: string[]; maxCharacters: number; maxFacesPerCharacter: number } | null;
+  enhance: object | null;
+  blur: object | null;
 }
 
 export const API = "/apps/locke/api";
@@ -52,7 +55,7 @@ export function useOptions(): Options | null | "error" {
  * The user's jobs, newest first. Polls every 3 s while one is waiting or running, every 20 s otherwise.
  * `type` filters on the client (the list is short: the last 100).
  */
-export function useJobs(type?: Job["type"]) {
+export function useJobs(type?: Job["type"], schedule?: string) {
   const auth = useAuth();
   const [jobs, setJobs] = useState<Job[] | null | "error">(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -60,7 +63,7 @@ export function useJobs(type?: Job["type"]) {
     clearTimeout(timer.current);
     let next = 20_000;
     try {
-      const { jobs: all } = await api<{ jobs: Job[] }>(auth, "GET", "/jobs?limit=100");
+      const { jobs: all } = await api<{ jobs: Job[] }>(auth, "GET", `/jobs?limit=${schedule ? 12 : 100}${schedule ? `&schedule=${encodeURIComponent(schedule)}` : ""}`);
       const mine = all.filter((j) => !j.test && (!type || j.type === type));
       setJobs(mine);
       if (mine.some(isActive)) next = 3000;
@@ -68,7 +71,7 @@ export function useJobs(type?: Job["type"]) {
       setJobs((j) => (Array.isArray(j) ? j : "error"));
     }
     timer.current = setTimeout(() => void load(), next);
-  }, [auth, type]);
+  }, [auth, type, schedule]);
   useEffect(() => {
     void load();
     return () => clearTimeout(timer.current);
@@ -149,9 +152,23 @@ export async function downloadResult(auth: IlvenAuth, job: Job, n: number) {
   setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
 }
 
-/** Keep = copy the result into the user's encrypted vault (conventional call with the user's own credential). */
+/**
+ * Keep = copy the result into the user's encrypted vault (conventional call with the user's own credential).
+ * An edit of a vault image becomes that item's next version; anything else a new item.
+ */
 export async function keepResult(auth: IlvenAuth, job: Job, n: number) {
   const blob = await resultBlob(auth, job.id, n);
+  if (job.summary?.vaultItem) {
+    const r = await auth.fetch(`${VAULT_URL}api/items/${job.summary.vaultItem}/versions?${new URLSearchParams({ app: "locke", operation: job.type })}`, {
+      method: "POST", headers: { "content-type": blob.type || "image/png" }, body: blob,
+    });
+    if (r.ok) return "version" as const;
+    // The vault item was trashed meanwhile: keep it as a new item instead.
+    if (r.status !== 404) {
+      const d = await r.json().catch(() => null) as { error?: string; message?: string } | null;
+      throw new ApiError(d?.error ?? "vault_error", d?.message ?? `HTTP ${r.status}`);
+    }
+  }
   const title = `${(job.summary?.title ?? "Locke").slice(0, 180)} · ${n}`;
   const r = await auth.fetch(`${VAULT_URL}api/items?${new URLSearchParams({ title, app: "locke" })}`, {
     method: "POST", headers: { "content-type": blob.type || "image/png" }, body: blob,
@@ -160,6 +177,7 @@ export async function keepResult(auth: IlvenAuth, job: Job, n: number) {
     const d = await r.json().catch(() => null) as { error?: string; message?: string } | null;
     throw new ApiError(d?.error ?? "vault_error", d?.message ?? `HTTP ${r.status}`);
   }
+  return "item" as const;
 }
 
 export async function cancelJob(auth: IlvenAuth, id: string) {

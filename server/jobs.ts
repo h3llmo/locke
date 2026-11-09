@@ -127,6 +127,12 @@ export interface NewJob {
   targetWorker?: string;
   /** Results must have this pixel size (face_swap and blur keep the input's size). */
   resultSize?: { width: number; height: number } | null;
+  /** Made by a schedule (Jobs › Scheduled, vault source collection). */
+  scheduleId?: string | null;
+  /** Results never expire (a schedule with "keep results"). */
+  keep?: boolean;
+  /** Step of an automated workflow run. */
+  workflowRunId?: string | null;
 }
 
 export async function createJob(ctx: Ctx, j: NewJob): Promise<string> {
@@ -141,11 +147,12 @@ export async function createJob(ctx: Ctx, j: NewJob): Promise<string> {
     }
     const params = seal(jobKey, Buffer.from(JSON.stringify({ v: 1, type: j.type, ...j.params }), "utf8"), aad.params(id));
     await ctx.db.query(
-      `INSERT INTO jobs (id, owner_sub, type, status, is_test, target_worker, requirements, job_key, params, summary, inputs, max_results, max_attempts, result_size)
-       VALUES ($1, $2, $3, 'queued', $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      `INSERT INTO jobs (id, owner_sub, type, status, is_test, target_worker, requirements, job_key, params, summary, inputs, max_results, max_attempts, result_size,
+         schedule_id, keep, workflow_run_id)
+       VALUES ($1, $2, $3, 'queued', $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
       [id, j.ownerSub, j.type, !!j.isTest, j.targetWorker ?? null, JSON.stringify(j.requirements), ctx.sealer.seal(jobKey.toString("base64")),
         params, ctx.sealer.seal(JSON.stringify(j.summary)), JSON.stringify(inputs), j.maxResults, MAX_ATTEMPTS,
-        j.resultSize ? JSON.stringify(j.resultSize) : null],
+        j.resultSize ? JSON.stringify(j.resultSize) : null, j.scheduleId ?? null, !!j.keep, j.workflowRunId ?? null],
     );
   } catch (e) {
     await ctx.store.deletePrefix(`jobs/${id}/`).catch(() => {});

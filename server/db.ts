@@ -73,4 +73,95 @@ export const migrations: Migration[] = [
     id: "002_result_size",
     sql: "ALTER TABLE jobs ADD COLUMN result_size jsonb",
   },
+  {
+    // Saved characters, saved prompts and their schedules, automated workflows. Names, prompts and settings are
+    // sealed (Locke's master key, bound to the row id inside); face and reference photos are sealed blobs in Garage
+    // under a per-row key. Only ids, counts, states and times are in clear.
+    id: "003_characters_prompts_workflows",
+    sql: `
+      CREATE TABLE characters (
+        id text PRIMARY KEY,
+        owner_sub text NOT NULL,
+        data text NOT NULL,
+        blob_key text NOT NULL,
+        faces jsonb NOT NULL DEFAULT '[]',
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX characters_owner ON characters (owner_sub, created_at);
+
+      CREATE TABLE prompts (
+        id text PRIMARY KEY,
+        owner_sub text NOT NULL,
+        data text NOT NULL,
+        blob_key text NOT NULL,
+        refs jsonb NOT NULL DEFAULT '[]',
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX prompts_owner ON prompts (owner_sub, updated_at DESC);
+
+      CREATE TABLE schedules (
+        id text PRIMARY KEY,
+        owner_sub text NOT NULL,
+        prompt_id text NOT NULL UNIQUE REFERENCES prompts(id) ON DELETE CASCADE,
+        spec jsonb NOT NULL,
+        active boolean NOT NULL DEFAULT true,
+        keep_results boolean NOT NULL DEFAULT false,
+        next_run_at timestamptz,
+        last_run_at timestamptz,
+        run_count int NOT NULL DEFAULT 0,
+        skipped_count int NOT NULL DEFAULT 0,
+        last_error text,
+        created_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX schedules_due ON schedules (next_run_at) WHERE active;
+
+      ALTER TABLE jobs ADD COLUMN schedule_id text REFERENCES schedules(id) ON DELETE SET NULL;
+      ALTER TABLE jobs ADD COLUMN keep boolean NOT NULL DEFAULT false;
+      ALTER TABLE jobs ADD COLUMN workflow_run_id text;
+      CREATE INDEX jobs_schedule ON jobs (schedule_id, created_at DESC) WHERE schedule_id IS NOT NULL;
+
+      -- The user's delegated key (Nevli), so workflows can read vault sources and save to the vault while they're away.
+      CREATE TABLE automation (
+        owner_sub text PRIMARY KEY,
+        sealed_key text NOT NULL,
+        prefix text NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now()
+      );
+
+      CREATE TABLE workflows (
+        id text PRIMARY KEY,
+        owner_sub text NOT NULL,
+        data text NOT NULL,
+        active boolean NOT NULL DEFAULT false,
+        activated_at timestamptz,
+        cursors jsonb NOT NULL DEFAULT '{}',
+        last_check_at timestamptz,
+        last_error text,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX workflows_owner ON workflows (owner_sub, created_at);
+
+      -- One per new image a workflow picked up. 'baseline' = already in the source when the workflow started (never run).
+      CREATE TABLE workflow_runs (
+        id text PRIMARY KEY,
+        workflow_id text NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
+        owner_sub text NOT NULL,
+        source text NOT NULL,
+        ref text NOT NULL,
+        status text NOT NULL CHECK (status IN ('baseline', 'pending', 'running', 'done', 'failed')),
+        item_id text,
+        step int NOT NULL DEFAULT 0,
+        job_id text,
+        notes jsonb NOT NULL DEFAULT '[]',
+        failure text,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        UNIQUE (workflow_id, source, ref)
+      );
+      CREATE INDEX workflow_runs_open ON workflow_runs (workflow_id, created_at) WHERE status IN ('pending', 'running');
+    `,
+  },
 ];

@@ -1,6 +1,6 @@
 // End-to-end test of Locke's job queue and worker API against a running Ilven deployment that includes Locke.
 // Plays the admin, a user (alice) and a GPU worker. Cleans up what it creates.
-// Put real GPU workers back in test mode first: a live one could take the user jobs this test queues for its own worker.
+// User jobs it queues use an age ("child") that only its own worker announces, so real live workers don't take them.
 //   docker run --rm --network ilven_default -v ilven_secrets:/s:ro -v "$PWD:/l:ro" node:22-alpine node /l/test/e2e.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -38,7 +38,7 @@ const PNG_TEXT = Buffer.concat([PNG.subarray(0, 33), Buffer.from("0000000c744558
 
 const CAPS = {
   maxConcurrency: 1, resultFormats: ["png", "jpeg"],
-  faceSwap: { maxCharacters: 2, maxFacesPerCharacter: 8, genders: ["any", "woman", "man"], ages: ["any", "young", "adult", "senior"], ageAliases: { young: "adult" }, distinctFilters: true },
+  faceSwap: { maxCharacters: 2, maxFacesPerCharacter: 8, genders: ["any", "woman", "man"], ages: ["any", "child", "young", "adult", "senior"], ageAliases: { young: "adult" }, distinctFilters: true },
   generate: null, enhance: null, blur: null, edit: null,
 };
 
@@ -184,7 +184,7 @@ test("user jobs: refused when no live worker can do them, routed to the live wor
 
   // What users can ask for follows the live workers' capabilities.
   const opts = (await call("GET", `${API}/options`, { auth: alice })).body;
-  assert.ok(opts.faceSwap.ages.includes("adult") && !opts.faceSwap.ages.includes("child"));
+  assert.ok(opts.faceSwap.ages.includes("child") && !opts.faceSwap.ages.includes("teen"));
   assert.ok(opts.faceSwap.maxCharacters >= 2);
   if (!othersLive) {
     assert.equal(opts.generate, null, "the e2e worker doesn't generate");
@@ -199,8 +199,8 @@ test("user jobs: refused when no live worker can do them, routed to the live wor
   assert.equal((await call("POST", `${API}/jobs`, { auth: alice, form: badGen })).body.error, "invalid_body");
 
   const ok = await call("POST", `${API}/jobs`, { auth: alice, form: faceSwapForm([
-    { gender: "woman", age: "adult", faces: ["face1"], mainFace: "face1" },
-    { gender: "man", age: "senior", faces: ["face2"], mainFace: "face2" }], files) });
+    { gender: "woman", age: "child", faces: ["face1"], mainFace: "face1" },
+    { gender: "man", age: "child", faces: ["face2"], mainFace: "face2" }], files) });
   assert.equal(ok.status, 201, JSON.stringify(ok.body));
   assert.equal(ok.body.status, "queued");
   cleanup.jobs.push([alice, ok.body.id]);

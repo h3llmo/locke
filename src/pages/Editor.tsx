@@ -1,23 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useI18n } from "../i18n/index.tsx";
-import type { MessageKey } from "../i18n/en.ts";
 import { useAuth, useIsAdmin } from "../app/session.tsx";
 import { ApiError, submitJob, useJobs, useOptions } from "../app/jobs.tsx";
+import { useCharacters } from "../app/data.tsx";
 import { Page } from "../components/Page.tsx";
 import { Icon } from "../components/Icon.tsx";
+import { CharacterBubbles } from "../components/Shared.tsx";
+import { VaultPicker } from "../components/VaultPicker.tsx";
 import { useToast } from "../components/Toasts.tsx";
 import { GpuNotice, JobProgress, StatusPill, useDate } from "./Jobs.tsx";
 
 /**
- * Editor, first tool: face swap from uploaded photos. A photo, then one or more characters, each with 1–8 photos of
- * the same face (the first is the main face) and a gender/age that tells the GPU which face in the photo is theirs.
- * The vault picker, saved characters, enhance and blur come later (HANDOFF §5.3).
+ * Editor, first tool: face swap (HANDOFF §5.3). A photo (uploaded, or from the vault: then the result can be saved as
+ * that vault item's next version) and one or more saved characters, matched by gender and age.
+ * Enhance and blur come when a GPU offers them.
  */
-interface Pic { file: File; url: string }
-interface Character { id: number; faces: Pic[]; gender: string; age: string }
+interface Photo { file: File; url: string; vaultItem?: string }
 const MAX_BYTES = 25 * 1024 * 1024;
-let seq = 1;
+// Kept while the app is open, so creating a character (another screen) doesn't lose the chosen photo.
+let keptPhoto: Photo | null = null;
+let keptChars: string[] = [];
 
 export function EditorPage() {
   const { t } = useI18n();
@@ -27,57 +30,44 @@ export function EditorPage() {
   const isAdmin = useIsAdmin();
   const options = useOptions();
   const fs = options && options !== "error" ? options.faceSwap : null;
-  const [photo, setPhoto] = useState<Pic | null>(null);
-  const [chars, setChars] = useState<Character[]>([{ id: seq++, faces: [], gender: "any", age: "any" }]);
+  const { data: characters } = useCharacters();
+  const [photo, setPhotoState] = useState<Photo | null>(keptPhoto);
+  const [chosen, setChosenState] = useState<string[]>(keptChars);
+  const [picker, setPicker] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const photoInput = useRef<HTMLInputElement>(null);
-  const faceInput = useRef<HTMLInputElement>(null);
-  const faceFor = useRef<number | null>(null);
-  const urls = useRef(new Set<string>());
-  useEffect(() => () => urls.current.forEach((u) => URL.revokeObjectURL(u)), []);
 
-  const pic = (file: File): Pic | null => {
-    if (!/^image\/(png|jpeg)$/.test(file.type)) { toast(t("create.refs.type")); return null; }
-    if (file.size > MAX_BYTES) { toast(t("create.refs.size")); return null; }
-    const url = URL.createObjectURL(file);
-    urls.current.add(url);
-    return { file, url };
-  };
-  const maxFaces = fs?.maxFacesPerCharacter ?? 8;
-  const addFaces = (id: number, files: FileList | null) => {
-    if (!files) return;
-    setChars((cs) => cs.map((c) => {
-      if (c.id !== id) return c;
-      const faces = [...c.faces];
-      for (const f of Array.from(files)) {
-        if (faces.length >= maxFaces) { toast(t("editor.faces.max", { n: maxFaces })); break; }
-        const p = pic(f);
-        if (p) faces.push(p);
-      }
-      return { ...c, faces };
-    }));
-  };
-  const update = (id: number, p: Partial<Character>) => setChars((cs) => cs.map((c) => (c.id === id ? { ...c, ...p } : c)));
-  const makeMain = (id: number, i: number) => setChars((cs) => cs.map((c) => (c.id === id ? { ...c, faces: [c.faces[i]!, ...c.faces.filter((_, k) => k !== i)] } : c)));
-  const removeFace = (id: number, i: number) => setChars((cs) => cs.map((c) => (c.id === id ? { ...c, faces: c.faces.filter((_, k) => k !== i) } : c)));
+  const setPhoto = (p: Photo | null) => { if (keptPhoto && keptPhoto !== p) URL.revokeObjectURL(keptPhoto.url); keptPhoto = p; setPhotoState(p); };
+  const setChosen = (c: string[]) => { keptChars = c; setChosenState(c); };
+  const list = Array.isArray(characters) ? characters : [];
+  // Forget characters deleted meanwhile.
+  useEffect(() => { if (Array.isArray(characters)) { const ok = chosen.filter((id) => characters.some((c) => c.id === id)); if (ok.length !== chosen.length) setChosen(ok); } }, [characters]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const ready = !!fs && !!photo && chars.every((c) => c.faces.length > 0) && !busy;
+  const fromFile = (file: File, vaultItem?: string) => {
+    if (!/^image\/(png|jpeg)$/.test(file.type)) { toast(t("create.refs.type")); return; }
+    if (file.size > MAX_BYTES) { toast(t("create.refs.size")); return; }
+    setPhoto({ file, url: URL.createObjectURL(file), ...(vaultItem ? { vaultItem } : {}) });
+  };
+  const max = fs?.maxCharacters ?? 1;
+  const toggle = (id: string) => {
+    if (chosen.includes(id)) setChosen(chosen.filter((x) => x !== id));
+    else if (max === 1) setChosen([id]);
+    else if (chosen.length < max) setChosen([...chosen, id]);
+    else toast(t("editor.characters.max", { n: max }));
+  };
+  const noPhotos = chosen.filter((id) => !list.find((c) => c.id === id)?.faces.length);
+
+  const ready = !!fs && !!photo && chosen.length > 0 && noPhotos.length === 0 && !busy;
   const run = async () => {
     if (!ready || !photo) return;
     setBusy(true);
     setError(null);
     const form = new FormData();
     form.set("target", photo.file, photo.file.name);
-    const characters = chars.map((c, ci) => {
-      const faces = c.faces.map((f, fi) => {
-        const name = `c${ci + 1}f${fi + 1}`;
-        form.set(name, f.file, f.file.name);
-        return name;
-      });
-      return { gender: c.gender, age: c.age, faces, mainFace: faces[0] };
-    });
-    form.set("params", JSON.stringify({ type: "face_swap", image: "target", characters }));
+    form.set("params", JSON.stringify({
+      type: "face_swap", image: "target", characters: chosen.map((character) => ({ character })), ...(photo.vaultItem ? { vaultItem: photo.vaultItem } : {}),
+    }));
     try {
       const job = await submitJob(auth, form);
       toast(t("create.queued"), { label: t("create.view"), run: () => nav(`/jobs/${job.id}`) });
@@ -105,14 +95,21 @@ export function EditorPage() {
           {photo ? (
             <div className="tile app-photo">
               <img src={photo.url} alt={t("editor.photo")} />
-              <button type="button" className="icon-btn on-image app-ref-remove" aria-label={t("editor.photo.change")} onClick={() => photoInput.current?.click()}><Icon name="upload" size={16} /></button>
+              {photo.vaultItem && <span className="tile-tag"><Icon name="lock" size={16} />{t("editor.fromVault")}</span>}
+              <button type="button" className="icon-btn on-image app-ref-remove" aria-label={t("editor.photo.remove")} onClick={() => setPhoto(null)}><Icon name="close" size={16} /></button>
             </div>
           ) : (
-            <button type="button" className="tile app-photo app-ref-add" onClick={() => photoInput.current?.click()}>
-              <Icon name="upload" /><span className="t-body-s c2">{t("editor.photo.pick")}</span>
-            </button>
+            <div className="app-photo-pick">
+              <button type="button" className="tile app-photo app-ref-add" onClick={() => photoInput.current?.click()}>
+                <Icon name="upload" /><span className="t-body-s c2">{t("editor.photo.pick")}</span>
+              </button>
+              <button type="button" className="tile app-photo app-ref-add" onClick={() => setPicker(true)}>
+                <Icon name="vault" /><span className="t-body-s c2">{t("picker.fromVault")}</span>
+              </button>
+            </div>
           )}
-          <input ref={photoInput} type="file" accept="image/png,image/jpeg" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) { const p = pic(f); if (p) setPhoto(p); } e.target.value = ""; }} />
+          {photo?.vaultItem && <p className="hint">{t("editor.fromVault.hint")}</p>}
+          <input ref={photoInput} type="file" accept="image/png,image/jpeg" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) fromFile(f); e.target.value = ""; }} />
         </section>
 
         <section className="card app-stack" aria-labelledby="fs-chars">
@@ -121,64 +118,29 @@ export function EditorPage() {
             <span className="app-grow-0" />
             <span className="lockcue"><Icon name="lock" size={16} />{t("privacy.private")}</span>
           </div>
-          <p className="hint">{t("editor.faceswap.hint")}</p>
-
-          {chars.map((c, ci) => (
-            <div key={c.id} className="app-char">
-              <div className="app-row">
-                <span className="t-label">{t("editor.character", { n: ci + 1 })}</span>
-                <span className="app-grow-0" />
-                {chars.length > 1 && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setChars(chars.filter((x) => x.id !== c.id))}>{t("workers.remove")}</button>}
-              </div>
-              <div className="app-refs">
-                {c.faces.map((f, i) => (
-                  <div key={f.url} className={`tile app-ref ${i === 0 ? "is-on" : ""}`}>
-                    <button type="button" className="app-ref-btn" aria-label={i === 0 ? t("editor.face.main") : t("editor.face.makeMain")} onClick={() => makeMain(c.id, i)}>
-                      <img src={f.url} alt="" />
-                    </button>
-                    {i === 0 && <span className="tile-tag">{t("editor.face.mainTag")}</span>}
-                    <button type="button" className="icon-btn on-image app-ref-remove" aria-label={t("editor.face.remove")} onClick={() => removeFace(c.id, i)}><Icon name="close" size={16} /></button>
-                  </div>
-                ))}
-                {c.faces.length < maxFaces && (
-                  <button type="button" className="tile app-ref app-ref-add" onClick={() => { faceFor.current = c.id; faceInput.current?.click(); }}>
-                    <Icon name="upload" /><span className="t-caption">{t("editor.faces.add")}</span>
-                  </button>
-                )}
-              </div>
-              <span className="hint">{t("editor.faces.hint")}</span>
-              <div className="app-row">
-                <span className="field-label app-fieldw">{t("editor.gender")}</span>
-                <div className="seg seg-sm">
-                  {(fs?.genders ?? ["any"]).map((g) => <button key={g} type="button" aria-pressed={c.gender === g} onClick={() => update(c.id, { gender: g })}>{t(`editor.gender.${g}` as MessageKey)}</button>)}
-                </div>
-              </div>
-              <div className="app-row">
-                <span className="field-label app-fieldw">{t("editor.age")}</span>
-                <div className="seg seg-sm">
-                  {(fs?.ages ?? ["any"]).map((a) => <button key={a} type="button" aria-pressed={c.age === a} onClick={() => update(c.id, { age: a })}>{t(`editor.age.${a}` as MessageKey)}</button>)}
-                </div>
-              </div>
-            </div>
-          ))}
-          <input ref={faceInput} type="file" accept="image/png,image/jpeg" multiple hidden onChange={(e) => { if (faceFor.current != null) addFaces(faceFor.current, e.target.files); e.target.value = ""; }} />
-          {chars.length < (fs?.maxCharacters ?? 1) && (
-            <button type="button" className="btn btn-ghost btn-sm app-addfrag" onClick={() => setChars([...chars, { id: seq++, faces: [], gender: "any", age: "any" }])}>
-              <Icon name="plus" size={16} />{t("editor.character.add")}
-            </button>
+          {characters === null && <div className="app-bubbles">{[0, 1, 2].map((i) => <div key={i} className="skel" style={{ width: 56, height: 56, borderRadius: 28 }} />)}</div>}
+          {Array.isArray(characters) && (
+            <CharacterBubbles characters={list} selected={chosen} onToggle={toggle} extra={
+              <Link className="bubble" to="/characters?new=1&back=/editor">
+                <span className="bubble-face app-bubble-empty"><Icon name="plus" /></span>
+                <span>{t("editor.character.new")}</span>
+              </Link>
+            } />
           )}
-          {chars.length > 1 && <p className="hint">{t("editor.characters.hint")}</p>}
+          <p className="hint">{t(list.length ? (max > 1 ? "editor.characters.pick.n" : "editor.characters.pick") : "editor.characters.none", { n: max })}</p>
+          {noPhotos.length > 0 && <p className="hint hint-error">{t("editor.characters.noPhotos")}</p>}
         </section>
       </div>
 
       <div className="app-runbar">
         {error && <p className="hint hint-error" role="alert">{error}</p>}
         <button type="button" className="btn btn-primary btn-lg btn-block" disabled={!ready} onClick={() => void run()}>
-          <Icon name="characters" />{t(busy ? "create.sending" : "editor.swap")}
+          <Icon name="characters" />{busy ? t("create.sending") : chosen.length > 1 ? t("editor.swap.n", { n: chosen.length }) : t("editor.swap")}
         </button>
       </div>
 
       <RecentSwaps />
+      {picker && <VaultPicker max={1} stage onClose={() => setPicker(false)} onPick={(p) => { const x = p[0]; if (x) fromFile(x.file, x.vaultItem); }} />}
     </Page>
   );
 }
@@ -196,7 +158,7 @@ function RecentSwaps() {
           <li key={j.id}>
             <Link className="app-jobrow" to={`/jobs/${j.id}`}>
               <span className="app-jobrow-text">
-                <span className="t-body-s clamp1">{t("jobs.type.face_swap")} · {t("jobs.characters", { n: j.summary?.characters ?? 1 })}</span>
+                <span className="t-body-s clamp1">{j.summary?.names?.join(", ") ?? t("jobs.type.face_swap")} · {t("jobs.characters", { n: j.summary?.characters ?? 1 })}</span>
                 <span className="t-caption">{when(j.createdAt)}</span>
                 <JobProgress job={j} />
               </span>

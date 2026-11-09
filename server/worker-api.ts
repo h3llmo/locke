@@ -234,7 +234,7 @@ export function registerWorkerApi(app: FastifyInstance, ctx: Ctx, masterKey: str
     }
     await ctx.db.query(
       `UPDATE jobs SET status = 'done', result_count = $2, progress = 1, lease_expires_at = NULL, finished_at = now(),
-         failure_code = NULL, expires_at = now() + interval '7 days' WHERE id = $1`,
+         failure_code = NULL, expires_at = CASE WHEN keep THEN NULL ELSE now() + interval '7 days' END WHERE id = $1`,
       [jobId, b.resultCount],
     );
     return {};

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, Route, Routes, useNavigate, useParams } from "react-router-dom";
+import { Link, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useI18n } from "../i18n/index.tsx";
 import type { MessageKey } from "../i18n/en.ts";
 import { useAuth, useJobsSummary } from "../app/session.tsx";
 import {
-  cancelJob, deleteJob, downloadResult, isActive, keepResult, useJob, useJobs, useOptions, useResultUrl, type Job, type Options,
+  ApiError, cancelJob, deleteJob, downloadResult, isActive, keepResult, useJob, useJobs, useOptions, useResultUrl, type Job, type Options,
 } from "../app/jobs.tsx";
+import { runPrompt, setSchedule, usePrompts, type SavedPrompt } from "../app/data.tsx";
+import { describeCadence } from "../app/cadence.ts";
 import { EmptyState, Page } from "../components/Page.tsx";
 import { Icon } from "../components/Icon.tsx";
 import { useToast } from "../components/Toasts.tsx";
@@ -51,7 +53,7 @@ function useMeta() {
       return [t("jobs.type.generate"), styleLabel(options, j.summary?.style), j.summary?.count && j.summary.count > 1 ? `×${j.summary.count}` : null]
         .filter(Boolean).join(" · ");
     }
-    if (j.type === "face_swap") return [t("jobs.type.face_swap"), t("jobs.characters", { n: j.summary?.characters ?? 1 })].join(" · ");
+    if (j.type === "face_swap") return [t("jobs.type.face_swap"), j.summary?.names?.join(", ") ?? t("jobs.characters", { n: j.summary?.characters ?? 1 })].join(" · ");
     return t(`jobs.type.${j.type}` as MessageKey);
   };
 }
@@ -104,12 +106,31 @@ export function GpuNotice() {
 
 function JobList() {
   const { t } = useI18n();
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") === "scheduled" ? "scheduled" : "recent";
+  const { data: prompts, reload } = usePrompts();
+  const scheduled = Array.isArray(prompts) ? prompts.filter((p) => p.schedule) : [];
+  return (
+    <Page title={t("jobs.title")}>
+      <GpuNotice />
+      <div className="tabs" role="tablist" aria-label={t("jobs.title")}>
+        <button type="button" role="tab" aria-selected={tab === "recent"} onClick={() => setParams({}, { replace: true })}>{t("jobs.tab.recent")}</button>
+        <button type="button" role="tab" aria-selected={tab === "scheduled"} onClick={() => setParams({ tab: "scheduled" }, { replace: true })}>
+          {t("jobs.tab.scheduled")} {scheduled.length > 0 && <span className="t-num c3">{scheduled.length}</span>}
+        </button>
+      </div>
+      {tab === "recent" ? <RecentJobs /> : <ScheduledList prompts={prompts} scheduled={scheduled} reload={reload} />}
+    </Page>
+  );
+}
+
+function RecentJobs() {
+  const { t } = useI18n();
   const { jobs } = useJobs();
   const meta = useMeta();
   const when = useDate();
   return (
-    <Page title={t("jobs.title")}>
-      <GpuNotice />
+    <>
       {jobs === null && <div className="app-joblist">{[0, 1, 2].map((i) => <div key={i} className="skel" style={{ height: 68, borderRadius: 16 }} />)}</div>}
       {jobs === "error" && <p className="hint hint-error">{t("jobs.error")}</p>}
       {Array.isArray(jobs) && jobs.length === 0 && (
@@ -125,7 +146,7 @@ function JobList() {
                 <Thumb job={j} />
                 <span className="app-jobrow-text">
                   <span className="t-body-s clamp1">{j.summary?.title ?? meta(j)}</span>
-                  <span className="t-caption clamp1">{meta(j)} · {when(j.createdAt)}</span>
+                  <span className="t-caption clamp1">{[meta(j), j.summary?.schedule ? t("jobs.fromSchedule") : null, when(j.createdAt)].filter(Boolean).join(" · ")}</span>
                   <JobProgress job={j} />
                 </span>
                 <StatusPill job={j} />
@@ -134,7 +155,68 @@ function JobList() {
           ))}
         </ul>
       )}
-    </Page>
+    </>
+  );
+}
+
+/** Jobs › Scheduled: one card per schedule (HANDOFF §5.2). */
+function ScheduledList({ prompts, scheduled, reload }: { prompts: SavedPrompt[] | null | "error"; scheduled: SavedPrompt[]; reload(): Promise<void> }) {
+  const { t } = useI18n();
+  if (prompts === null) return <div className="skel" style={{ height: 160, borderRadius: 18 }} />;
+  if (prompts === "error") return <p className="hint hint-error">{t("jobs.error")}</p>;
+  if (!scheduled.length) {
+    return (
+      <EmptyState icon="schedule" text={t("schedule.empty")}>
+        <Link className="btn btn-primary" to="/create">{t("jobs.empty.create")}</Link>
+      </EmptyState>
+    );
+  }
+  return <div className="app-stack">{scheduled.map((p) => <ScheduleCard key={p.id} prompt={p} reload={reload} />)}</div>;
+}
+
+function ScheduleCard({ prompt: p, reload }: { prompt: SavedPrompt; reload(): Promise<void> }) {
+  const { t, lang } = useI18n();
+  const auth = useAuth();
+  const toast = useToast();
+  const nav = useNavigate();
+  const when = useDate();
+  const s = p.schedule!;
+  const { jobs } = useJobs(undefined, s.id);
+  const done = Array.isArray(jobs) ? jobs.filter((j) => j.status === "done" && (j.resultCount ?? 0) > 0).slice(0, 6) : [];
+  const toggle = async () => {
+    try { await setSchedule(auth, p.id, { spec: s.spec, active: !s.active, keepResults: s.keepResults }); await reload(); }
+    catch (e) { toast(e instanceof Error ? e.message : t("jobs.error")); }
+  };
+  const runNow = async () => {
+    try { const r = await runPrompt(auth, p.id); toast(t("create.queued"), { label: t("create.view"), run: () => nav(`/jobs/${r.jobId}`) }); await reload(); }
+    catch (e) { toast(e instanceof Error ? e.message : t("jobs.error")); }
+  };
+  return (
+    <section className="card app-stack app-schedcard" aria-label={p.name}>
+      <div className="app-row">
+        <span className="app-grow-0 app-stack-xs">
+          <span className="t-title-s clamp1">{p.name}</span>
+          <span className="t-caption">{describeCadence(s.spec, t, lang)}{s.keepResults ? ` · ${t("schedule.kept")}` : ""}</span>
+        </span>
+        <span className="app-grow-0" />
+        <button type="button" role="switch" aria-checked={s.active} aria-label={t("schedule.active")} className={`switch ${s.active ? "is-on" : ""}`} onClick={() => void toggle()} />
+      </div>
+      <p className="t-caption">
+        {s.active && s.nextRunAt ? t("schedule.next", { when: when(s.nextRunAt) }) : t("schedule.paused")}
+        {" · "}{t("schedule.runs", { n: s.runCount })}
+        {s.skippedCount > 0 ? ` · ${t("schedule.skipped", { n: s.skippedCount })}` : ""}
+      </p>
+      {s.lastError && <p className="hint hint-error">{t(`schedule.error.${["no_worker", "unsupported", "empty_prompt", "character_not_found", "character_without_photos"].includes(s.lastError) ? s.lastError : "other"}` as MessageKey)}</p>}
+      {done.length > 0 && (
+        <div className="hscroll app-strip">
+          {done.map((j) => <Link key={j.id} to={`/jobs/${j.id}`} className="tile app-striptile" aria-label={j.summary?.title ?? ""}><ResultImg job={j} n={1} alt="" /></Link>)}
+        </div>
+      )}
+      <div className="app-row">
+        <button type="button" className="btn btn-secondary btn-sm" onClick={() => void runNow()}><Icon name="play" size={16} />{t("schedule.runNow")}</button>
+        <Link className="btn btn-ghost btn-sm" to={`/create/${p.id}`}>{t("schedule.edit")}</Link>
+      </div>
+    </section>
   );
 }
 
@@ -158,11 +240,11 @@ function JobResult() {
   const n = job.status === "done" ? job.resultCount ?? 0 : 0;
   const keep = async (i: number) => {
     try {
-      await keepResult(auth, job, i);
+      const how = await keepResult(auth, job, i);
       setKept((k) => new Set(k).add(i));
-      toast(t("jobs.kept"));
+      toast(t(how === "version" ? "jobs.keptVersion" : "jobs.kept"));
     } catch (e) {
-      toast(e instanceof Error && /quota/i.test(e.message) ? t("jobs.keep.full") : t("jobs.keep.error"));
+      toast(e instanceof ApiError && e.code === "vault_full" ? t("jobs.keep.full") : t("jobs.keep.error"));
     }
   };
   const download = (i: number) => void downloadResult(auth, job, i).catch(() => toast(t("jobs.download.error")));
@@ -179,7 +261,7 @@ function JobResult() {
     <div className="app-page">
       <header className="app-header">
         <Link to="/jobs" className="btn btn-ghost app-back"><Icon name="back" />{t("jobs.title")}</Link>
-        <span className="app-grow" />
+        <span className="app-grow-0" />
         {job.type === "generate" && s?.positive && <button type="button" className="btn btn-secondary btn-sm" onClick={again}>{t("jobs.again")}</button>}
       </header>
 
@@ -192,6 +274,10 @@ function JobResult() {
           {s?.aspect && <span className="pill">{t(`create.aspect.${s.aspect}` as MessageKey)}</span>}
           {s?.mode && <span className="pill">{t(`create.mode.${s.mode}` as MessageKey)}</span>}
           {s?.references ? <span className="pill">{t("create.refs.n", { n: s.references })}</span> : null}
+          {s?.character && <span className="pill">{s.character}</span>}
+          {s?.names?.map((n) => <span key={n} className="pill">{n}</span>)}
+          {s?.schedule && <span className="pill"><Icon name="schedule" size={16} />{s.schedule}</span>}
+          {s?.workflow && <span className="pill"><Icon name="automate" size={16} />{s.workflow}</span>}
         </div>
         <JobProgress job={job} />
       </div>
@@ -232,6 +318,8 @@ function JobResult() {
             ))}
           </div>
           {expiry && <p className="t-caption">{t("jobs.expiry", { date: expiry })}</p>}
+          {job.kept && <p className="t-caption">{t("jobs.keptBySchedule")}</p>}
+          {s?.vaultItem && <p className="t-caption">{t("jobs.keepAsVersion")}</p>}
         </>
       )}
 

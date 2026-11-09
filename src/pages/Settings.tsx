@@ -6,6 +6,31 @@ import { GpuWorkers } from "./Workers.tsx";
 import { Page } from "../components/Page.tsx";
 import { Icon } from "../components/Icon.tsx";
 import { QuotaRing } from "../components/QuotaRing.tsx";
+import { useToast } from "../components/Toasts.tsx";
+import { disableAutomation, useAutomation } from "../app/data.tsx";
+
+/** "Work while I'm away": Locke's delegated key for workflows. Turning it off revokes the key and pauses workflows. */
+function AwayAccess() {
+  const { t } = useI18n();
+  const auth = useAuth();
+  const toast = useToast();
+  const { data, reload } = useAutomation();
+  const [confirm, setConfirm] = useState(false);
+  if (!data || data === "error" || !data.enabled) return null;
+  return (
+    <section className="card app-stack">
+      <h2 className="t-title-s">{t("settings.away")}</h2>
+      <p className="t-body-s c2">{t(data.working === false ? "settings.away.revoked" : "settings.away.on")}</p>
+      {confirm ? (
+        <div className="app-row">
+          <span className="t-caption">{t("settings.away.confirm")}</span>
+          <button type="button" className="btn btn-danger btn-sm" onClick={() => void disableAutomation(auth).then(reload, () => toast(t("jobs.error")))}>{t("settings.away.off")}</button>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setConfirm(false)}>{t("workers.cancel")}</button>
+        </div>
+      ) : <div><button type="button" className="btn btn-secondary" onClick={() => setConfirm(true)}>{t("settings.away.off")}</button></div>}
+    </section>
+  );
+}
 
 function Pills<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: { v: T; label: string }[]; onChange(v: T): void }) {
   return (
@@ -83,6 +108,7 @@ export function SettingsPage() {
         <div><button type="button" className="btn btn-secondary" onClick={() => void auth.logout()}>{t("settings.signout")}</button></div>
         <p className="hint">{t("settings.signout.hint")}</p>
       </section>
+      <AwayAccess />
       {isAdmin && <GpuWorkers />}
     </Page>
   );

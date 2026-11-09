@@ -3,19 +3,41 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { createCallerAuthenticator, type Caller } from "@ilven/common";
 import { fingerprint } from "./crypto.ts";
-import { contentType, detectFormat, imageSize, stripMetadata, syntheticPng } from "./images.ts";
+import { contentType, syntheticPng } from "./images.ts";
 import {
-  AGES, assertSomeWorkerCan, createJob, err, GENDERS, incompatibility, newId, purgeJob, readResult, SETTINGS, type Capabilities, type Ctx,
+  AGES, createJob, err, GENDERS, incompatibility, newId, purgeJob, readResult, SETTINGS, type Capabilities, type Ctx,
 } from "./jobs.ts";
 import { workerKeyHash } from "./worker-api.ts";
+import { faceSwapJob, generateJob, readMultipart, type CharacterInput } from "./builders.ts";
+import { characterStore, registerCharacterApi } from "./characters.ts";
+import { registerPromptApi } from "./prompts.ts";
+import { registerSourceApi } from "./source.ts";
+import { registerAutomationApi, type AutomationDeps } from "./automation.ts";
 
 export const API_PREFIX = "/apps/locke/api";
 const MAX_CHARACTERS = 4;
 const MAX_FACES = 8;
 
 /** The app's own API (used by Locke's web app; Ilven-AI later calls the same checks through MCP). */
-export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
-  const authenticate = createCallerAuthenticator({ allowApiKey: true });
+export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, deps: AutomationDeps) {
+  // Users' logins and API keys (Ilven-AI connexes) everywhere. Locke's own delegated keys (workflows, via the vault)
+  // only on the vault-source routes.
+  const anyCaller = createCallerAuthenticator({ allowApiKey: true, service: "locke" });
+  const authenticate = async (req: FastifyRequest): Promise<Caller> => {
+    const c = await anyCaller(req);
+    if (c.kind === "apiKey" && c.delegatedTo) throw err(403, "forbidden", "This key only reads Locke's vault source");
+    return c;
+  };
+  const sourceCaller = async (req: FastifyRequest): Promise<Caller> => {
+    const c = await anyCaller(req);
+    if (c.kind === "apiKey" && c.delegatedTo && c.delegatedTo !== "locke") throw err(403, "forbidden", "Not for this key");
+    return c;
+  };
+  registerCharacterApi(app, ctx, API_PREFIX, authenticate);
+  registerPromptApi(app, ctx, API_PREFIX, authenticate);
+  registerSourceApi(app, ctx, API_PREFIX, sourceCaller);
+  registerAutomationApi(app, ctx, API_PREFIX, authenticate, deps);
+  const characters = characterStore(ctx);
   const admin = async (req: FastifyRequest): Promise<Caller> => {
     const c = await authenticate(req);
     if (c.kind !== "identity" || !c.isAdmin) throw err(403, "forbidden", "Locke admins only");
@@ -68,6 +90,8 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
         character: gens.some((g) => g!.character !== false),
         maxReferences: 4,
       } : null,
+      enhance: caps.some((c) => !!c.enhance) ? {} : null,
+      blur: caps.some((c) => !!c.blur) ? {} : null,
       faceSwap: fss.length ? {
         genders: GENDERS.filter((g) => union(fss.map((f) => f!.genders)).includes(g)),
         ages: AGES.filter((a) => union(fss.map((f) => f!.ages)).includes(a)),
@@ -78,17 +102,22 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
   });
 
   // ---------- jobs ----------
-  const charSchema = z.object({
-    gender: z.enum(GENDERS),
-    age: z.enum(AGES),
-    faces: z.array(z.string().min(1).max(64)).min(1).max(MAX_FACES),
-    mainFace: z.string().min(1).max(64),
-  }).refine((c) => c.faces.includes(c.mainFace), { message: "mainFace must be one of faces" });
+  // A character is either a saved one ({ character }) or photos uploaded with the job (file field names).
+  const charSchema = z.union([
+    z.object({ character: z.string().min(1).max(64) }),
+    z.object({
+      gender: z.enum(GENDERS),
+      age: z.enum(AGES),
+      faces: z.array(z.string().min(1).max(64)).min(1).max(MAX_FACES),
+      mainFace: z.string().min(1).max(64),
+    }).refine((c) => c.faces.includes(c.mainFace), { message: "mainFace must be one of faces" }),
+  ]);
   const faceSwapSchema = z.object({
     type: z.literal("face_swap"),
     image: z.string().min(1).max(64),
     characters: z.array(charSchema).min(1).max(MAX_CHARACTERS),
     output: z.object({ format: z.enum(["png", "jpeg"]) }).optional(),
+    vaultItem: z.uuid().optional(),
   });
   const fragments = z.array(z.string().trim().min(1).max(500)).max(60);
   const generateSchema = z.object({
@@ -101,6 +130,8 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
     mode: z.enum(["fast", "quality"]).default("fast"),
     seed: z.number().int().min(0).max(2 ** 32 - 1).nullable().default(null),
     references: z.array(z.string().min(1).max(64)).max(4).default([]),
+    character: z.string().min(1).max(64).optional(),
+    prompt: z.string().max(80).optional(),
   });
 
   /**
@@ -109,91 +140,43 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
    */
   app.post(`${API_PREFIX}/jobs`, async (req, reply) => {
     const c = await authenticate(req);
-    if (!req.isMultipart()) throw err(415, "multipart_required", "Send the job as multipart/form-data");
-    let paramsText: string | undefined;
-    const files = new Map<string, Buffer>();
-    for await (const part of req.parts()) {
-      if (part.type === "file") {
-        if (files.has(part.fieldname)) throw err(400, "bad_request", `Duplicate file ${part.fieldname}`);
-        files.set(part.fieldname, await part.toBuffer());
-      } else if (part.fieldname === "params") {
-        paramsText = String(part.value);
+    const { params: raw, files } = await readMultipart(req);
+    const used = new Set<string>();
+    const file = (field: string) => {
+      const f = files.get(field);
+      if (!f) throw err(400, "bad_request", `Missing file ${field}`);
+      used.add(field);
+      return f;
+    };
+    const allUsed = () => { if (used.size !== files.size) throw err(400, "bad_request", "Every uploaded file must be used by params"); };
+
+    if ((raw as { type?: unknown } | null)?.type === "generate") {
+      const p = generateSchema.parse(raw);
+      if (new Set(p.references).size !== p.references.length) throw err(400, "bad_request", "A reference is listed twice");
+      const refs = p.references.map(file);
+      allUsed();
+      const ch = p.character ? await characters.load(c.sub, p.character) : null;
+      const id = await generateJob(ctx, c.sub, p, refs, ch, { summary: { ...(ch ? { character: ch.name } : {}), ...(p.prompt ? { prompt: p.prompt } : {}) } });
+      return reply.status(201).send(await jobView(id, c.sub));
+    }
+    const p = faceSwapSchema.parse(raw);
+    const target = file(p.image);
+    const chars: CharacterInput[] = [];
+    const names: string[] = [];
+    for (const ch of p.characters) {
+      if ("character" in ch) {
+        const saved = await characters.load(c.sub, ch.character);
+        chars.push(saved);
+        names.push(saved.name);
+      } else {
+        // Main face first.
+        chars.push({ gender: ch.gender, age: ch.age, faces: [ch.mainFace, ...ch.faces.filter((f) => f !== ch.mainFace)].map(file) });
       }
     }
-    if (!paramsText) throw err(400, "bad_request", "Missing params");
-    let raw: unknown;
-    try { raw = JSON.parse(paramsText); } catch { throw err(400, "bad_request", "params is not JSON"); }
-    if ((raw as { type?: unknown } | null)?.type === "generate") return reply.status(201).send(await createGenerate(c.sub, generateSchema.parse(raw), files));
-    const p = faceSwapSchema.parse(raw);
-    const requirements = { characters: p.characters.map((ch) => ({ gender: ch.gender, age: ch.age, faces: ch.faces.length })), format: p.output?.format ?? "png" };
-    await assertSomeWorkerCan(ctx, p.type, requirements);
-
-    const inputs: { id: string; data: Buffer }[] = [];
-    const used = new Map<string, string>();
-    const input = (field: string) => {
-      const existing = used.get(field);
-      if (existing) return existing;
-      const data = files.get(field);
-      if (!data) throw err(400, "bad_request", `Missing file ${field}`);
-      const format = detectFormat(data);
-      if (!format) throw err(415, "unsupported_image", `${field}: use a PNG or JPEG image`);
-      const id = newId("in");
-      inputs.push({ id, data: stripMetadata(data, format) });
-      used.set(field, id);
-      return id;
-    };
-    const target = files.get(p.image);
-    const targetFormat = target && detectFormat(target);
-    const resultSize = targetFormat ? imageSize(target, targetFormat) : null;
-    if (targetFormat && !resultSize) throw err(415, "unsupported_image", `${p.image}: unreadable image size`);
-    const params = {
-      image: input(p.image),
-      match: "largest",
-      characters: p.characters.map((ch, i) => ({
-        ref: `ch_${i + 1}`,
-        faces: ch.faces.map(input),
-        mainFace: input(ch.mainFace),
-        gender: ch.gender,
-        age: ch.age,
-      })),
-      output: p.output ?? { format: "png" },
-    };
-    if (used.size !== files.size) throw err(400, "bad_request", "Every uploaded file must be used by params");
-    const id = await createJob(ctx, {
-      ownerSub: c.sub, type: "face_swap", params, inputs, requirements, maxResults: 1, resultSize,
-      summary: { title: "Face swap", characters: p.characters.length },
-    });
+    allUsed();
+    const id = await faceSwapJob(ctx, c.sub, target, chars, { summary: { ...(names.length ? { names } : {}), ...(p.vaultItem ? { vaultItem: p.vaultItem } : {}) } });
     return reply.status(201).send(await jobView(id, c.sub));
   });
-
-  /** Shared by uploads: checks the image type and strips its metadata. */
-  function cleanImage(field: string, data: Buffer | undefined) {
-    if (!data) throw err(400, "bad_request", `Missing file ${field}`);
-    const format = detectFormat(data);
-    if (!format) throw err(415, "unsupported_image", `${field}: use a PNG or JPEG image`);
-    return stripMetadata(data, format);
-  }
-
-  async function createGenerate(sub: string, p: z.infer<typeof generateSchema>, files: Map<string, Buffer>) {
-    if (new Set(p.references).size !== p.references.length) throw err(400, "bad_request", "A reference is listed twice");
-    if (files.size !== p.references.length || p.references.some((r) => !files.has(r))) throw err(400, "bad_request", "Every uploaded file must be a reference");
-    const requirements = { style: p.style, count: p.count, references: p.references.length, character: false, format: "png" };
-    await assertSomeWorkerCan(ctx, "generate", requirements);
-    const inputs = p.references.map((field) => ({ id: newId("in"), data: cleanImage(field, files.get(field)) }));
-    const params = {
-      positive: p.positive, negative: p.negative, style: p.style, aspect: p.aspect, count: p.count, mode: p.mode,
-      references: inputs.map((i) => i.id), seed: p.seed, output: { format: "png" },
-    };
-    const title = p.positive.join(", ");
-    const id = await createJob(ctx, {
-      ownerSub: sub, type: "generate", params, inputs, requirements, maxResults: p.count,
-      summary: {
-        title: title.length > 140 ? `${title.slice(0, 139)}…` : title, style: p.style, aspect: p.aspect, mode: p.mode, count: p.count,
-        references: inputs.length, positive: p.positive, negative: p.negative,
-      },
-    });
-    return jobView(id, sub);
-  }
 
   async function jobView(id: string, ownerSub: string) {
     const { rows } = await ctx.db.query(
@@ -225,17 +208,22 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string) {
       finishedAt: j.finished_at,
       expiresAt: j.expires_at,
       cancelRequested: j.cancel_requested,
+      scheduleId: j.schedule_id,
+      workflow: !!j.workflow_run_id,
+      kept: j.keep,
     };
   }
 
   app.get(`${API_PREFIX}/jobs`, async (req) => {
     const c = await authenticate(req);
-    const q = z.object({ limit: z.coerce.number().int().min(1).max(200).default(50), before: z.iso.datetime().optional() }).parse(req.query);
+    const q = z.object({
+      limit: z.coerce.number().int().min(1).max(200).default(50), before: z.iso.datetime().optional(), schedule: z.string().max(64).optional(),
+    }).parse(req.query);
     const { rows } = await ctx.db.query(
       `SELECT j.*, (SELECT count(*)::int FROM jobs q WHERE q.status = 'queued' AND NOT q.is_test AND q.created_at <= j.created_at) AS position
-       FROM jobs j WHERE j.owner_sub = $1 AND ($2::timestamptz IS NULL OR j.created_at < $2)
+       FROM jobs j WHERE j.owner_sub = $1 AND ($2::timestamptz IS NULL OR j.created_at < $2) AND ($4::text IS NULL OR j.schedule_id = $4)
        ORDER BY j.created_at DESC LIMIT $3`,
-      [c.sub, q.before ?? null, q.limit],
+      [c.sub, q.before ?? null, q.limit, q.schedule ?? null],
     );
     return { jobs: rows.map(toView) };
   });

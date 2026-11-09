@@ -13,6 +13,8 @@ import { registerWithNevli, storageFromNevli } from "./nevli.ts";
 import { expireJobs, reapLeases, SETTINGS, type Ctx } from "./jobs.ts";
 import { registerWorkerApi } from "./worker-api.ts";
 import { API_PREFIX, registerApi } from "./api.ts";
+import { runSchedules } from "./prompts.ts";
+import { runWorkflows, type AutomationDeps } from "./automation.ts";
 
 /**
  * Locke server: the web app under /apps/locke/ (Ilven gateway → container alias app-locke:8080), Locke's API, the
@@ -63,10 +65,16 @@ app.addHook("onSend", async (_req, reply, payload) => {
   reply.header("referrer-policy", "same-origin");
   return payload;
 });
-await app.register(fastifyMultipart, { limits: { fileSize: SETTINGS.maxInputBytes, files: 1 + 4 * 8, fields: 4, parts: 40 } });
+await app.register(fastifyMultipart, { limits: { fileSize: SETTINGS.maxInputBytes, files: 1 + 4 * 8 + 4, fields: 4, parts: 44 } });
 
+// Character photos are uploaded one by one as the raw body.
+app.addContentTypeParser(/^image\//, { parseAs: "buffer", bodyLimit: SETTINGS.maxInputBytes }, (_req, body, done) => done(null, body));
+
+const deps: AutomationDeps = {
+  nevliUrl, appSecret, vaultUrl: env("LOCKE_VAULT_URL", "http://app-locke-vault:8080/apps/locke-vault/api"),
+};
 registerWorkerApi(app, ctx, masterKey);
-registerApi(app, ctx, masterKey);
+registerApi(app, ctx, masterKey, deps);
 app.all(`${API_PREFIX}/*`, async (_req, reply) => reply.status(404).send({ error: "not_found", message: "Not found" }));
 
 await app.register(fastifyStatic, {
@@ -97,6 +105,9 @@ mountMcp(mcp, "/mcp", () => new McpServer({ name: "locke", version: "0.1.0" }, {
 // Housekeeping: expired leases go back to the queue; unkept results are deleted after their keep date.
 setInterval(() => void reapLeases(ctx).catch((e) => app.log.error({ err: e }, "lease reaper failed")), 5000).unref();
 setInterval(() => void expireJobs(ctx).catch((e) => app.log.error({ err: e }, "expiry failed")), 10 * 60 * 1000).unref();
+// Schedules (saved prompts) and automated workflows.
+setInterval(() => void runSchedules(ctx, (e) => app.log.error({ err: e }, "schedule run failed")).catch((e) => app.log.error({ err: e }, "scheduler failed")), 20_000).unref();
+setInterval(() => void runWorkflows(ctx, deps, (e, msg) => app.log.error({ err: e }, msg)).catch((e) => app.log.error({ err: e }, "workflow engine failed")), 20_000).unref();
 
 await mcp.listen({ host: "0.0.0.0", port: 8081 });
 await app.listen({ host: "0.0.0.0", port: Number(process.env.PORT ?? 8080) });

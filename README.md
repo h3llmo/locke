@@ -20,6 +20,8 @@ include:
   - ../locke/compose.yaml
 # .env
 COMPOSE_FILE=compose.yaml:compose.override.yaml:compose.local.yaml
+# Locke's results as a vault source (keep the default Pilot entry if you use Pilot)
+VAULT_SOURCES=[{"id":"pilot","url":"http://app-pilot:8080/apps/pilot/api/vault-source"},{"id":"locke","url":"http://app-locke:8080/apps/locke/api/vault-source"}]
 ```
 
 `docker compose up -d --build locke` → http://localhost:8080/apps/locke/. The image builds against Ilven's shared
@@ -34,6 +36,22 @@ npm run build        # dist/web (app) + dist/index.mjs (server)
 ```
 
 ## Status
-Step 1 of the handoff (§10): app shell — tokens, fonts, dark/light/system theme, EN/FR messages, routes, dock
-(< 640 px) / rail (640–1279) / sidebar (≥ 1280), assistant corner kept free, toasts, Settings (theme, language,
-vault quota from Locke Vault, sign out). The Locke API, job queue, partner worker contract and MCP tools come next.
+- **Create:** prompt fragments (list / raw, positive / negative), styles from the GPU, format, results, speed,
+  references (upload or vault), a saved character when the GPU supports it. **Saved prompts** keep everything,
+  including switched-off fragments and references. **Schedules** run a saved prompt every few minutes, hourly, daily
+  or weekly (wall-clock, user's time zone); a run is skipped while the previous one still waits; results can be kept.
+- **Jobs:** Recent and Scheduled tabs, result page (Keep to the vault, or as a new version of the vault image that was
+  edited; Download; viewer; Run again).
+- **Editor:** face swap of an uploaded or vault photo with saved characters.
+- **Characters:** name, gender and age (which face is theirs), 1–8 photos, main face first. Sealed at rest.
+- **Automate:** workflows watch vault sources (any collection, e.g. one schedule) and run Face swap / Enhance, then
+  Blur last, on every new image; each step adds a version in the vault. They run while the user is away with a
+  **delegated key** from Nevli (asked once, revocable in Ilven Account; valid only at locke-vault, dms and Locke's
+  vault source, for that user). Enhance and Blur wait for a GPU that offers them.
+- **Locke as a vault source** (`/api/vault-source`, contract `ilven-vault-source/1`): finished results; collections
+  "All", "Created by hand" and one per schedule; supports `addedAfter`.
+- GPU worker API `locke-worker/1`: [docs/worker-api.md](docs/worker-api.md).
+- Tests: unit (`npm test`), `test/e2e.mjs` (queue and worker API) and `test/e2e-features.mjs` (characters, prompts,
+  schedules, source, automation). Both use their own worker with values real workers don't announce, so live workers
+  can stay live.
+- Not yet: Locke's MCP tools for Ilven-AI, Enhance/Blur in the Editor, push notifications.
