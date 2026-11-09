@@ -5,7 +5,7 @@ import { bearer, hmacHex } from "@ilven/common";
 import { aad, b64u, fingerprint, open } from "./crypto.ts";
 import { detectFormat, imageSize, metadataBlocks } from "./images.ts";
 import {
-  claimOnce, err, FAIL_CODES, finishFailed, JOB_TYPES, jobKeyOf, leasedJob, queueSignal, reapLeases, renewLease, SETTINGS,
+  claimOnce, err, FAIL_CODES, finishFailed, jobEvents, JOB_TYPES, jobKeyOf, leasedJob, queueSignal, reapLeases, renewLease, SETTINGS,
   supportsType, type Ctx, type WorkerRow,
 } from "./jobs.ts";
 
@@ -237,6 +237,7 @@ export function registerWorkerApi(app: FastifyInstance, ctx: Ctx, masterKey: str
          failure_code = NULL, expires_at = CASE WHEN keep THEN NULL ELSE now() + interval '7 days' END WHERE id = $1`,
       [jobId, b.resultCount],
     );
+    jobEvents.emit("finished", jobId, "done");
     return {};
   });
 

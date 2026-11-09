@@ -7,7 +7,59 @@ import { Page } from "../components/Page.tsx";
 import { Icon } from "../components/Icon.tsx";
 import { QuotaRing } from "../components/QuotaRing.tsx";
 import { useToast } from "../components/Toasts.tsx";
-import { disableAutomation, useAutomation } from "../app/data.tsx";
+import { disableAutomation, removeDiscord, saveDiscord, testDiscord, useAutomation, useNotifications } from "../app/data.tsx";
+import { ApiError } from "../app/jobs.tsx";
+
+/**
+ * Discord notifications: the user's own channel webhook. Messages are generic ("your image is ready" + a link):
+ * no prompt, image or name is sent to Discord.
+ */
+function DiscordNotifications() {
+  const { t, lang } = useI18n();
+  const auth = useAuth();
+  const toast = useToast();
+  const { data, set } = useNotifications();
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  if (!data || data === "error") return null;
+  const d = data.discord;
+  const run = async (f: () => Promise<typeof data>, ok?: string) => {
+    setBusy(true);
+    setError(null);
+    try { set(await f()); setUrl(""); if (ok) toast(ok); }
+    catch (e) { setError(e instanceof ApiError ? e.message : t("jobs.error")); }
+    finally { setBusy(false); }
+  };
+  const failures = d.configured ? d.notifyFailures : true;
+  return (
+    <section className="card app-stack">
+      <h2 className="t-title-s">{t("notify.title")}</h2>
+      <p className="t-body-s c2">{t("notify.hint")}</p>
+      {d.configured && (
+        <p className={`t-caption ${d.lastError ? "app-warn" : ""}`}>
+          {d.lastError ? t(d.lastError === "webhook_gone" ? "notify.error.gone" : "notify.error.other") : t("notify.on")}
+        </p>
+      )}
+      <label className="field">
+        <span className="field-label">{t(d.configured ? "notify.url.replace" : "notify.url")}</span>
+        <input className="input" type="password" autoComplete="off" spellCheck={false} value={url} placeholder="https://discord.com/api/webhooks/…" onChange={(e) => setUrl(e.target.value)} />
+      </label>
+      <p className="hint">{t("notify.url.how")}</p>
+      <div className="opt-row">
+        <span className="opt-label">{t("notify.failures")}</span>
+        <button type="button" role="switch" aria-checked={failures} aria-label={t("notify.failures")} className={`switch ${failures ? "is-on" : ""}`}
+          disabled={!d.configured || busy} onClick={() => void run(() => saveDiscord(auth, { notifyFailures: !failures, lang }))} />
+      </div>
+      {error && <p className="hint hint-error" role="alert">{error}</p>}
+      <div className="app-row">
+        <button type="button" className="btn btn-primary" disabled={busy || !url.trim()} onClick={() => void run(() => saveDiscord(auth, { webhookUrl: url.trim(), notifyFailures: failures, lang }), t("notify.saved"))}>{t("notify.save")}</button>
+        {d.configured && <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void run(() => testDiscord(auth), t("notify.tested"))}>{t("notify.test")}</button>}
+        {d.configured && <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => void run(() => removeDiscord(auth))}>{t("notify.remove")}</button>}
+      </div>
+    </section>
+  );
+}
 
 /** "Work while I'm away": Locke's delegated key for workflows. Turning it off revokes the key and pauses workflows. */
 function AwayAccess() {
@@ -108,6 +160,7 @@ export function SettingsPage() {
         <div><button type="button" className="btn btn-secondary" onClick={() => void auth.logout()}>{t("settings.signout")}</button></div>
         <p className="hint">{t("settings.signout.hint")}</p>
       </section>
+      <DiscordNotifications />
       <AwayAccess />
       {isAdmin && <GpuWorkers />}
     </Page>

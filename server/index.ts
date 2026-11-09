@@ -15,6 +15,7 @@ import { registerWorkerApi } from "./worker-api.ts";
 import { API_PREFIX, registerApi } from "./api.ts";
 import { runSchedules } from "./prompts.ts";
 import { runWorkflows, type AutomationDeps } from "./automation.ts";
+import { startNotifications } from "./notify.ts";
 
 /**
  * Locke server: the web app under /apps/locke/ (Ilven gateway → container alias app-locke:8080), Locke's API, the
@@ -105,6 +106,7 @@ mountMcp(mcp, "/mcp", () => new McpServer({ name: "locke", version: "0.1.0" }, {
 // Housekeeping: expired leases go back to the queue; unkept results are deleted after their keep date.
 setInterval(() => void reapLeases(ctx).catch((e) => app.log.error({ err: e }, "lease reaper failed")), 5000).unref();
 setInterval(() => void expireJobs(ctx).catch((e) => app.log.error({ err: e }, "expiry failed")), 10 * 60 * 1000).unref();
+startNotifications(ctx, (e) => app.log.warn({ err: e }, "notification failed"));
 // Schedules (saved prompts) and automated workflows.
 setInterval(() => void runSchedules(ctx, (e) => app.log.error({ err: e }, "schedule run failed")).catch((e) => app.log.error({ err: e }, "scheduler failed")), 20_000).unref();
 setInterval(() => void runWorkflows(ctx, deps, (e, msg) => app.log.error({ err: e }, msg)).catch((e) => app.log.error({ err: e }, "workflow engine failed")), 20_000).unref();

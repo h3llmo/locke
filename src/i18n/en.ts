@@ -410,6 +410,20 @@ export const en = {
   "settings.away.revoked": "The key was revoked in Ilven Account: workflows are stopped until you allow it again in Automate.",
   "settings.away.off": "Turn off",
   "settings.away.confirm": "Turn off and pause all workflows?",
+  "notify.title": "Notifications on Discord",
+  "notify.hint": "Get a message in your own Discord channel when a job is done. It only says what finished, with a link back: no prompt, image or name is sent to Discord.",
+  "notify.url": "Channel webhook URL",
+  "notify.url.replace": "Replace the webhook URL",
+  "notify.url.how": "In Discord: channel settings → Integrations → Webhooks → New webhook → Copy webhook URL. Locke keeps it encrypted and never shows it again.",
+  "notify.failures": "Also when a job fails",
+  "notify.save": "Save",
+  "notify.saved": "Discord notifications are on",
+  "notify.test": "Send a test",
+  "notify.tested": "Test sent: check your channel",
+  "notify.remove": "Turn off",
+  "notify.on": "On: messages go to your Discord channel.",
+  "notify.error.gone": "Discord says this webhook doesn't exist any more. Paste a new one.",
+  "notify.error.other": "The last message didn't reach Discord. Send a test to check.",
 } as const;
 
 export type MessageKey = keyof typeof en;

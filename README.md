@@ -48,6 +48,8 @@ npm run build        # dist/web (app) + dist/index.mjs (server)
   Blur last, on every new image; each step adds a version in the vault. They run while the user is away with a
   **delegated key** from Nevli (asked once, revocable in Ilven Account; valid only at locke-vault, dms and Locke's
   vault source, for that user). Enhance and Blur wait for a GPU that offers them.
+- **Discord notifications** (Settings): the user's own channel webhook (sealed, write-only); generic messages with
+  a link when a job is done or failed, one per finished workflow image. No prompt, image or name is sent.
 - **Locke as a vault source** (`/api/vault-source`, contract `ilven-vault-source/1`): finished results; collections
   "All", "Created by hand" and one per schedule; supports `addedAfter`.
 - GPU worker API `locke-worker/1`: [docs/worker-api.md](docs/worker-api.md).

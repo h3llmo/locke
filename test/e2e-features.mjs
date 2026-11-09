@@ -215,6 +215,23 @@ test("automation: delegated key from Nevli; a workflow picks up a new image and 
   assert.equal(w.lastError, null);
 });
 
+test("Discord notifications: webhook checked, write-only, sealed; removable", async () => {
+  const N = `${API}/notifications`;
+  assert.equal((await call("PUT", `${N}/discord`, { auth: alice, json: { webhookUrl: "https://evil.example/api/webhooks/1/x", appUrl: "https://x.example/apps/locke" } })).body.error, "invalid_webhook");
+  // A well-formed but unknown webhook: saved, never returned, and Discord refuses the test.
+  const fake = `https://discord.com/api/webhooks/100000000000000000/${"x".repeat(68)}`;
+  const put = await call("PUT", `${N}/discord`, { auth: alice, json: { webhookUrl: fake, notifyFailures: false, appUrl: "https://x.example/apps/locke", lang: "fr" } });
+  assert.equal(put.status, 200, JSON.stringify(put.body));
+  assert.equal(put.body.discord.configured, true);
+  assert.ok(!JSON.stringify(put.body).includes("webhooks"), "the URL is write-only");
+  const t = await call("POST", `${N}/discord/test`, { auth: alice });
+  assert.equal(t.status, 502);
+  assert.equal(t.body.error, "webhook_gone");
+  assert.equal((await call("GET", N, { auth: alice })).body.discord.lastError, "webhook_gone");
+  assert.equal((await call("GET", N, { auth: admin })).body.discord.configured, false, "per user");
+  assert.equal((await call("DELETE", `${N}/discord`, { auth: alice })).body.discord.configured, false);
+});
+
 after(async () => {
   if (!alice) return;
   if (made.workflow) {

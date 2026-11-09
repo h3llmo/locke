@@ -37,6 +37,8 @@ export const err = (status: number, code: string, message: string = code, extra?
 export const queueSignal = new EventEmitter();
 queueSignal.setMaxListeners(1000);
 const signal = () => queueSignal.emit("job");
+/** "finished" (jobId, "done" | "failed"): a job reached a final state with an outcome (notifications). */
+export const jobEvents = new EventEmitter();
 
 // ---------- capabilities and routing ----------
 
@@ -198,6 +200,7 @@ export async function reapLeases(ctx: Ctx, jobId?: string) {
     await ctx.db.query("DELETE FROM job_results WHERE job_id = $1", [r.id]);
     await ctx.store.deletePrefix(`jobs/${r.id}/results/`).catch(() => {});
     if (r.status === "cancelled") await purgeJob(ctx, r.id).catch(() => {});
+    if (r.status === "failed") jobEvents.emit("finished", r.id, "failed");
     if (r.status === "queued") setTimeout(signal, RETRY_DELAYS_S[0] * 1000).unref();
   }
 }
@@ -319,6 +322,7 @@ export async function finishFailed(ctx: Ctx, jobId: string, code: string, retrya
   await ctx.store.deletePrefix(`jobs/${jobId}/results/`);
   const status = rows[0]!.status;
   if (status === "cancelled") await purgeJob(ctx, jobId);
+  if (status === "failed") jobEvents.emit("finished", jobId, "failed");
   if (status === "queued") setTimeout(signal, (rows[0]!.attempt <= 1 ? RETRY_DELAYS_S[0]! : RETRY_DELAYS_S[1]!) * 1000 + 100).unref();
   return status;
 }

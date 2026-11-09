@@ -137,3 +137,11 @@ export function authBlob(a: IlvenAuth, url: string): Promise<Blob> {
   return p;
 }
 export function forgetBlob(url: string) { blobs.delete(url); }
+
+// ---------- notifications ----------
+export interface Notifications { discord: { configured: false } | { configured: true; notifyFailures: boolean; lastSentAt: string | null; lastError: string | null } }
+export const useNotifications = () => useList((a) => api<Notifications>(a, "GET", "/notifications"));
+export const saveDiscord = (a: IlvenAuth, b: { webhookUrl?: string; notifyFailures: boolean; lang: string }) =>
+  api<Notifications>(a, "PUT", "/notifications/discord", { ...b, appUrl: `${location.origin}/apps/locke` });
+export const removeDiscord = (a: IlvenAuth) => api<Notifications>(a, "DELETE", "/notifications/discord");
+export const testDiscord = (a: IlvenAuth) => api<Notifications>(a, "POST", "/notifications/discord/test");

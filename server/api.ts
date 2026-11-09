@@ -13,6 +13,7 @@ import { characterStore, registerCharacterApi } from "./characters.ts";
 import { registerPromptApi } from "./prompts.ts";
 import { registerSourceApi } from "./source.ts";
 import { registerAutomationApi, type AutomationDeps } from "./automation.ts";
+import { registerNotificationApi } from "./notify.ts";
 
 export const API_PREFIX = "/apps/locke/api";
 const MAX_CHARACTERS = 4;
@@ -37,6 +38,7 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, d
   registerPromptApi(app, ctx, API_PREFIX, authenticate);
   registerSourceApi(app, ctx, API_PREFIX, sourceCaller);
   registerAutomationApi(app, ctx, API_PREFIX, authenticate, deps);
+  registerNotificationApi(app, ctx, API_PREFIX, authenticate);
   const characters = characterStore(ctx);
   const admin = async (req: FastifyRequest): Promise<Caller> => {
     const c = await authenticate(req);

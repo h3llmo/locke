@@ -164,4 +164,20 @@ export const migrations: Migration[] = [
       CREATE INDEX workflow_runs_open ON workflow_runs (workflow_id, created_at) WHERE status IN ('pending', 'running');
     `,
   },
+  {
+    // Notifications: the user's Discord webhook (sealed: whoever has it can post to their channel).
+    id: "004_notifications",
+    sql: `
+      CREATE TABLE notifications (
+        owner_sub text PRIMARY KEY,
+        discord_webhook text NOT NULL,
+        notify_failures boolean NOT NULL DEFAULT true,
+        app_url text NOT NULL,
+        lang text NOT NULL DEFAULT 'en',
+        last_sent_at timestamptz,
+        last_error text,
+        created_at timestamptz NOT NULL DEFAULT now()
+      );
+    `,
+  },
 ];

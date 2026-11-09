@@ -7,6 +7,7 @@ import { characterStore, type Auth } from "./characters.ts";
 import { detectFormat, contentType } from "./images.ts";
 import { openRow, sealRow } from "./sealed.ts";
 import { VaultClient, VaultError, type SourceInfo } from "./vault.ts";
+import { notifier } from "./notify.ts";
 
 /**
  * Automate (HANDOFF §5.4): workflows watch vault sources and run steps on every new image, in this order:
@@ -311,6 +312,8 @@ async function discover(ctx: Ctx, deps: AutomationDeps, log: (e: unknown, msg: s
 async function advance(ctx: Ctx, deps: AutomationDeps, log: (e: unknown, msg: string) => void) {
   const auto = automation(ctx, deps);
   const chars = characterStore(ctx);
+  const notify = notifier(ctx);
+  const tell = (r: RunRow, status: "done" | "failed") => { notify.forWorkflowRun(r.owner_sub, r.workflow_id, status).catch((e) => log(e, "notification failed")); };
   const { rows } = await ctx.db.query<RunRow & { data: string; active: boolean }>(
     `SELECT r.*, w.data, w.active FROM workflow_runs r JOIN workflows w ON w.id = r.workflow_id JOIN automation a ON a.owner_sub = r.owner_sub
      WHERE r.status IN ('pending', 'running') ORDER BY r.created_at LIMIT 200`,
@@ -328,7 +331,7 @@ async function advance(ctx: Ctx, deps: AutomationDeps, log: (e: unknown, msg: st
         [r.id, ...keys.map((k) => (k === "notes" ? JSON.stringify(fields[k]) : fields[k]))],
       );
     };
-    const fail = (code: string) => set({ status: "failed", failure: code, job_id: null });
+    const fail = async (code: string) => { await set({ status: "failed", failure: code, job_id: null }); tell(r, "failed"); };
     try {
       const d = openRow<WorkflowData>(ctx.sealer, r.workflow_id, r.data);
       const steps = stepsOf(d);
@@ -342,7 +345,7 @@ async function advance(ctx: Ctx, deps: AutomationDeps, log: (e: unknown, msg: st
           item = (await vault.stage(r.source, r.ref)).id;
           await set({ item_id: item, status: "running" });
         }
-        if (r.step >= steps.length) { await set({ status: "done" }); continue; }
+        if (r.step >= steps.length) { await set({ status: "done" }); tell(r, "done"); continue; }
         const step = steps[r.step]!;
         const image = await vault.content(item);
         const extra = { workflowRunId: r.id, summary: { title: `${d.name} · ${step.op === "face_swap" ? "Face swap" : step.op === "blur" ? "Blur" : "Enhance"}`, workflow: d.name } };
@@ -386,6 +389,7 @@ async function advance(ctx: Ctx, deps: AutomationDeps, log: (e: unknown, msg: st
       await ctx.db.query("DELETE FROM jobs WHERE id = $1", [r.job_id]);
       const next = r.step + 1;
       await set({ step: next, job_id: null, status: next >= steps.length ? "done" : "running" });
+      if (next >= steps.length) tell(r, "done");
       inFlight.set(r.workflow_id, Math.max(0, (inFlight.get(r.workflow_id) ?? 1) - 1));
     } catch (e) {
       if (e instanceof VaultError && e.status === 401) {
