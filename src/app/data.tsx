@@ -42,7 +42,7 @@ export interface WorkflowRun {
 }
 export interface Automation { enabled: boolean; working?: boolean; since?: string }
 
-export interface VaultItem { id: string; title: string; currentVersion: number | null; versions: { n: number; contentType: string; operation: string; app: string }[]; updatedAt: string }
+export interface VaultItem { id: string; title: string; currentVersion: number | null; versions: { n: number; contentType: string; operation: string; app: string; createdAt: string }[]; updatedAt: string }
 export interface VaultSource {
   id: string; available: boolean; name: string; description: string; status: "ready" | "needs_setup" | "not_allowed"; experimental: boolean;
   filters: { collection: boolean; addedAfter: boolean }; collections: { id: string; name: string }[];
@@ -119,10 +119,27 @@ export const vaultItems = (a: IlvenAuth, cursor?: string) => vault<{ items: Vaul
 export const vaultSources = async (a: IlvenAuth) => (await vault<{ sources: VaultSource[] }>(a, "GET", "/sources")).sources;
 export const sourceQuery = (a: IlvenAuth, source: string, q: { collection?: string; cursor?: string; limit?: number }) =>
   vault<{ items: SourceItem[]; cursor: string | null }>(a, "POST", `/sources/${encodeURIComponent(source)}/query`, { limit: 60, ...q });
-export const vaultItemUrl = (id: string) => `${V}/items/${id}/content`;
-/** One version's own address: a cached image can never be an older version than the one shown. */
-export const vaultVersionUrl = (id: string, n: number) => `${V}/items/${id}/versions/${n}/content`;
-export const sourceItemUrl = (source: string, ref: string) => `${V}/sources/${encodeURIComponent(source)}/items/${encodeURIComponent(ref)}/content`;
+/**
+ * Image sizes: `thumb` for grids and lists, `display` to look at one image; no size = the full-size original, only
+ * for downloads (GPU jobs read originals on the server, never through the browser).
+ */
+export type PreviewSize = "thumb" | "display";
+const sized = (url: string, size?: PreviewSize, at?: string) => {
+  const q = new URLSearchParams({ ...(size ? { size } : {}), ...(at ? { at: String(Date.parse(at)) } : {}) }).toString();
+  return q ? `${url}?${q}` : url;
+};
+export const vaultItemUrl = (id: string, size?: PreviewSize) => sized(`${V}/items/${id}/content`, size);
+/**
+ * One version's own address: a cached image can never be an older version than the one shown. `at` (the version's
+ * creation time) keeps it unique when "Undo" frees a version number that a later version reuses.
+ */
+export const vaultVersionUrl = (id: string, n: number, size?: PreviewSize, at?: string) => sized(`${V}/items/${id}/versions/${n}/content`, size, at);
+/** The latest version of a vault item, as a preview. */
+export const vaultPreviewUrl = (i: VaultItem, size: PreviewSize) => {
+  const v = i.versions.find((x) => x.n === i.currentVersion);
+  return v ? vaultVersionUrl(i.id, v.n, size, v.createdAt) : vaultItemUrl(i.id, size);
+};
+export const sourceItemUrl = (source: string, ref: string, size?: PreviewSize) => sized(`${V}/sources/${encodeURIComponent(source)}/items/${encodeURIComponent(ref)}/content`, size);
 export async function addVaultVersion(a: IlvenAuth, itemId: string, blob: Blob, operation: string) {
   const r = await a.fetch(`${V}/items/${itemId}/versions?${new URLSearchParams({ app: "locke", operation })}`, {
     method: "POST", headers: { "content-type": blob.type || "image/png" }, body: blob,

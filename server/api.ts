@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { createCallerAuthenticator, type Caller } from "@ilven/common";
+import { makePreview, PREVIEW_SIZES } from "./previews.ts";
 import { fingerprint } from "./crypto.ts";
 import { contentType, syntheticPng } from "./images.ts";
 import {
@@ -41,7 +42,7 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, d
   registerSourceApi(app, ctx, API_PREFIX, sourceCaller);
   registerAutomationApi(app, ctx, API_PREFIX, authenticate, deps);
   registerNotificationApi(app, ctx, API_PREFIX, authenticate);
-  registerEditsApi(app, ctx, API_PREFIX, authenticate);
+  registerEditsApi(app, ctx, API_PREFIX, authenticate, deps.vaultUrl);
   const characters = characterStore(ctx);
   const admin = async (req: FastifyRequest): Promise<Caller> => {
     const c = await authenticate(req);
@@ -291,6 +292,10 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, d
     );
     if (!rows[0]) throw err(404, "not_found", "Result not found");
     const image = await readResult(ctx, id, Number(n), rows[0].job_key);
+    // `?size=thumb|display`: a preview for viewing (made on request); no size: the full-size result (downloads, keep).
+    const { size } = z.object({ size: z.enum(PREVIEW_SIZES).optional() }).parse(req.query ?? {});
+    const preview = size ? await makePreview(image, size) : null;
+    if (preview) return reply.header("content-type", "image/webp").header("cache-control", "private, no-store").send(preview);
     return reply.header("content-type", contentType(rows[0].format as "png" | "jpeg")).header("cache-control", "private, no-store").send(image);
   });
 

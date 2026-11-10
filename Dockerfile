@@ -15,6 +15,11 @@ FROM node:22-alpine
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /src/locke/dist/ ./
+# Image previews (thumbnails, display sizes): sharp and its native libvips, outside the bundle.
+COPY --from=build /src/locke/node_modules/sharp ./node_modules/sharp
+COPY --from=build /src/locke/node_modules/@img ./node_modules/@img
+COPY --from=build /src/locke/node_modules/semver ./node_modules/semver
+COPY --from=build /src/locke/node_modules/detect-libc ./node_modules/detect-libc
 USER node
 EXPOSE 8080
 CMD ["node", "--enable-source-maps", "index.mjs"]

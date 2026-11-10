@@ -203,7 +203,7 @@ function EditCharacter({ character: c, onClose, onChange, reload }: {
         </div>
       )}
       <input ref={input} type="file" accept="image/png,image/jpeg" multiple hidden onChange={(e) => { void upload(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
-      {picker && <VaultPicker max={MAX_FACES - c.faces.length} onClose={() => setPicker(false)} onPick={(p) => void upload(p.map((x) => x.file))} />}
+      {picker && <VaultPicker max={MAX_FACES - c.faces.length} onClose={() => setPicker(false)} onPick={(p) => void upload(p.flatMap((x) => (x.file ? [x.file] : [])))} />}
     </Sheet>
   );
 }

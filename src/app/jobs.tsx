@@ -107,13 +107,14 @@ export function useJob(id: string | undefined) {
   return { job, reload: load };
 }
 
-// Result images are decrypted by Locke on each request: keep one blob per result for the session.
+// Result images are decrypted by Locke on each request: keep one blob per result and size for the session. Pages
+// show previews (`size`); downloading and keeping use the full-size result.
 const blobs = new Map<string, Promise<Blob>>();
-export function resultBlob(auth: IlvenAuth, jobId: string, n: number): Promise<Blob> {
-  const k = `${jobId}/${n}`;
+export function resultBlob(auth: IlvenAuth, jobId: string, n: number, size?: "thumb" | "display"): Promise<Blob> {
+  const k = `${jobId}/${n}/${size ?? "full"}`;
   let p = blobs.get(k);
   if (!p) {
-    p = auth.fetch(`${API}/jobs/${jobId}/results/${n}`).then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))));
+    p = auth.fetch(`${API}/jobs/${jobId}/results/${n}${size ? `?size=${size}` : ""}`).then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))));
     p.catch(() => blobs.delete(k));
     blobs.set(k, p);
   }
@@ -124,19 +125,19 @@ export function forgetResults(jobId: string) {
 }
 
 /** Object URL of one result; null while loading, "error" when it can't be read. */
-export function useResultUrl(jobId: string, n: number): string | null | "error" {
+export function useResultUrl(jobId: string, n: number, size: "thumb" | "display" = "display"): string | null | "error" {
   const auth = useAuth();
   const [url, setUrl] = useState<string | null | "error">(null);
   useEffect(() => {
     let alive = true;
     let made: string | undefined;
-    resultBlob(auth, jobId, n).then((b) => {
+    resultBlob(auth, jobId, n, size).then((b) => {
       if (!alive) return;
       made = URL.createObjectURL(b);
       setUrl(made);
     }, () => alive && setUrl("error"));
     return () => { alive = false; if (made) URL.revokeObjectURL(made); };
-  }, [auth, jobId, n]);
+  }, [auth, jobId, n, size]);
   return url;
 }
 

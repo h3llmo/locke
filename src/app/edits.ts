@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { IlvenAuth } from "@ilven/web-auth";
-import { refreshJobsSummary, useAuth, VAULT_URL } from "./session.tsx";
+import { refreshJobsSummary, useAuth } from "./session.tsx";
 import { useAssistantChanges } from "./assistant.ts";
 import { api, API, ApiError } from "./jobs.tsx";
-import type { WorkflowStep } from "./data.tsx";
+import type { PreviewSize, WorkflowStep } from "./data.tsx";
 
 /**
  * Edits (server/edits.ts): several steps on one photo, in the user's order, as one thing. Each step runs as a hidden
@@ -14,6 +14,8 @@ export interface Edit {
   /** "2:no_face_found": step 3 (0-based 2) found no face and was skipped. */
   notes: string[]; failure: string | null;
   vaultItem: string | null; vaultVersion: number | null; operation: string;
+  /** Where the result was kept in the vault. */
+  kept: { item: string; version: number | null } | null;
   current: { status: "queued" | "running" | string; progress: number | null; queuePosition: number | null } | null;
   result: { format: string; width: number; height: number; bytes: number } | null;
   createdAt: string; updatedAt: string; finishedAt: string | null; expiresAt: string | null;
@@ -21,10 +23,17 @@ export interface Edit {
 export const editRunning = (e: Edit) => e.status === "running";
 export const skippedSteps = (e: Edit) => new Set(e.notes.map((n) => Number(n.split(":")[0])));
 
-export async function submitEdit(auth: IlvenAuth, photo: File, steps: WorkflowStep[], vault?: { item: string; version?: number }) {
+/**
+ * The photo of a new edit: an uploaded file, or a reference that Locke resolves on the server (a vault photo's version,
+ * or a previous edit's result): full-size photos never go through the browser. `vault` also says where keeping the
+ * result adds a version.
+ */
+export type EditSource = { file: File } | { fromEdit: string } | { vaultOnly: true };
+export async function submitEdit(auth: IlvenAuth, src: EditSource, steps: WorkflowStep[], vault?: { item: string; version?: number }) {
   const form = new FormData();
-  form.set("params", JSON.stringify({ image: "photo", steps, ...(vault ? { vaultItem: vault.item, ...(vault.version ? { vaultVersion: vault.version } : {}) } : {}) }));
-  form.set("photo", photo, photo.name);
+  const link = vault ? { vaultItem: vault.item, ...(vault.version ? { vaultVersion: vault.version } : {}) } : {};
+  form.set("params", JSON.stringify({ steps, ...link, ...("file" in src ? { image: "photo" } : "fromEdit" in src ? { fromEdit: src.fromEdit } : {}) }));
+  if ("file" in src) form.set("photo", src.file, src.file.name);
   const e = await api<Edit>(auth, "POST", "/edits", form);
   refreshJobsSummary();
   return e;
@@ -75,13 +84,14 @@ export function useEdit(id: string | undefined) {
   return { edit, reload: load };
 }
 
-// Images are decrypted by Locke on each request: one blob per edit image for the session.
+// Images are decrypted by Locke on each request: one blob per edit image and size for the session. Pages show
+// previews (`size`); only a download asks for the full-size result.
 const blobs = new Map<string, Promise<Blob>>();
-export function editBlob(auth: IlvenAuth, id: string, which: "original" | "result"): Promise<Blob> {
-  const k = `${id}/${which}`;
+export function editBlob(auth: IlvenAuth, id: string, which: "original" | "result", size?: PreviewSize): Promise<Blob> {
+  const k = `${id}/${which}/${size ?? "full"}`;
   let p = blobs.get(k);
   if (!p) {
-    p = auth.fetch(`${API}/edits/${id}/images/${which}`).then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))));
+    p = auth.fetch(`${API}/edits/${id}/images/${which}${size ? `?size=${size}` : ""}`).then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))));
     p.catch(() => blobs.delete(k));
     blobs.set(k, p);
   }
@@ -89,16 +99,16 @@ export function editBlob(auth: IlvenAuth, id: string, which: "original" | "resul
 }
 function forgetEdit(id: string) { for (const k of [...blobs.keys()]) if (k.startsWith(`${id}/`)) blobs.delete(k); }
 
-export function useEditImage(id: string, which: "original" | "result", enabled = true): string | null | "error" {
+export function useEditImage(id: string, which: "original" | "result", enabled = true, size: PreviewSize = "display"): string | null | "error" {
   const auth = useAuth();
   const [url, setUrl] = useState<string | null | "error">(null);
   useEffect(() => {
     if (!enabled) return;
     let alive = true;
     let made: string | undefined;
-    editBlob(auth, id, which).then((b) => { if (alive) { made = URL.createObjectURL(b); setUrl(made); } }, () => alive && setUrl("error"));
+    editBlob(auth, id, which, size).then((b) => { if (alive) { made = URL.createObjectURL(b); setUrl(made); } }, () => alive && setUrl("error"));
     return () => { alive = false; if (made) URL.revokeObjectURL(made); };
-  }, [auth, id, which, enabled]);
+  }, [auth, id, which, enabled, size]);
   return url;
 }
 
@@ -114,29 +124,10 @@ export async function downloadEdit(auth: IlvenAuth, e: Edit) {
 }
 
 /**
- * Keep = copy the final result into the user's vault: an edit of a vault photo becomes ONE new version of it
- * ("Undo last step" in the vault removes the whole edit); an uploaded photo becomes a new vault item.
+ * Keep = Locke copies the final result into the user's vault (server to vault, with the user's own login): an edit of
+ * a vault photo becomes ONE new version of it ("Undo last step" in the vault removes the whole edit); an uploaded
+ * photo becomes a new vault item.
  */
-export async function keepEdit(auth: IlvenAuth, e: Edit, title: string): Promise<{ how: "version" | "item"; item: string; version: number | null }> {
-  const blob = await editBlob(auth, e.id, "result");
-  const fail = async (r: Response) => {
-    const d = await r.json().catch(() => null) as { error?: string; message?: string } | null;
-    return new ApiError(d?.error ?? "vault_error", d?.message ?? `HTTP ${r.status}`);
-  };
-  if (e.vaultItem) {
-    const r = await auth.fetch(`${VAULT_URL}api/items/${e.vaultItem}/versions?${new URLSearchParams({ app: "locke", operation: e.operation })}`, {
-      method: "POST", headers: { "content-type": blob.type || "image/jpeg" }, body: blob,
-    });
-    if (r.ok) {
-      const d = await r.json().catch(() => null) as { currentVersion?: number; version?: { n: number }; n?: number } | null;
-      return { how: "version", item: e.vaultItem, version: d?.currentVersion ?? d?.version?.n ?? d?.n ?? null };
-    }
-    if (r.status !== 404) throw await fail(r); // trashed meanwhile: a new item instead
-  }
-  const r = await auth.fetch(`${VAULT_URL}api/items?${new URLSearchParams({ title: title.slice(0, 200), app: "locke" })}`, {
-    method: "POST", headers: { "content-type": blob.type || "image/jpeg" }, body: blob,
-  });
-  if (!r.ok) throw await fail(r);
-  const d = await r.json().catch(() => null) as { id?: string } | null;
-  return { how: "item", item: d?.id ?? "", version: 1 };
+export async function keepEdit(auth: IlvenAuth, e: Edit, title: string): Promise<Edit> {
+  return api<Edit>(auth, "POST", `/edits/${e.id}/keep`, { title: title.slice(0, 200) });
 }

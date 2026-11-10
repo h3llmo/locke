@@ -461,7 +461,7 @@ function CreateEditor() {
           }}
           onDone={async () => { await reloadPrompts(); setSheet(null); }} />
       )}
-      {sheet === "vault" && <VaultPicker max={max - refs.length} onClose={() => setSheet(null)} onPick={(p) => addRefs(p.map((x) => x.file))} />}
+      {sheet === "vault" && <VaultPicker max={max - refs.length} onClose={() => setSheet(null)} onPick={(p) => addRefs(p.flatMap((x) => (x.file ? [x.file] : [])))} />}
     </Page>
   );
 }

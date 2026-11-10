@@ -1,12 +1,14 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { HttpError } from "@ilven/common";
+import { HttpError, type Caller } from "@ilven/common";
 import { KEEP_UNKEPT_DAYS, err, newId, purgeJob, readResult, type Ctx } from "./jobs.ts";
 import { cleanImage, readMultipart } from "./builders.ts";
 import { contentType, detectFormat, imageSize } from "./images.ts";
 import { RowBlobs, newBlobKey, openRow, sealRow } from "./sealed.ts";
 import { MAX_STEPS, checkSteps, skippable, startStep, stepSchema, stepTitle, type Step } from "./steps.ts";
 import { notifier } from "./notify.ts";
+import { makePreview, PREVIEW_SIZES } from "./previews.ts";
+import { VaultClient } from "./vault.ts";
 
 /**
  * Edits (Editor): several tools on one photo, in the user's order (e.g. upscale ×2 then blur), handled as one thing.
@@ -17,10 +19,18 @@ import { notifier } from "./notify.ts";
  * The original and the working image are sealed in the object store under a per-edit key (RowBlobs). Steps run while
  * the user is away (Locke holds the images itself, no vault access needed). Unkept results are deleted after
  * KEEP_UNKEPT_DAYS, like job results.
+ *
+ * Full-size images never need to cross the user's connection: a vault photo (or a previous edit's result) is read by
+ * reference on the server, the browser is shown previews (`?size=`), keeping writes to the vault from the server, and
+ * only a download sends the original. Every step runs on the full-size image.
  */
 const MAX_RUNNING_PER_USER = 20;
 
-interface EditData { steps: Step[]; vaultItem?: string; vaultVersion?: number }
+interface EditData {
+  steps: Step[]; vaultItem?: string; vaultVersion?: number;
+  /** Where the result was kept in the vault (a new version of vaultItem, or a new item). */
+  kept?: { item: string; version: number | null };
+}
 interface EditRow {
   id: string; owner_sub: string; data: string; blob_key: string; status: "running" | "done" | "failed" | "cancelled";
   step: number; job_id: string | null; notes: string[]; failure: string | null;
@@ -46,7 +56,7 @@ function view(ctx: Ctx, e: Joined) {
   const d = openRow<EditData>(ctx.sealer, e.id, e.data);
   return {
     id: e.id, status: e.status, steps: d.steps, step: e.step, notes: e.notes, failure: e.failure,
-    vaultItem: d.vaultItem ?? null, vaultVersion: d.vaultVersion ?? null, operation: editOperation(d.steps),
+    vaultItem: d.vaultItem ?? null, vaultVersion: d.vaultVersion ?? null, operation: editOperation(d.steps), kept: d.kept ?? null,
     current: e.status === "running" && e.job_status
       ? { status: e.job_status, progress: e.job_progress, queuePosition: e.position }
       : null,
@@ -74,8 +84,11 @@ async function stopJob(ctx: Ctx, jobId: string | null) {
   else await ctx.db.query("UPDATE jobs SET cancel_requested = true WHERE id = $1 AND status = 'running'", [jobId]);
 }
 
-export function registerEditsApi(app: FastifyInstance, ctx: Ctx, prefix: string, auth: (req: FastifyRequest) => Promise<{ sub: string }>) {
+export function registerEditsApi(app: FastifyInstance, ctx: Ctx, prefix: string, auth: (req: FastifyRequest) => Promise<Caller>, vaultUrl: string) {
   const blobs = blobsOf(ctx);
+  // The user's own credential, forwarded: Locke reads and writes their vault for them, as the browser would.
+  const vaultOf = (c: Caller) => new VaultClient(vaultUrl, c.credential, true);
+  const keeping = new Set<string>();
   const one = async (sub: string, id: string) => {
     const { rows } = await ctx.db.query<Joined>(`${SELECT} WHERE e.id = $1 AND e.owner_sub = $2`, [id, sub]);
     if (!rows[0]) throw err(404, "not_found", "Edit not found");
@@ -83,27 +96,48 @@ export function registerEditsApi(app: FastifyInstance, ctx: Ctx, prefix: string,
   };
   const idOf = (p: unknown) => z.object({ id: z.string().max(64) }).parse(p).id;
 
-  /** Multipart: `params` {image, steps, vaultItem?, vaultVersion?} and the photo. Every step is checked up front. */
+  /**
+   * Multipart `params` {steps, image?, vaultItem?, vaultVersion?, fromEdit?}. The photo is, in this order: the uploaded
+   * file named by `image`; another done edit's result (`fromEdit`, e.g. "Edit the result"); or the vault photo
+   * `vaultItem` at `vaultVersion` (default: its latest), read from the vault by Locke. `vaultItem` also says where
+   * keeping the result adds a version. Every step is checked up front.
+   */
   app.post(`${prefix}/edits`, async (req, reply) => {
     const c = await auth(req);
     const { params, files } = await readMultipart(req);
     const p = z.object({
-      image: z.string().min(1).max(64),
+      image: z.string().min(1).max(64).optional(),
       steps: z.array(stepSchema).min(1).max(MAX_STEPS),
       vaultItem: z.uuid().optional(),
       vaultVersion: z.number().int().min(1).optional(),
+      fromEdit: z.string().max(64).optional(),
     }).parse(params);
-    const photo = files.get(p.image);
-    if (!photo || files.size !== 1) throw err(400, "bad_request", "Send exactly one photo, named by params.image");
-    const clean = cleanImage("photo", photo);
-    if (!clean.size) throw err(415, "unsupported_image", "photo: unreadable image size");
+    if (p.image ? files.size !== 1 || !files.has(p.image) : files.size !== 0) throw err(400, "bad_request", "Send at most one photo, named by params.image");
     await checkSteps(ctx, c.sub, p.steps);
     const { rows: n } = await ctx.db.query<{ n: number }>("SELECT count(*)::int AS n FROM edits WHERE owner_sub = $1 AND status = 'running'", [c.sub]);
     if (n[0]!.n >= MAX_RUNNING_PER_USER) throw err(409, "too_many", `At most ${MAX_RUNNING_PER_USER} edits in progress`);
 
+    let photo: Buffer;
+    let vaultVersion = p.vaultVersion;
+    if (p.image) photo = files.get(p.image)!;
+    else if (p.fromEdit) {
+      const src = await one(c.sub, p.fromEdit);
+      if (src.status !== "done") throw err(409, "not_done", "That edit has no result yet");
+      const img = await blobs.get(src.id, src.blob_key, "current");
+      if (!img) throw err(410, "expired", "That edit's images were deleted");
+      photo = img;
+    } else if (p.vaultItem) {
+      const v = await vaultOf(c).version(p.vaultItem, p.vaultVersion);
+      if (!/^image\/(png|jpeg)$/.test(v.type)) throw err(415, "unsupported_image", "photo: use a PNG or JPEG image");
+      photo = v.bytes;
+      vaultVersion = v.n;
+    } else throw err(400, "bad_request", "Send a photo, a vault photo (vaultItem) or an edit to continue (fromEdit)");
+    const clean = cleanImage("photo", photo);
+    if (!clean.size) throw err(415, "unsupported_image", "photo: unreadable image size");
+
     const id = newId("ed");
     const key = newBlobKey(ctx.sealer);
-    const data: EditData = { steps: p.steps, ...(p.vaultItem ? { vaultItem: p.vaultItem } : {}), ...(p.vaultVersion ? { vaultVersion: p.vaultVersion } : {}) };
+    const data: EditData = { steps: p.steps, ...(p.vaultItem ? { vaultItem: p.vaultItem } : {}), ...(vaultVersion ? { vaultVersion } : {}) };
     try {
       await blobs.put(id, key, "original", clean.data);
       await blobs.put(id, key, "current", clean.data);
@@ -127,15 +161,69 @@ export function registerEditsApi(app: FastifyInstance, ctx: Ctx, prefix: string,
 
   app.get(`${prefix}/edits/:id`, async (req) => view(ctx, await one((await auth(req)).sub, idOf(req.params))));
 
-  /** The photo before the edit, or the final result once done. Decrypted per request, never cached. */
+  /**
+   * The photo before the edit, or the final result once done. `?size=thumb|display`: a preview (WebP, made once and
+   * sealed with the edit's other images); no size: the full-size image (downloads). Never cached by the browser.
+   */
   app.get(`${prefix}/edits/:id/images/:which`, async (req, reply) => {
     const c = await auth(req);
     const { which } = z.object({ which: z.enum(["original", "result"]) }).parse(req.params);
+    const { size } = z.object({ size: z.enum(PREVIEW_SIZES).optional() }).parse(req.query ?? {});
     const e = await one(c.sub, idOf(req.params));
     if (which === "result" && e.status !== "done") throw err(409, "not_done", "This edit has no result yet");
+    const send = (img: Buffer, type: string) => reply.header("content-type", type).header("cache-control", "private, no-store").send(img);
+    if (size) {
+      const stored = await blobs.get(e.id, e.blob_key, `${which}.${size}`);
+      if (stored) return send(stored, "image/webp");
+    }
     const img = await blobs.get(e.id, e.blob_key, which === "result" ? "current" : "original");
     if (!img) throw err(410, "expired", "This edit's images were deleted");
-    return reply.header("content-type", contentType(detectFormat(img) ?? "png")).header("cache-control", "private, no-store").send(img);
+    if (size) {
+      const preview = await makePreview(img, size);
+      if (preview) {
+        await blobs.put(e.id, e.blob_key, `${which}.${size}`, preview);
+        return send(preview, "image/webp");
+      }
+    }
+    return send(img, contentType(detectFormat(img) ?? "png"));
+  });
+
+  /**
+   * Keep the result in the user's vault, from the server: an edit of a vault photo becomes ONE new version of it (so
+   * "Undo last step" removes the whole edit), anything else (or a photo trashed meanwhile) a new vault item.
+   */
+  app.post(`${prefix}/edits/:id/keep`, async (req) => {
+    const c = await auth(req);
+    const { title } = z.object({ title: z.string().trim().min(1).max(200).optional() }).parse(req.body ?? {});
+    const e = await one(c.sub, idOf(req.params));
+    if (e.status !== "done") throw err(409, "not_done", "This edit has no result yet");
+    const d = openRow<EditData>(ctx.sealer, e.id, e.data);
+    if (d.kept) return view(ctx, e);
+    if (keeping.has(e.id)) throw err(409, "conflict", "Already being kept");
+    keeping.add(e.id);
+    try {
+      const img = await blobs.get(e.id, e.blob_key, "current");
+      if (!img) throw err(410, "expired", "This edit's images were deleted");
+      const type = contentType(detectFormat(img) ?? "png");
+      const vault = vaultOf(c);
+      let kept: EditData["kept"];
+      if (d.vaultItem) {
+        try {
+          const it = await vault.addVersion(d.vaultItem, img, type, editOperation(d.steps));
+          kept = { item: it.id, version: it.currentVersion };
+        } catch (x) {
+          if (!(x instanceof HttpError && x.status === 404)) throw x; // trashed meanwhile: a new item instead
+        }
+      }
+      if (!kept) {
+        const it = await vault.newItem(img, type, title ?? `Edit · ${d.steps.map(stepTitle).join(", ")}`);
+        kept = { item: it.id, version: it.currentVersion ?? 1 };
+      }
+      await ctx.db.query("UPDATE edits SET data = $2, updated_at = now() WHERE id = $1", [e.id, sealRow(ctx.sealer, e.id, { ...d, kept })]);
+      return view(ctx, await one(c.sub, e.id));
+    } finally {
+      keeping.delete(e.id);
+    }
   });
 
   app.post(`${prefix}/edits/:id/cancel`, async (req) => {

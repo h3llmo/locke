@@ -3,13 +3,13 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
-  "description": "Locke \u2014 AI photo studio. An Ilven integration (runs inside an Ilven landing zone).",
+  "description": "Locke — AI photo studio. An Ilven integration (runs inside an Ilven landing zone).",
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "npm run build:web && npm run build:server",
     "build:web": "vite build",
-    "build:server": "esbuild server/index.ts --bundle --platform=node --target=node22 --format=esm --preserve-symlinks --external:pg-native --outfile=dist/index.mjs --sourcemap --banner:js=\"import { createRequire as __cr } from 'module'; const require = __cr(import.meta.url);\"",
+    "build:server": "esbuild server/index.ts --bundle --platform=node --target=node22 --format=esm --preserve-symlinks --external:pg-native --external:sharp --outfile=dist/index.mjs --sourcemap --banner:js=\"import { createRequire as __cr } from 'module'; const require = __cr(import.meta.url);\"",
     "test": "NODE_PRESERVE_SYMLINKS=1 tsx --test server/*.test.ts && node docs/worker-api/vectors.mjs"
   },
   "dependencies": {
@@ -26,6 +26,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router-dom": "7.18.5",
+    "sharp": "0.35.5",
     "zod": "4.6.7"
   },
   "devDependencies": {

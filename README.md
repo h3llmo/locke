@@ -46,6 +46,10 @@ npm run build        # dist/web (app) + dist/index.mjs (server)
   enhancement, upscale ×2/×4, background blur. Applying them makes one **edit** (`server/edits.ts`): each step is a hidden
   GPU job feeding the next; only the final result is offered, and keeping it on a vault photo adds one version. Edits
   show as one row in Jobs; "Edit the result" chains another edit. A step that finds no face is skipped.
+- **Full size only where it matters:** pages show previews (`?size=thumb|display`, WebP, about 480 / 2048 px) of vault
+  photos, source photos, edits and results; GPU steps always run on the full-size original. A vault photo or a previous
+  edit's result goes to an edit by reference (Locke reads it on the server with the user's own login), and Keep writes
+  to the vault from the server, so full-size images only cross the user's connection on Download.
 - **Characters:** name, gender and age (which face is theirs), 1–8 photos, main face first. Sealed at rest.
 - **Automate:** workflows watch vault sources (any collection, e.g. one schedule) and run Face swap / Enhance, then
   Blur last, on every new image; each step adds a version in the vault. They run while the user is away with a
@@ -74,5 +78,6 @@ npm run build        # dist/web (app) + dist/index.mjs (server)
   they saw, so a photo added to an album is picked up whatever its date. Each ticked iCloud album (and Favorites,
   Hidden) is its own collection: one workflow per album.
 - Workflows use the same step builder: any order (blur is no longer forced last), one vault version per step.
-- The vault picker reads each vault image by version, so a picked image is never an older cached version.
+- The vault picker reads each vault image by version, so a picked image is never an older cached version. Its grid
+  shows thumbnails (iCloud: Apple's own small copies, no original downloaded).
 - Not yet: push notifications.

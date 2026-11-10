@@ -84,13 +84,13 @@ function Thumb({ job }: { job: Job }) {
   const done = job.status === "done" && (job.resultCount ?? 0) > 0;
   return (
     <div className="tile app-jobthumb">
-      {done ? <ResultImg job={job} n={1} alt="" /> : <span className="app-jobthumb-icon"><Icon name={job.type === "generate" ? "create" : "editor"} /></span>}
+      {done ? <ResultImg job={job} n={1} alt="" size="thumb" /> : <span className="app-jobthumb-icon"><Icon name={job.type === "generate" ? "create" : "editor"} /></span>}
     </div>
   );
 }
 
-function ResultImg({ job, n, alt }: { job: Job; n: number; alt: string }) {
-  const url = useResultUrl(job.id, n);
+function ResultImg({ job, n, alt, size = "display" }: { job: Job; n: number; alt: string; size?: "thumb" | "display" }) {
+  const url = useResultUrl(job.id, n, size);
   if (url === null) return <div className="skel app-fill" />;
   if (url === "error") return <span className="app-jobthumb-icon"><Icon name="close" /></span>;
   return <img src={url} alt={alt} />;
@@ -246,7 +246,7 @@ function ScheduleCard({ prompt: p, reload }: { prompt: SavedPrompt; reload(): Pr
       {s.lastError && <p className="hint hint-error">{t(`schedule.error.${["no_worker", "unsupported", "empty_prompt", "character_not_found", "character_without_photos"].includes(s.lastError) ? s.lastError : "other"}` as MessageKey)}</p>}
       {done.length > 0 && (
         <div className="hscroll app-strip">
-          {done.map((j) => <Link key={j.id} to={`/jobs/${j.id}`} className="tile app-striptile" aria-label={j.summary?.title ?? ""}><ResultImg job={j} n={1} alt="" /></Link>)}
+          {done.map((j) => <Link key={j.id} to={`/jobs/${j.id}`} className="tile app-striptile" aria-label={j.summary?.title ?? ""}><ResultImg job={j} n={1} alt="" size="thumb" /></Link>)}
         </div>
       )}
       <div className="app-row">
@@ -345,7 +345,7 @@ function JobResult() {
             {Array.from({ length: n }, (_, k) => k + 1).map((i) => (
               <div key={i} className="app-result-cell">
                 <button type="button" className="tile app-result" onClick={() => setViewer(i)} aria-label={t("jobs.open", { n: i, total: n })}>
-                  <ResultImg job={job} n={i} alt={t("jobs.variant", { n: i, total: n })} />
+                  <ResultImg job={job} n={i} alt={t("jobs.variant", { n: i, total: n })} size="thumb" />
                   {kept.has(i) && <span className="tile-tag"><Icon name="check" size={16} />{t("jobs.keptTag")}</span>}
                 </button>
                 <div className="app-row app-result-actions">

@@ -204,12 +204,9 @@ export function createLockeMcp(app: FastifyInstance, vaultUrl: string) {
       },
       annotations: act,
     }, async ({ photo, steps }) => toolResult(async () => {
-      const res = await vault(`/items/${encodeURIComponent(photo)}/content`);
-      const type = res.headers.get("content-type") ?? "";
-      if (!/^image\/(png|jpeg)/.test(type)) throw err(415, "unsupported_image", "That vault file isn't a PNG or JPEG photo");
+      // Locke reads the photo from the vault itself (its latest version).
       const form = new FormData();
-      form.set("params", JSON.stringify({ image: "photo", steps, vaultItem: photo }));
-      form.set("photo", new Blob([await res.arrayBuffer()], { type }), "photo");
+      form.set("params", JSON.stringify({ steps, vaultItem: photo }));
       return briefEdit((await call("POST", "/edits", { form })).json as EditView);
     }));
 
@@ -233,20 +230,9 @@ export function createLockeMcp(app: FastifyInstance, vaultUrl: string) {
       annotations: act,
     }, async ({ job, result }) => toolResult(async () => {
       if (job.startsWith("ed_")) {
-        const e = await get<EditView>(`/edits/${encodeURIComponent(job)}`);
-        if (e.status !== "done") throw err(409, "not_done", "That edit has no result yet");
-        const img = await call("GET", `/edits/${encodeURIComponent(job)}/images/result`);
-        const body = new Uint8Array(img.raw);
-        if (e.vaultItem) {
-          try {
-            await vault(`/items/${encodeURIComponent(e.vaultItem)}/versions?${new URLSearchParams({ app: "locke", operation: e.operation })}`, { method: "POST", headers: { "content-type": img.type }, body });
-            return { saved: "new_version", photo: e.vaultItem };
-          } catch (x) {
-            if (!(x instanceof HttpError && x.status === 404)) throw x;
-          }
-        }
-        const r = (await (await vault(`/items?${new URLSearchParams({ title: `Edit · ${e.steps.map((x) => x.op).join(", ")}`, app: "locke" })}`, { method: "POST", headers: { "content-type": img.type }, body })).json()) as { id: string };
-        return { saved: "new_photo", photo: r.id };
+        const e = await send<EditView>("POST", `/edits/${encodeURIComponent(job)}/keep`, {});
+        const k = e.kept!;
+        return k.item === e.vaultItem ? { saved: "new_version", photo: k.item, version: k.version } : { saved: "new_photo", photo: k.item };
       }
       const j = await get<Job>(`/jobs/${encodeURIComponent(job)}`);
       if (j.status !== "done") throw err(409, "not_done", "That job has no results yet");

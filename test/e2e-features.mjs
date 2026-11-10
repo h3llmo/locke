@@ -6,6 +6,7 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { crc32, deflateSync } from "node:zlib";
 import { aad, b64u, generateWorkerKeyPair, open, seal, unwrapJobKey } from "../docs/worker-api/locke-worker-crypto.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://gateway";
@@ -41,6 +42,19 @@ const until = async (what, fn, ms = 150_000) => {
   }
 };
 
+/** A plain-colour PNG of w×h (big enough for real previews). */
+function solidPng(w, h) {
+  const chunk = (type, data) => {
+    const td = Buffer.concat([Buffer.from(type), data]);
+    const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
+    const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(td));
+    return Buffer.concat([len, td, crc]);
+  };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2;
+  const row = Buffer.alloc(1 + w * 3);
+  for (let x = 0; x < w; x++) row.set([180 + (x % 50), 60, 60], 1 + x * 3);
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(Buffer.concat(Array(h).fill(row)))), chunk("IEND", Buffer.alloc(0))]);
+}
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
 const CAPS = {
   maxConcurrency: 1, resultFormats: ["png", "jpeg"],
@@ -266,6 +280,53 @@ test("edits: several steps on one photo run as one, in order; a step without a f
   assert.ok((await call("GET", `${API}/edits`, { auth: alice })).body.edits.some((e) => e.id === id));
   // Step jobs are gone once their result moved on.
   assert.equal((await call("GET", `${API}/jobs/${c.jobId}`, { auth: alice })).status, 404);
+
+  // Pages are shown previews; only downloads get the full-size image. A 1×1 photo is its own preview.
+  const thumb = await call("GET", `${API}/edits/${id}/images/result?size=thumb`, { auth: alice });
+  assert.equal(thumb.status, 200);
+  assert.equal(thumb.type, "image/png");
+  assert.equal((await call("GET", `${API}/edits/${id}/images/result?size=huge`, { auth: alice })).status, 400);
+
+  // Keep: Locke writes the result to the vault itself (an uploaded photo becomes a new vault item); twice is once.
+  const k = await call("POST", `${API}/edits/${id}/keep`, { auth: alice, json: { title: "e2e edit" } });
+  assert.equal(k.status, 200, JSON.stringify(k.body));
+  made.items.add(k.body.kept.item);
+  assert.equal(k.body.kept.version, 1);
+  assert.deepEqual((await call("POST", `${API}/edits/${id}/keep`, { auth: alice, json: {} })).body.kept, k.body.kept);
+  const item = (await call("GET", `${V}/items/${k.body.kept.item}`, { auth: alice })).body;
+  assert.equal(item.versions.length, 1);
+  // The vault keeps previews next to each version, encrypted like it (WebP, about 480 / 2048 px).
+  const big = await call("POST", `${V}/items?title=e2e-big`, { auth: alice, bytes: solidPng(2400, 1600), type: "image/png" });
+  assert.equal(big.status, 201, JSON.stringify(big.body));
+  made.items.add(big.body.id);
+  for (const size of ["thumb", "display"]) {
+    const p = await call("GET", `${V}/items/${big.body.id}/versions/1/content?size=${size}`, { auth: alice });
+    assert.equal(p.status, 200);
+    assert.equal(p.type, "image/webp");
+    assert.ok(p.body.length < big.body.size, "smaller than the original");
+  }
+  assert.equal((await call("GET", `${V}/items/${big.body.id}/versions/1/content`, { auth: alice })).type, "image/png", "no size: the original");
+  assert.equal((await call("GET", `${V}/items/${big.body.id}/versions/1/content?size=thumb`, { auth: admin })).status, 404, "per user");
+
+  // New edits by reference, no photo sent: a previous edit's result, or a vault photo read by Locke.
+  const byRef = async (extra) => {
+    const form = new FormData();
+    form.set("params", JSON.stringify({ steps: [{ op: "face_swap", characters: [made.character] }], ...extra }));
+    const x = await call("POST", `${API}/edits`, { auth: alice, form });
+    assert.equal(x.status, 201, JSON.stringify(x.body));
+    assert.equal((await call("POST", `${API}/edits/${x.body.id}/cancel`, { auth: alice })).status, 200);
+    assert.equal((await call("DELETE", `${API}/edits/${x.body.id}`, { auth: alice })).status, 204);
+    return x.body;
+  };
+  assert.equal((await byRef({ fromEdit: id, vaultItem: item.id, vaultVersion: 1 })).vaultItem, item.id);
+  assert.equal((await byRef({ vaultItem: item.id })).vaultVersion, 1, "the latest version, read from the vault");
+  const none = new FormData();
+  none.set("params", JSON.stringify({ steps: [{ op: "upscale", scale: 2 }] }));
+  assert.equal((await call("POST", `${API}/edits`, { auth: alice, form: none })).status, 400, "a photo or a reference is needed");
+  const theirs = new FormData();
+  theirs.set("params", JSON.stringify({ steps: [{ op: "face_swap", characters: [made.character] }], fromEdit: id }));
+  assert.equal((await call("POST", `${API}/edits`, { auth: admin, form: theirs })).status, 404, "another user's edit");
+
   assert.equal((await call("DELETE", `${API}/edits/${id}`, { auth: alice })).status, 204);
   assert.equal((await call("GET", `${API}/edits/${id}`, { auth: alice })).status, 404);
 });

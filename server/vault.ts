@@ -1,9 +1,10 @@
 import { HttpError } from "@ilven/common";
 
 /**
- * Locke's server-side calls to Locke Vault, made for one user with Locke's delegated key for that user (Nevli,
- * audience locke-vault + the services the vault reads sources from). Used by workflows only: interactive calls go
- * from the browser with the user's own login.
+ * Locke's server-side calls to Locke Vault, always for one user: workflows use Locke's delegated key for that user
+ * (Nevli, audience locke-vault + the services the vault reads sources from); edits use the user's own credential,
+ * forwarded from their request (a conventional call, CLAUDE.md §5.3), so full-size photos go from the vault to Locke
+ * and back without crossing the user's connection.
  */
 export class VaultError extends HttpError {}
 
@@ -14,8 +15,11 @@ export interface SourceInfo {
 }
 export interface SourceItem { ref: string; name: string; addedAt?: string; date?: string }
 
+export interface VaultItemBrief { id: string; currentVersion: number | null; versions: { n: number }[] }
+
 export class VaultClient {
-  constructor(private base: string, private key: string) {}
+  /** `user`: the key is the user's own login or API key (not Locke's delegated key). */
+  constructor(private base: string, private key: string, private user = false) {}
 
   private async call(path: string, init: RequestInit = {}): Promise<Response> {
     const res = await fetch(`${this.base}${path}`, {
@@ -25,7 +29,7 @@ export class VaultClient {
     }).catch(() => { throw new VaultError(503, "vault_unavailable", "Locke Vault is not reachable"); });
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
-      const code = res.status === 401 ? "automation_revoked" : body?.error ?? `vault_${res.status}`;
+      const code = res.status === 401 ? (this.user ? "unauthorized" : "automation_revoked") : body?.error ?? `vault_${res.status}`;
       throw new VaultError(res.status, code, body?.message ?? `Locke Vault answered HTTP ${res.status}`);
     }
     return res;
@@ -43,9 +47,22 @@ export class VaultClient {
   async content(itemId: string): Promise<Buffer> {
     return Buffer.from(await (await this.call(`/items/${encodeURIComponent(itemId)}/content`)).arrayBuffer());
   }
+  /** One version's original bytes (the latest when `n` is omitted), with its number. */
+  async version(itemId: string, n?: number): Promise<{ bytes: Buffer; type: string; n: number }> {
+    const item = await this.json<VaultItemBrief>(`/items/${encodeURIComponent(itemId)}`);
+    const v = n ?? item.currentVersion;
+    if (!v || !item.versions.some((x) => x.n === v)) throw new VaultError(404, "not_found", "That version of the vault photo no longer exists");
+    const res = await this.call(`/items/${encodeURIComponent(itemId)}/versions/${v}/content`);
+    return { bytes: Buffer.from(await res.arrayBuffer()), type: res.headers.get("content-type") ?? "", n: v };
+  }
   addVersion(itemId: string, bytes: Buffer, type: string, operation: string, note?: string) {
     const q = new URLSearchParams({ app: "locke", operation, ...(note ? { note } : {}) });
-    return this.json<{ id: string }>(`/items/${encodeURIComponent(itemId)}/versions?${q}`, {
+    return this.json<VaultItemBrief>(`/items/${encodeURIComponent(itemId)}/versions?${q}`, {
+      method: "POST", headers: { "content-type": type }, body: new Uint8Array(bytes),
+    });
+  }
+  newItem(bytes: Buffer, type: string, title: string) {
+    return this.json<VaultItemBrief>(`/items?${new URLSearchParams({ title: title.slice(0, 200), app: "locke" })}`, {
       method: "POST", headers: { "content-type": type }, body: new Uint8Array(bytes),
     });
   }

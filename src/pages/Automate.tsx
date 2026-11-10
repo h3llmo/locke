@@ -260,7 +260,7 @@ function Activity({ workflow }: { workflow: Workflow }) {
         <ul className="app-joblist" role="list">
           {runs.map((r) => (
             <li key={r.id} className="app-jobrow">
-              <span className="tile app-jobthumb">{r.itemId ? <AuthImg url={vaultItemUrl(r.itemId)} alt="" /> : <span className="app-jobthumb-icon"><Icon name="automate" /></span>}</span>
+              <span className="tile app-jobthumb">{r.itemId ? <AuthImg url={vaultItemUrl(r.itemId, "thumb")} alt="" /> : <span className="app-jobthumb-icon"><Icon name="automate" /></span>}</span>
               <span className="app-jobrow-text">
                 <span className="t-body-s">
                   {r.status === "done" ? t("automate.run.done") : r.status === "failed" ? t(`automate.fail.${FAILS.includes(r.failure ?? "") ? r.failure : "other"}` as MessageKey)

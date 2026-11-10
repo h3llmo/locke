@@ -4,9 +4,10 @@ import { useI18n } from "../i18n/index.tsx";
 import type { MessageKey } from "../i18n/en.ts";
 import { useAuth, useIsAdmin } from "../app/session.tsx";
 import { ApiError, useOptions } from "../app/jobs.tsx";
+import { AuthImg } from "../components/Shared.tsx";
 import { useCharacters, type WorkflowStep } from "../app/data.tsx";
 import {
-  cancelEdit, deleteEdit, downloadEdit, editBlob, keepEdit, skippedSteps, submitEdit, useEdit, useEditImage, useEdits, type Edit,
+  cancelEdit, deleteEdit, downloadEdit, keepEdit, skippedSteps, submitEdit, useEdit, useEditImage, useEdits, type Edit,
 } from "../app/edits.ts";
 import { useAssistantContext } from "../app/assistant.ts";
 import { EmptyState, Page } from "../components/Page.tsx";
@@ -30,17 +31,34 @@ export function EditorPage() {
   );
 }
 
-interface Photo { file: File; url: string; vaultItem?: string; version?: number }
+/**
+ * The photo being edited. An upload is a file; a vault photo or a previous edit's result is only a reference, shown
+ * as a preview: Locke reads the full-size image on the server, so it never crosses the user's connection.
+ */
+type Photo = { vaultItem?: string; version?: number } & (
+  | { kind: "file"; file: File; url: string }
+  | { kind: "vault"; vaultItem: string; version: number; preview: string }
+  | { kind: "edit"; fromEdit: string }
+);
 const MAX_BYTES = 25 * 1024 * 1024;
 // Kept while the app is open, so creating a character (another screen) loses neither the photo nor the steps.
 let keptPhoto: Photo | null = null;
 let keptSteps: WorkflowStep[] = [];
+const release = (p: Photo | null) => { if (p?.kind === "file") URL.revokeObjectURL(p.url); };
 
-/** Opens the Editor on an image (e.g. an edit's result, to edit it further). */
-export function editNext(file: File, vault?: { item: string; version?: number | null }) {
-  if (keptPhoto) URL.revokeObjectURL(keptPhoto.url);
-  keptPhoto = { file, url: URL.createObjectURL(file), ...(vault ? { vaultItem: vault.item, ...(vault.version ? { version: vault.version } : {}) } : {}) };
+/** Opens the Editor on an edit's result, to edit it further. */
+export function editNext(fromEdit: string, vault?: { item: string; version?: number | null }) {
+  release(keptPhoto);
+  keptPhoto = { kind: "edit", fromEdit, ...(vault ? { vaultItem: vault.item, ...(vault.version ? { version: vault.version } : {}) } : {}) };
   keptSteps = [];
+}
+
+function PhotoImage({ photo }: { photo: Photo }) {
+  const { t } = useI18n();
+  const edit = useEditImage(photo.kind === "edit" ? photo.fromEdit : "", "result", photo.kind === "edit");
+  if (photo.kind === "file") return <img src={photo.url} alt={t("editor.photo")} />;
+  if (photo.kind === "vault") return <AuthImg url={photo.preview} alt={t("editor.photo")} />;
+  return typeof edit === "string" && edit !== "error" ? <img src={edit} alt={t("editor.photo")} /> : <div className="skel" style={{ height: 240 }} />;
 }
 
 function EditorHome() {
@@ -61,7 +79,7 @@ function EditorHome() {
   const photoInput = useRef<HTMLInputElement>(null);
   const label = useStepLabel();
 
-  const setPhoto = (p: Photo | null) => { if (keptPhoto && keptPhoto !== p) URL.revokeObjectURL(keptPhoto.url); keptPhoto = p; setPhotoState(p); };
+  const setPhoto = (p: Photo | null) => { if (keptPhoto !== p) release(keptPhoto); keptPhoto = p; setPhotoState(p); };
   const setSteps = (s: WorkflowStep[]) => { keptSteps = s; setStepsState(s); setError(null); };
   useAssistantContext("editor", {
     photo: photo ? (photo.vaultItem ? { vaultPhotoId: photo.vaultItem, version: photo.version ?? null } : { notInVault: true }) : null,
@@ -81,10 +99,10 @@ function EditorHome() {
     if (changed) setSteps(fixed);
   }, [characters]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fromFile = (file: File, vault?: { item: string; version?: number }) => {
+  const fromFile = (file: File) => {
     if (!/^image\/(png|jpeg)$/.test(file.type)) { toast(t("create.refs.type")); return; }
     if (file.size > MAX_BYTES) { toast(t("create.refs.size")); return; }
-    setPhoto({ file, url: URL.createObjectURL(file), ...(vault ? { vaultItem: vault.item, ...(vault.version ? { version: vault.version } : {}) } : {}) });
+    setPhoto({ kind: "file", file, url: URL.createObjectURL(file) });
   };
 
   const ready = !busy && !!photo && stepsReady(steps, chars) && steps.every((s) => offered(caps, s.op));
@@ -93,7 +111,8 @@ function EditorHome() {
     setBusy(true);
     setError(null);
     try {
-      const e = await submitEdit(auth, photo.file, steps, photo.vaultItem ? { item: photo.vaultItem, version: photo.version } : undefined);
+      const src = photo.kind === "file" ? { file: photo.file } : photo.kind === "edit" ? { fromEdit: photo.fromEdit } : { vaultOnly: true as const };
+      const e = await submitEdit(auth, src, steps, photo.vaultItem ? { item: photo.vaultItem, version: photo.version } : undefined);
       nav(`/editor/${e.id}`);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t("create.error.send"));
@@ -119,7 +138,7 @@ function EditorHome() {
           <h2 className="t-title-s" id="ed-photo"><span className="app-stepnum">1</span>{t("editor.photo")}</h2>
           {photo ? (
             <div className="tile app-photo">
-              <img src={photo.url} alt={t("editor.photo")} />
+              <PhotoImage photo={photo} />
               {photo.vaultItem && <span className="tile-tag"><Icon name="lock" size={16} />{photo.version ? t("editor.fromVault.version", { n: photo.version }) : t("editor.fromVault")}</span>}
               <button type="button" className="icon-btn on-image app-ref-remove" aria-label={t("editor.photo.remove")} onClick={() => setPhoto(null)}><Icon name="close" size={16} /></button>
             </div>
@@ -156,7 +175,11 @@ function EditorHome() {
       </div>
 
       <RecentEdits />
-      {picker && <VaultPicker max={1} stage onClose={() => setPicker(false)} onPick={(p) => { const x = p[0]; if (x) fromFile(x.file, x.vaultItem ? { item: x.vaultItem, version: x.version } : undefined); }} />}
+      {picker && <VaultPicker max={1} stage byRef onClose={() => setPicker(false)} onPick={(p) => {
+        const x = p[0];
+        if (x?.file) fromFile(x.file);
+        else if (x) setPhoto({ kind: "vault", vaultItem: x.vaultItem, version: x.version, preview: x.preview });
+      }} />}
     </Page>
   );
 }
@@ -188,7 +211,7 @@ export function EditProgress({ edit: e }: { edit: Edit }) {
 }
 
 export function EditThumb({ edit: e }: { edit: Edit }) {
-  const url = useEditImage(e.id, e.status === "done" ? "result" : "original", e.status === "done" || e.status === "running");
+  const url = useEditImage(e.id, e.status === "done" ? "result" : "original", e.status === "done" || e.status === "running", "thumb");
   return (
     <div className="tile app-jobthumb">
       {typeof url === "string" && url !== "error" ? <img src={url} alt="" /> : <span className="app-jobthumb-icon"><Icon name="editor" /></span>}
@@ -248,7 +271,7 @@ function EditDetail() {
   const title = useEditTitle();
   const label = useStepLabel();
   const [show, setShow] = useState<"result" | "original">("result");
-  const [kept, setKept] = useState<{ item: string; version: number | null } | null>(null);
+  const [keeping, setKeeping] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const loaded = !!edit && edit !== "missing";
   const done = loaded && edit.status === "done";
@@ -259,23 +282,24 @@ function EditDetail() {
   if (edit === "missing") return <Page title={t("editor.title")}><EmptyState icon="editor" text={t("edit.missing")}><Link className="btn btn-secondary" to="/editor">{t("edit.back")}</Link></EmptyState></Page>;
   const e = edit;
   const skipped = skippedSteps(e);
+  const kept = e.kept;
 
   const keep = async () => {
+    setKeeping(true);
     try {
       const r = await keepEdit(auth, e, title(e));
-      setKept({ item: r.item, version: r.version });
-      toast(r.how === "version" && r.version ? t("edit.keptVersion", { n: r.version }) : t("jobs.kept"));
+      await reload();
+      toast(r.kept && r.kept.item === e.vaultItem && r.kept.version ? t("edit.keptVersion", { n: r.kept.version }) : t("jobs.kept"));
     } catch (x) {
       toast(x instanceof ApiError && x.code === "vault_full" ? t("jobs.keep.full") : t("jobs.keep.error"));
+    } finally {
+      setKeeping(false);
     }
   };
-  const further = async () => {
-    try {
-      const blob = await editBlob(auth, e.id, "result");
-      const file = new File([blob], `locke-${e.operation}.${blob.type === "image/jpeg" ? "jpg" : "png"}`, { type: blob.type });
-      editNext(file, kept ? { item: kept.item, version: kept.version } : e.vaultItem ? { item: e.vaultItem } : undefined);
-      nav("/editor");
-    } catch { toast(t("jobs.error")); }
+  // Locke copies the result into the next edit itself: nothing to download.
+  const further = () => {
+    editNext(e.id, kept ? { item: kept.item, version: kept.version } : e.vaultItem ? { item: e.vaultItem } : undefined);
+    nav("/editor");
   };
   const cancel = async () => { try { await cancelEdit(auth, e.id); await reload(); } catch { toast(t("jobs.error")); } };
   const remove = async () => { try { await deleteEdit(auth, e.id); nav("/editor"); } catch { toast(t("jobs.error")); } };
@@ -328,10 +352,10 @@ function EditDetail() {
 
       {done && (
         <div className="app-row app-pills">
-          <button type="button" className="btn btn-primary" disabled={!!kept} onClick={() => void keep()}>
+          <button type="button" className="btn btn-primary" disabled={!!kept || keeping} onClick={() => void keep()}>
             <Icon name="vault" />{t(kept ? "jobs.keptTag" : e.vaultItem ? "edit.keepVersion" : "jobs.keep")}
           </button>
-          <button type="button" className="btn btn-secondary" onClick={() => void further()}><Icon name="editor" />{t("edit.continue")}</button>
+          <button type="button" className="btn btn-secondary" onClick={further}><Icon name="editor" />{t("edit.continue")}</button>
           <button type="button" className="icon-btn" aria-label={t("jobs.download")} onClick={() => void downloadEdit(auth, e).catch(() => toast(t("jobs.download.error")))}><Icon name="download" /></button>
         </div>
       )}

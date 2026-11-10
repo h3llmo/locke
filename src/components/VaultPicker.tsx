@@ -3,7 +3,7 @@ import { useI18n } from "../i18n/index.tsx";
 import { useAuth, VAULT_URL } from "../app/session.tsx";
 import { ApiError } from "../app/jobs.tsx";
 import {
-  authBlob, sourceItemUrl, sourceQuery, vaultItems, vaultItemUrl, vaultSources, vaultVersionUrl, type SourceItem, type VaultItem, type VaultSource,
+  authBlob, sourceItemUrl, sourceQuery, vaultItems, vaultPreviewUrl, vaultSources, vaultVersionUrl, type SourceItem, type VaultItem, type VaultSource,
 } from "../app/data.tsx";
 import { AuthImg, Sheet } from "./Shared.tsx";
 import { Icon } from "./Icon.tsx";
@@ -13,11 +13,17 @@ import { Icon } from "./Icon.tsx";
  * iCloud…). PNG and JPEG only (what the GPU takes). With `stage`, a picked source image is first copied into the
  * vault (HANDOFF §5.3), so edits become versions of that vault item. Vault images are read by version (their own
  * address), so a picked image is always the version shown, never an older one cached earlier in the session.
+ *
+ * The grid shows thumbnails only. With `byRef` (Editor), a vault image isn't downloaded at all: the pick is a reference
+ * (item + version) that Locke reads from the vault itself, plus a display-size preview to show. Otherwise (character
+ * photos, references) the picked images are downloaded as files.
  */
-export interface Picked { file: File; vaultItem?: string; version?: number }
+export type Picked =
+  | { file: File; vaultItem?: string; version?: number }
+  | { file?: undefined; vaultItem: string; version: number; preview: string };
 const OK_TYPE = /^image\/(png|jpeg)$/;
 
-export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stage?: boolean; onPick(p: Picked[]): void; onClose(): void }) {
+export function VaultPicker({ max, stage, byRef, onPick, onClose }: { max: number; stage?: boolean; byRef?: boolean; onPick(p: Picked[]): void; onClose(): void }) {
   const { t } = useI18n();
   const auth = useAuth();
   const [sources, setSources] = useState<VaultSource[] | null>(null);
@@ -39,13 +45,13 @@ export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stag
     try {
       if (tab === "vault") {
         const r = await vaultItems(auth, more ? cursor ?? undefined : undefined);
-        const list = r.items.filter((i) => OK_TYPE.test(i.versions[i.versions.length - 1]?.contentType ?? "")).map((i) => ({ key: `v:${i.id}`, url: i.currentVersion ? vaultVersionUrl(i.id, i.currentVersion) : vaultItemUrl(i.id), name: i.title, item: i }));
+        const list = r.items.filter((i) => OK_TYPE.test(i.versions[i.versions.length - 1]?.contentType ?? "")).map((i) => ({ key: `v:${i.id}`, url: vaultPreviewUrl(i, "thumb"), name: i.title, item: i }));
         setItems((x) => (more && x ? [...x, ...list] : list));
         setCursor(r.cursor);
       } else {
         const r = await sourceQuery(auth, tab, { ...(coll ? { collection: coll } : {}), ...(more && cursor ? { cursor } : {}) });
         const list = r.items.filter((i: SourceItem) => !i.contentType || OK_TYPE.test(i.contentType))
-          .map((i) => ({ key: `s:${tab}:${i.ref}`, url: sourceItemUrl(tab, i.ref), name: i.name, ref: i.ref }));
+          .map((i) => ({ key: `s:${tab}:${i.ref}`, url: sourceItemUrl(tab, i.ref, "thumb"), name: i.name, ref: i.ref }));
         setItems((x) => (more && x ? [...x, ...list] : list));
         setCursor(r.cursor);
       }
@@ -69,21 +75,24 @@ export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stag
       for (const key of picked) {
         const it = items.find((i) => i.key === key);
         if (!it) continue;
-        let vaultItem = it.item?.id;
-        let version = it.item?.currentVersion ?? undefined;
-        let url = it.url;
-        if (!vaultItem && stage && it.ref) {
+        let item = it.item;
+        if (!item && stage && it.ref) {
           // Copy the source image into the vault first; edits then become its versions.
           const r = await auth.fetch(`${VAULT_URL}api/items/from-source`, {
             method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ source: tab, ref: it.ref }),
           });
-          const d = await r.json().catch(() => null) as { id?: string; error?: string; message?: string } | null;
+          const d = await r.json().catch(() => null) as (VaultItem & { error?: string; message?: string }) | null;
           if (!r.ok || !d?.id) throw new ApiError(d?.error ?? "vault_error", d?.message ?? t("picker.error"));
-          vaultItem = d.id;
-          version = 1;
-          url = vaultVersionUrl(d.id, 1);
+          item = d;
         }
-        const blob = await authBlob(auth, url);
+        const vaultItem = item?.id;
+        const version = item?.currentVersion ?? undefined;
+        if (item && version && byRef) {
+          out.push({ vaultItem: item.id, version, preview: vaultPreviewUrl(item, "display") });
+          continue;
+        }
+        const v = item?.versions.find((x) => x.n === version);
+        const blob = await authBlob(auth, item && v ? vaultVersionUrl(item.id, v.n, undefined, v.createdAt) : sourceItemUrl(tab, it.ref!));
         if (!OK_TYPE.test(blob.type)) throw new ApiError("type", t("create.refs.type"));
         out.push({ file: new File([blob], `${it.name.replace(/\.[a-z0-9]+$/i, "").slice(0, 60) || "image"}.${blob.type === "image/png" ? "png" : "jpg"}`, { type: blob.type }), ...(vaultItem ? { vaultItem, ...(version ? { version } : {}) } : {}) });
       }
