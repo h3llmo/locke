@@ -25,6 +25,7 @@ const PATHS = {
   blur: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 3v18 M16 5v14 M20 9v6",
   vault: "M4 5h16v14H4z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M12 9v-1 M4 9h2 M4 15h2",
   arrow: "M5 12h14 M13 6l6 6-6 6",
+  expand: "M4 9V4h5 M4 4l6 6 M20 15v5h-5 M20 20l-6-6 M15 4h5v5 M9 20H4v-5",
 } as const;
 
 export type IconName = keyof typeof PATHS;

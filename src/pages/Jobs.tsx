@@ -27,7 +27,8 @@ const statusPill: Record<Job["status"], string> = {
 
 const FAILS = ["unsupported", "invalid_input", "decrypt_failed", "no_face_found", "out_of_memory", "model_missing",
   "engine_unavailable", "timeout", "cancelled", "internal", "lease_expired"];
-const failKey = (code: string | null) => `jobs.fail.${code && FAILS.includes(code) ? code : "internal"}` as MessageKey;
+const failKey = (code: string | null, type?: Job["type"]) =>
+  (code === "no_face_found" && type === "enhance" ? "jobs.fail.no_face_found.enhance" : `jobs.fail.${code && FAILS.includes(code) ? code : "internal"}`) as MessageKey;
 
 export function useDate() {
   const { lang } = useI18n();
@@ -45,7 +46,7 @@ export function styleLabel(o: Options | null | "error", id: string | undefined) 
 }
 
 /** One line: what the job is (type · style · ×n). */
-function useMeta() {
+export function useMeta() {
   const { t } = useI18n();
   const options = useOptions();
   return (j: Job) => {
@@ -54,6 +55,9 @@ function useMeta() {
         .filter(Boolean).join(" · ");
     }
     if (j.type === "face_swap") return [t("jobs.type.face_swap"), j.summary?.names?.join(", ") ?? t("jobs.characters", { n: j.summary?.characters ?? 1 })].join(" · ");
+    if (j.type === "enhance" && j.summary?.level) return `${t("jobs.type.enhance")} · ${t(`automate.strength.${j.summary.level}` as MessageKey)}`;
+    if (j.type === "upscale" && j.summary?.scale) return `${t("jobs.type.upscale")} ×${j.summary.scale}`;
+    if (j.type === "blur" && j.summary?.strength !== undefined) return `${t("jobs.type.blur")} · ${t("automate.blur.strength", { n: j.summary.strength })}`;
     return t(`jobs.type.${j.type}` as MessageKey);
   };
 }
@@ -298,7 +302,7 @@ function JobResult() {
       {job.status === "queued" && <GpuNotice />}
       {job.status === "failed" && (
         <div className="app-notice is-error" role="alert">
-          <span className="t-body-s">{t(failKey(job.failureCode))}</span>
+          <span className="t-body-s">{t(failKey(job.failureCode, job.type))}</span>
         </div>
       )}
       {isActive(job) && (

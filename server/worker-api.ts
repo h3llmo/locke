@@ -31,7 +31,7 @@ const capabilitiesSchema = z.object({
     counts: z.array(z.number().int().min(1).max(4)).max(4).optional(),
     character: z.boolean().optional(),
   }).loose().nullable().optional(),
-  enhance: z.object({}).loose().nullable().optional(),
+  enhance: z.object({ strengths: z.array(z.enum(["subtle", "balanced", "strong"])).min(1).optional(), maxScale: z.number().optional() }).loose().nullable().optional(),
   blur: z.object({}).loose().nullable().optional(),
   upscale: z.object({ scales: z.array(z.union([z.literal(2), z.literal(4)])).min(1).optional() }).loose().nullable().optional(),
   edit: z.unknown().optional(),

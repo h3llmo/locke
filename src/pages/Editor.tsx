@@ -10,21 +10,28 @@ import { Icon } from "../components/Icon.tsx";
 import { CharacterBubbles } from "../components/Shared.tsx";
 import { VaultPicker } from "../components/VaultPicker.tsx";
 import { useToast } from "../components/Toasts.tsx";
-import { GpuNotice, JobProgress, StatusPill, useDate } from "./Jobs.tsx";
+import type { MessageKey } from "../i18n/en.ts";
+import { GpuNotice, JobProgress, StatusPill, useDate, useMeta } from "./Jobs.tsx";
 
 /**
- * Editor, first tool: face swap (HANDOFF §5.3). A photo (uploaded, or from the vault: then the result can be saved as
- * that vault item's next version) and one or more saved characters, matched by gender and age.
- * Enhance and blur come when a GPU offers them.
+ * Editor (HANDOFF §5.3): one photo (uploaded, or from the vault: then the result can be saved as that vault item's next
+ * version) and one tool: face swap with saved characters (matched by gender and age), face enhancement, upscale or
+ * background blur. Each tool is offered when a live GPU announces it.
  */
 interface Photo { file: File; url: string; vaultItem?: string }
 const MAX_BYTES = 25 * 1024 * 1024;
 // Kept while the app is open, so creating a character (another screen) doesn't lose the chosen photo.
 let keptPhoto: Photo | null = null;
 let keptChars: string[] = [];
-type Tool = "face_swap" | "blur";
+type Tool = "face_swap" | "enhance" | "upscale" | "blur";
+const TOOLS: { id: Tool; icon: "characters" | "create" | "expand" | "blur" }[] = [
+  { id: "face_swap", icon: "characters" }, { id: "enhance", icon: "create" }, { id: "upscale", icon: "expand" }, { id: "blur", icon: "blur" },
+];
+type Level = "subtle" | "balanced" | "strong";
 let keptTool: Tool = "face_swap";
 let keptStrength = 60;
+let keptLevel: Level = "balanced";
+let keptScale: 2 | 4 = 2;
 
 export function EditorPage() {
   const { t } = useI18n();
@@ -41,7 +48,14 @@ export function EditorPage() {
   const [strength, setStrengthState] = useState(keptStrength);
   const setTool = (x: Tool) => { keptTool = x; setToolState(x); setError(null); };
   const setStrength = (n: number) => { keptStrength = n; setStrengthState(n); };
-  const blurOk = !!(options && options !== "error" && options.blur);
+  const [level, setLevelState] = useState<Level>(keptLevel);
+  const setLevel = (x: Level) => { keptLevel = x; setLevelState(x); };
+  const [scale, setScaleState] = useState<2 | 4>(keptScale);
+  const setScale = (x: 2 | 4) => { keptScale = x; setScaleState(x); };
+  const o = options && options !== "error" ? options : null;
+  const offered: Record<Tool, boolean> = { face_swap: !!fs, enhance: !!o?.enhance, upscale: !!o?.upscale, blur: !!o?.blur };
+  const levels = o?.enhance?.strengths ?? ["subtle", "balanced", "strong"];
+  const scales = o?.upscale?.scales ?? [2];
   const [picker, setPicker] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +66,7 @@ export function EditorPage() {
   const list = Array.isArray(characters) ? characters : [];
   useAssistantContext("editor", {
     photo: photo ? (photo.vaultItem ? { vaultPhotoId: photo.vaultItem } : { notInVault: true }) : null,
-    tool: tool === "blur" ? "background blur" : "face swap",
+    tool: { face_swap: "face swap", enhance: "face enhancement", upscale: "upscale", blur: "background blur" }[tool],
     chosenCharacters: chosen.map((id) => ({ id, name: list.find((c) => c.id === id)?.name })),
   });
   // Forget characters deleted meanwhile.
@@ -72,7 +86,8 @@ export function EditorPage() {
   };
   const noPhotos = chosen.filter((id) => !list.find((c) => c.id === id)?.faces.length);
 
-  const ready = !busy && !!photo && (tool === "blur" ? blurOk : !!fs && chosen.length > 0 && noPhotos.length === 0);
+  const ready = !busy && !!photo && offered[tool] && (tool !== "face_swap" || (chosen.length > 0 && noPhotos.length === 0))
+    && (tool !== "enhance" || levels.includes(level)) && (tool !== "upscale" || scales.includes(scale));
   const run = async () => {
     if (!ready || !photo) return;
     setBusy(true);
@@ -80,9 +95,10 @@ export function EditorPage() {
     const form = new FormData();
     form.set("target", photo.file, photo.file.name);
     const fromVault = photo.vaultItem ? { vaultItem: photo.vaultItem } : {};
-    form.set("params", JSON.stringify(tool === "blur"
-      ? { type: "blur", image: "target", strength, ...fromVault }
-      : { type: "face_swap", image: "target", characters: chosen.map((character) => ({ character })), ...fromVault }));
+    const params = {
+      face_swap: { characters: chosen.map((character) => ({ character })) }, enhance: { strength: level }, upscale: { scale }, blur: { strength },
+    }[tool];
+    form.set("params", JSON.stringify({ type: tool, image: "target", ...params, ...fromVault }));
     try {
       const job = await submitJob(auth, form);
       toast(t("create.queued"), { label: t("create.view"), run: () => nav(`/jobs/${job.id}`) });
@@ -97,16 +113,19 @@ export function EditorPage() {
     <Page title={t("editor.title")}>
       <GpuNotice />
       {options === "error" && <p className="hint hint-error">{t("jobs.error")}</p>}
-      {options && options !== "error" && (tool === "blur" ? !blurOk : !fs) && (
+      {o && !offered[tool] && (
         <div className="app-notice" role="status">
           <Icon name="gpuOffline" />
-          <span className="t-body-s c2">{t(tool === "blur" ? "editor.blur.unavailable" : isAdmin ? "editor.noWorker.admin" : "editor.noWorker")}</span>
+          <span className="t-body-s c2">{t(tool === "face_swap" ? (isAdmin ? "editor.noWorker.admin" : "editor.noWorker") : `editor.${tool}.unavailable` as MessageKey)}</span>
         </div>
       )}
 
       <div className="seg" role="radiogroup" aria-label={t("editor.tool")}>
-        <button type="button" role="radio" aria-checked={tool === "face_swap"} aria-pressed={tool === "face_swap"} onClick={() => setTool("face_swap")}><Icon name="characters" size={16} />{t("editor.faceswap")}</button>
-        <button type="button" role="radio" aria-checked={tool === "blur"} aria-pressed={tool === "blur"} onClick={() => setTool("blur")}><Icon name="blur" size={16} />{t("editor.blur")}</button>
+        {TOOLS.map((x) => (
+          <button key={x.id} type="button" role="radio" aria-checked={tool === x.id} aria-pressed={tool === x.id} onClick={() => setTool(x.id)}>
+            <Icon name={x.icon} size={16} />{t(`jobs.type.${x.id}` as MessageKey)}
+          </button>
+        ))}
       </div>
 
       <div className="app-editor">
@@ -132,7 +151,39 @@ export function EditorPage() {
           <input ref={photoInput} type="file" accept="image/png,image/jpeg" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) fromFile(f); e.target.value = ""; }} />
         </section>
 
-        {tool === "blur" ? (
+        {tool === "enhance" && (
+        <section className="card app-stack" aria-labelledby="fs-enhance">
+          <div className="app-row">
+            <h2 className="t-title-s app-grow-0" id="fs-enhance">{t("jobs.type.enhance")}</h2>
+            <span className="app-grow-0" />
+            <span className="lockcue"><Icon name="lock" size={16} />{t("privacy.private")}</span>
+          </div>
+          <div className="seg seg-sm" role="radiogroup" aria-label={t("editor.enhance.level")}>
+            {(["subtle", "balanced", "strong"] as const).map((x) => (
+              <button key={x} type="button" role="radio" aria-checked={level === x} aria-pressed={level === x} disabled={!levels.includes(x)} onClick={() => setLevel(x)}>
+                {t(`automate.strength.${x}` as MessageKey)}
+              </button>
+            ))}
+          </div>
+          <p className="hint">{t("editor.enhance.hint")}</p>
+        </section>
+        )}
+        {tool === "upscale" && (
+        <section className="card app-stack" aria-labelledby="fs-upscale">
+          <div className="app-row">
+            <h2 className="t-title-s app-grow-0" id="fs-upscale">{t("jobs.type.upscale")}</h2>
+            <span className="app-grow-0" />
+            <span className="lockcue"><Icon name="lock" size={16} />{t("privacy.private")}</span>
+          </div>
+          <div className="seg seg-sm" role="radiogroup" aria-label={t("editor.upscale.scale")}>
+            {([2, 4] as const).map((x) => (
+              <button key={x} type="button" role="radio" aria-checked={scale === x} aria-pressed={scale === x} disabled={!scales.includes(x)} onClick={() => setScale(x)}>×{x}</button>
+            ))}
+          </div>
+          <p className="hint">{t("editor.upscale.hint")}</p>
+        </section>
+        )}
+        {tool === "blur" && (
         <section className="card app-stack" aria-labelledby="fs-blur">
           <div className="app-row">
             <h2 className="t-title-s app-grow-0" id="fs-blur">{t("jobs.type.blur")}</h2>
@@ -145,7 +196,8 @@ export function EditorPage() {
           </label>
           <p className="hint">{t("editor.blur.hint")}</p>
         </section>
-        ) : (
+        )}
+        {tool === "face_swap" && (
         <section className="card app-stack" aria-labelledby="fs-chars">
           <div className="app-row">
             <h2 className="t-title-s app-grow-0" id="fs-chars">{t("editor.faceswap")}</h2>
@@ -170,8 +222,11 @@ export function EditorPage() {
       <div className="app-runbar">
         {error && <p className="hint hint-error" role="alert">{error}</p>}
         <button type="button" className="btn btn-primary btn-lg btn-block" disabled={!ready} onClick={() => void run()}>
-          <Icon name={tool === "blur" ? "blur" : "characters"} />
-          {busy ? t("create.sending") : tool === "blur" ? t("editor.blur.run") : chosen.length > 1 ? t("editor.swap.n", { n: chosen.length }) : t("editor.swap")}
+          <Icon name={TOOLS.find((x) => x.id === tool)!.icon} />
+          {busy ? t("create.sending")
+            : tool === "face_swap" ? (chosen.length > 1 ? t("editor.swap.n", { n: chosen.length }) : t("editor.swap"))
+            : tool === "upscale" ? t("editor.upscale.run", { n: scale })
+            : t(`editor.${tool}.run` as MessageKey)}
         </button>
       </div>
 
@@ -184,8 +239,9 @@ export function EditorPage() {
 function RecentEdits() {
   const { t } = useI18n();
   const { jobs: all } = useJobs();
-  const jobs = Array.isArray(all) ? all.filter((j) => (j.type === "face_swap" || j.type === "blur") && !j.workflow) : all;
+  const jobs = Array.isArray(all) ? all.filter((j) => j.type !== "generate" && !j.workflow) : all;
   const when = useDate();
+  const meta = useMeta();
   if (!Array.isArray(jobs) || jobs.length === 0) return null;
   return (
     <section className="app-stack-s" aria-labelledby="fs-recent">
@@ -195,9 +251,9 @@ function RecentEdits() {
           <li key={j.id}>
             <Link className="app-jobrow" to={`/jobs/${j.id}`}>
               <span className="app-jobrow-text">
-                <span className="t-body-s clamp1">{j.type === "blur"
-                  ? `${t("editor.blur")}${j.summary?.strength !== undefined ? ` · ${t("automate.blur.strength", { n: j.summary.strength })}` : ""}`
-                  : `${j.summary?.names?.join(", ") ?? t("jobs.type.face_swap")} · ${t("jobs.characters", { n: j.summary?.characters ?? 1 })}`}</span>
+                <span className="t-body-s clamp1">{j.type === "face_swap"
+                  ? `${j.summary?.names?.join(", ") ?? t("jobs.type.face_swap")} · ${t("jobs.characters", { n: j.summary?.characters ?? 1 })}`
+                  : meta(j)}</span>
                 <span className="t-caption">{when(j.createdAt)}</span>
                 <JobProgress job={j} />
               </span>

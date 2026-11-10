@@ -3,8 +3,8 @@
 How a GPU worker (first partner: **windows-pilot**, which drives Fooocus and FaceFusion) takes Locke jobs and
 returns results. The worker **pulls**: it only makes outbound HTTPS calls to Locke and opens no port.
 
-Status (2026-11-08): **v1, frozen for `face_swap`, implemented in Locke** (tested end to end, `test/e2e.mjs`); `generate` is frozen too (§5.5); `enhance` and `blur` parameters are drafts
-and may change before those types go live. Test first against the
+Status (2026-11-10): **v1, frozen for `face_swap`, implemented in Locke** (tested end to end, `test/e2e.mjs`); `generate` is frozen too (§5.5);
+`enhance`, `blur` and `upscale` are live (windows-pilot 0.5.0). Locke asks for JPEG results on every job (§6.2). Test first against the
 mock server and the test vectors in [`worker-api/`](worker-api/), then against Locke with a `test` worker.
 
 | File | What it is |
@@ -345,12 +345,17 @@ After applying `ageAliases`, two characters **overlap** when both hold:
 With `distinctFilters: true`, Locke never sends overlapping characters: it tells the user at submit time ("Give
 these characters different gender or age"). The worker still answers `unsupported` if it receives some.
 
-### 5.3 `enhance` (draft)
+### 5.3 `enhance` (live 2026-11-10)
 ```json
-{ "v": 1, "type": "enhance", "image": "in_…", "strength": "balanced", "output": { "format": "png" } }
+{ "v": 1, "type": "enhance", "image": "in_…", "strength": "balanced", "output": { "format": "jpeg" } }
 ```
-`strength`: `subtle | balanced | strong`. One result; it may upscale up to `capabilities.enhance.maxScale`.
-Capability: `"enhance": { "strengths": ["subtle", "balanced", "strong"], "maxScale": 2 }`.
+- **Faces only**: face restoration; the rest of the image is unchanged. `strength` (`subtle | balanced | strong`, one of
+  `capabilities.enhance.strengths`) picks the model and blend: subtle is light, strong is visibly smoother.
+- One result with **exactly the input's dimensions** (Locke rejects anything else with `wrong_size`); upscaling is the
+  separate `upscale` type, so `maxScale` is `1`.
+- A photo with no detectable face fails with `no_face_found` (`retryable: false`), never comes back unchanged. Locke
+  tells the user in the Editor; in a workflow it skips the step and keeps the image as it was.
+- Capability: `"enhance": { "strengths": ["subtle", "balanced", "strong"], "maxScale": 1 }`.
 
 ### 5.4 `blur` (draft)
 ```json
@@ -361,7 +366,7 @@ Capability: `"enhance": { "strengths": ["subtle", "balanced", "strong"], "maxSca
   blur radius is fine.
 - Same dimensions as the input. Capability: `"blur": {}`.
 
-### 5.7 `upscale` (draft, 2026-11-09)
+### 5.7 `upscale` (live 2026-11-10)
 ```json
 { "v": 1, "type": "upscale", "image": "in_…", "scale": 2, "maxPixels": 40000000, "output": { "format": "jpeg" } }
 ```
@@ -372,8 +377,9 @@ Capability: `"enhance": { "strengths": ["subtle", "balanced", "strong"], "maxSca
   must list `"jpeg"` in `resultFormats` to receive upscale jobs.
 - Detail is reconstructed (an AI upscaler such as Real-ESRGAN), not just resized. Faces may be restored lightly; the
   person must stay recognisable.
-- Capability: `"upscale": { "scales": [2, 4] }` (`null` or absent = not offered). Locke uses it in automated
-  workflows (a step "Upscale ×2/×4", in the order the user chose; blur stays last).
+- Capability: `"upscale": { "scales": [2, 4] }` (`null` or absent = not offered). Locke offers it in the Editor and as an
+  automated workflow step ("Upscale ×2/×4", in the order the user chose; blur stays last). About 45 s for ×4 on a
+  2.4 MP photo; `maxJobSeconds.upscale` is 900.
 
 ### 5.5 `generate` (v1, frozen 2026-11-08)
 ```json
@@ -438,6 +444,8 @@ Not in v1. Locke never sends it.
 | Progress | every 15 s (10 s fine, ≥ 5 s) |
 | Max job duration | `maxJobSeconds` (face_swap 10 min) |
 | Input / result size | ≤ 25 MiB each, encrypted |
+| Input dimensions | ≤ 50 megapixels and ≤ 10,000 px per side (checked by Locke on upload; the worker doesn't shrink inputs) |
+| Result format | Locke sends `output: {"format": "jpeg"}` on every job (quality 95, 4:4:4, no metadata, sRGB) |
 | Inputs per face_swap job | 1 + up to 8 per character |
 | Rate limit | 120 requests/min per worker key (`settings.rateLimitPerMinute`) → `429 rate_limited` with `Retry-After` |
 

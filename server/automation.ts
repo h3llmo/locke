@@ -380,8 +380,8 @@ async function advance(ctx: Ctx, deps: AutomationDeps, log: (e: unknown, msg: st
       if (!job || !step || ["cancelled", "expired"].includes(job.status)) { await fail("cancelled"); continue; }
       if (job.status === "queued" || job.status === "running") continue;
       if (job.status === "failed") {
-        if (job.failure_code === "no_face_found" && step.op === "face_swap") {
-          // Nothing to swap in this image: keep it as it is and go on.
+        if (job.failure_code === "no_face_found" && (step.op === "face_swap" || step.op === "enhance")) {
+          // No face to swap or enhance in this image: keep it as it is and go on.
           await set({ step: r.step + 1, job_id: null, notes: [...r.notes, "no_face_found"] });
           await purgeJob(ctx, r.job_id);
           await ctx.db.query("DELETE FROM jobs WHERE id = $1", [r.job_id]);

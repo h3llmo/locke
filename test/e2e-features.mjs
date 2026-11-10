@@ -46,7 +46,7 @@ const CAPS = {
   maxConcurrency: 1, resultFormats: ["png", "jpeg"],
   faceSwap: { maxCharacters: 2, maxFacesPerCharacter: 8, genders: ["any", "woman", "man"], ages: ["any", "child", "adult"], distinctFilters: true },
   generate: { styles: [{ id: "e2e-style", label: "E2E" }], counts: [1], character: false },
-  enhance: null, blur: null, upscale: { scales: [2] }, edit: null,
+  enhance: { strengths: ["subtle"], maxScale: 1 }, blur: null, upscale: { scales: [2] }, edit: null,
 };
 const keys = generateWorkerKeyPair();
 let admin, alice, workerId, workerKey;
@@ -231,6 +231,25 @@ test("background blur: checked like other edits (the real blur runs on the live 
   assert.ok("blur" in opts);
 });
 
+test("enhance and upscale from the Editor: validated, routed on what workers announce", async () => {
+  const send = (params, file = PNG) => {
+    const form = new FormData();
+    form.set("params", JSON.stringify(params));
+    if (file) form.set("photo", new Blob([file], { type: "image/png" }), "photo.png");
+    return call("POST", `${API}/jobs`, { auth: alice, form });
+  };
+  assert.equal((await send({ type: "enhance", image: "photo", strength: "extreme" })).status, 400);
+  assert.equal((await send({ type: "upscale", image: "photo", scale: 3 })).status, 400);
+  const opts = (await call("GET", `${API}/options`, { auth: alice })).body;
+  assert.ok(opts.enhance.strengths.includes("subtle"));
+  // A huge image is refused before anything is stored (only its header is read).
+  const big = Buffer.from(PNG);
+  big.writeUInt32BE(20_000, 16); big.writeUInt32BE(20_000, 20);
+  const r = await send({ type: "enhance", image: "photo", strength: "subtle" }, big);
+  assert.equal(r.status, 413, JSON.stringify(r.body));
+  assert.equal(r.body.error, "image_too_large");
+});
+
 test("Discord notifications: webhook checked, write-only, sealed; removable", async () => {
   const N = `${API}/notifications`;
   const adminBefore = (await call("GET", N, { auth: admin })).body; // the admin may have a real webhook: never touched
@@ -265,8 +284,8 @@ test("assistant tools (MCP): listed for Nevli, need the user's key, act as the u
   };
   const { tools } = await rpc("tools/list", {});
   const names = tools.map((x) => x.name).sort();
-  for (const n of ["blur_background", "cancel_job", "delete_job", "face_swap", "generate_images", "get_job", "get_status", "list_characters", "list_jobs", "list_saved_prompts",
-    "list_vault_photos", "list_workflows", "run_saved_prompt", "save_result_to_vault", "set_schedule_active", "set_workflow_active"]) assert.ok(names.includes(n), n);
+  for (const n of ["blur_background", "cancel_job", "delete_job", "enhance_faces", "face_swap", "generate_images", "get_job", "get_status", "list_characters", "list_jobs", "list_saved_prompts",
+    "list_vault_photos", "list_workflows", "run_saved_prompt", "save_result_to_vault", "set_schedule_active", "set_workflow_active", "upscale_photo"]) assert.ok(names.includes(n), n);
   for (const n of ["cancel_job", "delete_job"]) assert.equal(tools.find((x) => x.name === n).annotations.destructiveHint, true, n);
   assert.match((await tool("list_jobs", {})).error, /API key/, "no key, no call");
   assert.ok((await tool("list_jobs", {}, "ilv_" + "a".repeat(43))).error, "unknown key refused");

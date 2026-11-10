@@ -8,7 +8,7 @@ import {
   AGES, createJob, err, GENDERS, incompatibility, newId, purgeJob, readResult, SETTINGS, type Capabilities, type Ctx,
 } from "./jobs.ts";
 import { workerKeyHash } from "./worker-api.ts";
-import { faceSwapJob, generateJob, imageJob, readMultipart, type CharacterInput } from "./builders.ts";
+import { faceSwapJob, generateJob, imageJob, readMultipart, upscaleJob, type CharacterInput } from "./builders.ts";
 import { characterStore, registerCharacterApi } from "./characters.ts";
 import { registerPromptApi } from "./prompts.ts";
 import { registerSourceApi } from "./source.ts";
@@ -18,6 +18,7 @@ import { registerNotificationApi } from "./notify.ts";
 export const API_PREFIX = "/apps/locke/api";
 const MAX_CHARACTERS = 4;
 const MAX_FACES = 8;
+const STRENGTHS = ["subtle", "balanced", "strong"] as const;
 
 /** The app's own API (used by Locke's web app; Ilven-AI later calls the same checks through MCP). */
 export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, deps: AutomationDeps) {
@@ -92,7 +93,8 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, d
         character: gens.some((g) => g!.character !== false),
         maxReferences: 4,
       } : null,
-      enhance: caps.some((c) => !!c.enhance) ? {} : null,
+      enhance: caps.some((c) => !!c.enhance)
+        ? { strengths: STRENGTHS.filter((x) => caps.some((c) => c.enhance && (c.enhance.strengths ?? STRENGTHS).includes(x))) } : null,
       blur: caps.some((c) => !!c.blur) ? {} : null,
       upscale: caps.some((c) => !!c.upscale) ? { scales: [...new Set(caps.flatMap((c) => c.upscale?.scales ?? (c.upscale ? [2] : [])))].sort() } : null,
       faceSwap: fss.length ? {
@@ -119,7 +121,6 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, d
     type: z.literal("face_swap"),
     image: z.string().min(1).max(64),
     characters: z.array(charSchema).min(1).max(MAX_CHARACTERS),
-    output: z.object({ format: z.enum(["png", "jpeg"]) }).optional(),
     vaultItem: z.uuid().optional(),
   });
   // Background blur (worker API §5.4): the subject stays sharp. Keeping the result of a vault photo adds a version.
@@ -127,6 +128,20 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, d
     type: z.literal("blur"),
     image: z.string().min(1).max(64),
     strength: z.number().int().min(0).max(100).default(60),
+    vaultItem: z.uuid().optional(),
+  });
+  // Enhance (§5.3): faces only, same size; a photo without a face fails with no_face_found.
+  const enhanceSchema = z.object({
+    type: z.literal("enhance"),
+    image: z.string().min(1).max(64),
+    strength: z.enum(STRENGTHS).default("balanced"),
+    vaultItem: z.uuid().optional(),
+  });
+  // Upscale (§5.7): ×2 or ×4, JPEG.
+  const upscaleSchema = z.object({
+    type: z.literal("upscale"),
+    image: z.string().min(1).max(64),
+    scale: z.union([z.literal(2), z.literal(4)]).default(2),
     vaultItem: z.uuid().optional(),
   });
   const fragments = z.array(z.string().trim().min(1).max(500)).max(60);
@@ -174,6 +189,20 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, d
       const image = file(p.image);
       allUsed();
       const id = await imageJob(ctx, c.sub, "blur", image, p.strength, { summary: { strength: p.strength, ...(p.vaultItem ? { vaultItem: p.vaultItem } : {}) } });
+      return reply.status(201).send(await jobView(id, c.sub));
+    }
+    if ((raw as { type?: unknown } | null)?.type === "enhance") {
+      const p = enhanceSchema.parse(raw);
+      const image = file(p.image);
+      allUsed();
+      const id = await imageJob(ctx, c.sub, "enhance", image, p.strength, { summary: { level: p.strength, ...(p.vaultItem ? { vaultItem: p.vaultItem } : {}) } });
+      return reply.status(201).send(await jobView(id, c.sub));
+    }
+    if ((raw as { type?: unknown } | null)?.type === "upscale") {
+      const p = upscaleSchema.parse(raw);
+      const image = file(p.image);
+      allUsed();
+      const id = await upscaleJob(ctx, c.sub, image, p.scale, { summary: { scale: p.scale, ...(p.vaultItem ? { vaultItem: p.vaultItem } : {}) } });
       return reply.status(201).send(await jobView(id, c.sub));
     }
     const p = faceSwapSchema.parse(raw);

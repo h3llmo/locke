@@ -71,7 +71,7 @@ export function createLockeMcp(app: FastifyInstance, vaultUrl: string) {
       ...(j.scheduleId ? { scheduled: true } : {}), ...(j.workflow ? { workflow: true } : {}),
       createdAt: j.createdAt, finishedAt: j.finishedAt,
     });
-    type Options = { generate: { styles: { id: string; label: string }[]; counts: number[]; character: boolean } | null; faceSwap: unknown; enhance: unknown; blur: unknown };
+    type Options = { generate: { styles: { id: string; label: string }[]; counts: number[]; character: boolean } | null; faceSwap: unknown; enhance: { strengths: string[] } | null; blur: unknown; upscale?: { scales: number[] } | null };
 
     const s = new McpServer({ name: "locke", version: "0.2.0" }, { capabilities: { tools: {} } });
     const ro = { readOnlyHint: true } as const;
@@ -82,20 +82,20 @@ export function createLockeMcp(app: FastifyInstance, vaultUrl: string) {
     // ---------- reading ----------
     s.registerTool("get_status", {
       title: "GPU status and options",
-      description: "Whether Locke's GPU is online, the user's queued/running jobs, and what can be asked for right now (generation styles, image counts, face swap).",
+      description: "Whether Locke's GPU is online, the user's queued/running jobs, and what can be asked for right now (generation styles, image counts, face swap, enhance, upscale, blur).",
       inputSchema: {}, annotations: ro,
     }, async () => toolResult(async () => {
       const [w, o] = await Promise.all([get<{ status: string; queued: number; running: number }>("/worker-status"), get<Options>("/options")]);
       return {
         gpu: w.status, myJobs: { queued: w.queued, running: w.running },
         generate: o.generate ? { styles: o.generate.styles, counts: o.generate.counts, withCharacter: o.generate.character } : null,
-        faceSwap: o.faceSwap, blur: !!o.blur, note: "Jobs wait in the queue while the GPU is offline; they run when it comes back.",
+        faceSwap: o.faceSwap, enhance: o.enhance, upscale: o.upscale ?? null, blur: !!o.blur, note: "Jobs wait in the queue while the GPU is offline; they run when it comes back.",
       };
     }));
 
     s.registerTool("list_jobs", {
       title: "List jobs",
-      description: "The user's recent Locke jobs (generations, face swaps, blurs), newest first. Results that aren't saved to the vault are deleted after 7 days.",
+      description: "The user's recent Locke jobs (generations, face swaps, enhancements, upscales, blurs), newest first. Results that aren't saved to the vault are deleted after 7 days.",
       inputSchema: { limit: z.int().min(1).max(50).default(10), status: z.enum(["queued", "running", "done", "failed", "cancelled"]).optional() },
       annotations: ro,
     }, async ({ limit, status }) => toolResult(async () => {
@@ -200,23 +200,38 @@ export function createLockeMcp(app: FastifyInstance, vaultUrl: string) {
       return brief((await call("POST", "/jobs", { form })).json as Job);
     }));
 
-    s.registerTool("blur_background", {
-      title: "Blur a vault photo's background",
-      description: "Queue a background blur on one photo of the user's vault: the subject stays sharp. Saving the result adds a new version of that photo (undo it in the vault). Default strength 60.",
-      inputSchema: {
-        photo: z.uuid().describe("Vault photo id (list_vault_photos, or the photo open in the editor)"),
-        strength: z.int().min(0).max(100).default(60).describe("0 = barely visible, 100 = strongest"),
-      },
-      annotations: act,
-    }, async ({ photo, strength }) => toolResult(async () => {
+    /** A one-photo edit of a vault photo; keeping the result adds a new version of that photo. */
+    const editVaultPhoto = async (photo: string, params: Record<string, unknown>) => {
       const res = await vault(`/items/${encodeURIComponent(photo)}/content`);
       const type = res.headers.get("content-type") ?? "";
       if (!/^image\/(png|jpeg)/.test(type)) throw err(415, "unsupported_image", "That vault file isn't a PNG or JPEG photo");
       const form = new FormData();
-      form.set("params", JSON.stringify({ type: "blur", image: "photo", strength, vaultItem: photo }));
+      form.set("params", JSON.stringify({ ...params, image: "photo", vaultItem: photo }));
       form.set("photo", new Blob([await res.arrayBuffer()], { type }), "photo");
       return brief((await call("POST", "/jobs", { form })).json as Job);
-    }));
+    };
+    const vaultPhoto = z.uuid().describe("Vault photo id (list_vault_photos, or the photo open in the editor)");
+
+    s.registerTool("blur_background", {
+      title: "Blur a vault photo's background",
+      description: "Queue a background blur on one photo of the user's vault: the subject stays sharp. Saving the result adds a new version of that photo (undo it in the vault). Default strength 60.",
+      inputSchema: { photo: vaultPhoto, strength: z.int().min(0).max(100).default(60).describe("0 = barely visible, 100 = strongest") },
+      annotations: act,
+    }, async ({ photo, strength }) => toolResult(() => editVaultPhoto(photo, { type: "blur", strength })));
+
+    s.registerTool("enhance_faces", {
+      title: "Enhance the faces in a vault photo",
+      description: "Queue a face restoration on one photo of the user's vault (faces only, same size). Fails with no_face_found when the photo has no face. Saving the result adds a new version of that photo. Default strength balanced.",
+      inputSchema: { photo: vaultPhoto, strength: z.enum(["subtle", "balanced", "strong"]).default("balanced").describe("subtle = light, strong = visibly smoother") },
+      annotations: act,
+    }, async ({ photo, strength }) => toolResult(() => editVaultPhoto(photo, { type: "enhance", strength })));
+
+    s.registerTool("upscale_photo", {
+      title: "Upscale a vault photo",
+      description: "Queue an upscale (×2 or ×4, capped at about 40 megapixels) of one photo of the user's vault. Saving the result adds a new version of that photo. Default ×2.",
+      inputSchema: { photo: vaultPhoto, scale: z.union([z.literal(2), z.literal(4)]).default(2) },
+      annotations: act,
+    }, async ({ photo, scale }) => toolResult(() => editVaultPhoto(photo, { type: "upscale", scale })));
 
     s.registerTool("run_saved_prompt", {
       title: "Run a saved prompt", description: "Queue one run of a saved prompt now (list_saved_prompts).", inputSchema: { id }, annotations: act,
@@ -227,7 +242,7 @@ export function createLockeMcp(app: FastifyInstance, vaultUrl: string) {
 
     s.registerTool("save_result_to_vault", {
       title: "Save a result to the vault",
-      description: "Keep one finished result in the user's Locke Vault (encrypted). A face swap of a vault photo becomes a new version of that photo; anything else becomes a new vault photo.",
+      description: "Keep one finished result in the user's Locke Vault (encrypted). An edit of a vault photo (face swap, enhance, upscale, blur) becomes a new version of that photo; anything else becomes a new vault photo.",
       inputSchema: { job: id, result: z.int().min(1).max(4).default(1).describe("Which result of the job (1 = first)") },
       annotations: act,
     }, async ({ job, result }) => toolResult(async () => {

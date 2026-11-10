@@ -51,7 +51,7 @@ export interface Capabilities {
   resultFormats?: string[];
   faceSwap?: { maxCharacters?: number; maxFacesPerCharacter?: number; genders?: string[]; ages?: string[]; ageAliases?: Record<string, string>; distinctFilters?: boolean } | null;
   generate?: { styles?: { id: string; label?: string }[]; counts?: number[]; character?: boolean } | null;
-  enhance?: unknown; blur?: unknown; upscale?: { scales?: number[] } | null; edit?: unknown;
+  enhance?: { strengths?: string[]; maxScale?: number } | null; blur?: unknown; upscale?: { scales?: number[] } | null; edit?: unknown;
 }
 
 const capKey: Record<JobType, keyof Capabilities> = { face_swap: "faceSwap", generate: "generate", enhance: "enhance", blur: "blur", upscale: "upscale", edit: "edit" };
@@ -84,6 +84,10 @@ export function incompatibility(caps: Capabilities | null, type: string, req: un
     if (r.references > 4) return "values";
     if (r.character && g.character === false) return "values";
     return null;
+  }
+  if (type === "enhance") {
+    const strength = (req as { strength?: string }).strength;
+    return !strength || (caps!.enhance?.strengths ?? ["subtle", "balanced", "strong"]).includes(strength) ? null : "values";
   }
   if (type === "upscale") return (caps!.upscale?.scales ?? [2]).includes((req as { scale: number }).scale) ? null : "values";
   if (type !== "face_swap") return null;

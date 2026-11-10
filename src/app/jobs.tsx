@@ -10,7 +10,7 @@ export interface Job {
   summary: {
     title?: string; style?: string; aspect?: string; mode?: string; count?: number; references?: number;
     positive?: string[]; negative?: string[]; characters?: number; worker?: string;
-    names?: string[]; character?: string; prompt?: string; schedule?: string; workflow?: string; vaultItem?: string; strength?: number;
+    names?: string[]; character?: string; prompt?: string; schedule?: string; workflow?: string; vaultItem?: string; strength?: number; level?: string; scale?: number;
   } | null;
   progress: number | null; attempt: number; queuePosition: number | null; failureCode: string | null;
   resultCount: number | null; createdAt: string; startedAt: string | null; finishedAt: string | null;
@@ -19,7 +19,7 @@ export interface Job {
 export interface Options {
   generate: { styles: { id: string; label: string }[]; counts: number[]; character: boolean; maxReferences: number } | null;
   faceSwap: { genders: string[]; ages: string[]; maxCharacters: number; maxFacesPerCharacter: number } | null;
-  enhance: object | null;
+  enhance: { strengths: string[] } | null;
   blur: object | null;
   upscale?: { scales: number[] } | null;
 }
