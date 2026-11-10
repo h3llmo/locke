@@ -14,6 +14,7 @@ import { registerPromptApi } from "./prompts.ts";
 import { registerSourceApi } from "./source.ts";
 import { registerAutomationApi, type AutomationDeps } from "./automation.ts";
 import { registerNotificationApi } from "./notify.ts";
+import { registerEditsApi } from "./edits.ts";
 
 export const API_PREFIX = "/apps/locke/api";
 const MAX_CHARACTERS = 4;
@@ -40,6 +41,7 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, d
   registerSourceApi(app, ctx, API_PREFIX, sourceCaller);
   registerAutomationApi(app, ctx, API_PREFIX, authenticate, deps);
   registerNotificationApi(app, ctx, API_PREFIX, authenticate);
+  registerEditsApi(app, ctx, API_PREFIX, authenticate);
   const characters = characterStore(ctx);
   const admin = async (req: FastifyRequest): Promise<Caller> => {
     const c = await authenticate(req);
@@ -267,7 +269,7 @@ export function registerApi(app: FastifyInstance, ctx: Ctx, masterKey: string, d
     }).parse(req.query);
     const { rows } = await ctx.db.query(
       `SELECT j.*, (SELECT count(*)::int FROM jobs q WHERE q.status = 'queued' AND NOT q.is_test AND q.created_at <= j.created_at) AS position
-       FROM jobs j WHERE j.owner_sub = $1 AND ($2::timestamptz IS NULL OR j.created_at < $2) AND ($4::text IS NULL OR j.schedule_id = $4)
+       FROM jobs j WHERE j.owner_sub = $1 AND j.edit_id IS NULL AND ($2::timestamptz IS NULL OR j.created_at < $2) AND ($4::text IS NULL OR j.schedule_id = $4)
        ORDER BY j.created_at DESC LIMIT $3`,
       [c.sub, q.before ?? null, q.limit, q.schedule ?? null],
     );

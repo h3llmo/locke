@@ -4,6 +4,7 @@ import { HttpError } from "@ilven/common";
 import { McpServer, toolResult } from "@ilven/common/mcp";
 import { API_PREFIX } from "./api.ts";
 import { err } from "./jobs.ts";
+import type { EditView } from "./edits.ts";
 
 /**
  * Locke's tools for Ilven-AI (CLAUDE.md §4.3, §5.4). Ilven-AI calls them through the user's connex with the user's own
@@ -95,7 +96,7 @@ export function createLockeMcp(app: FastifyInstance, vaultUrl: string) {
 
     s.registerTool("list_jobs", {
       title: "List jobs",
-      description: "The user's recent Locke jobs (generations, face swaps, enhancements, upscales, blurs), newest first. Results that aren't saved to the vault are deleted after 7 days.",
+      description: "The user's recent Locke jobs (generations; photo edits are listed by list_edits), newest first. Results that aren't saved to the vault are deleted after 7 days.",
       inputSchema: { limit: z.int().min(1).max(50).default(10), status: z.enum(["queued", "running", "done", "failed", "cancelled"]).optional() },
       annotations: ro,
     }, async ({ limit, status }) => toolResult(async () => {
@@ -182,56 +183,41 @@ export function createLockeMcp(app: FastifyInstance, vaultUrl: string) {
       return brief((await call("POST", "/jobs", { form })).json as Job);
     }));
 
-    s.registerTool("face_swap", {
-      title: "Face swap a vault photo",
-      description: "Queue a face swap on one photo of the user's vault with one or more of their characters (Locke matches faces by each character's gender and age). Saving the result adds a new version of that vault photo.",
+    const briefEdit = (e: EditView) => ({
+      id: e.id, kind: "edit", status: e.status, steps: e.steps.map((x) => x.op), step: e.status === "running" ? e.step + 1 : null,
+      ...(e.current ? { gpu: e.current.status, queuePosition: e.current.queuePosition } : {}),
+      ...(e.notes.length ? { skipped: e.notes } : {}), ...(e.failure ? { failure: e.failure } : {}),
+      ...(e.status === "done" ? { result: e.result, deletedAt: e.expiresAt } : {}), createdAt: e.createdAt,
+    });
+
+    s.registerTool("edit_photo", {
+      title: "Edit a vault photo",
+      description: "Run one or more edits on one photo of the user's vault, in the given order, as a single edit: face_swap (with character ids from list_characters, matched by gender and age), enhance (faces only; strength subtle|balanced|strong, default balanced), upscale (scale 2 or 4, about 40 megapixels at most) and blur (background blur, strength 0-100, default 60). A step that finds no face is skipped. Only the final result is kept; save_result_to_vault adds it as one new version of the photo.",
       inputSchema: {
         photo: z.uuid().describe("Vault photo id (list_vault_photos, or the photo open in the editor)"),
-        characters: z.array(id).min(1).max(4).describe("Character ids from list_characters"),
+        steps: z.array(z.discriminatedUnion("op", [
+          z.object({ op: z.literal("face_swap"), characters: z.array(id).min(1).max(4) }),
+          z.object({ op: z.literal("enhance"), strength: z.enum(["subtle", "balanced", "strong"]).default("balanced") }),
+          z.object({ op: z.literal("upscale"), scale: z.union([z.literal(2), z.literal(4)]).default(2) }),
+          z.object({ op: z.literal("blur"), strength: z.int().min(0).max(100).default(60) }),
+        ])).min(1).max(6).describe("In order; e.g. [{op:'upscale',scale:2},{op:'blur',strength:60}]"),
       },
       annotations: act,
-    }, async ({ photo, characters }) => toolResult(async () => {
+    }, async ({ photo, steps }) => toolResult(async () => {
       const res = await vault(`/items/${encodeURIComponent(photo)}/content`);
       const type = res.headers.get("content-type") ?? "";
       if (!/^image\/(png|jpeg)/.test(type)) throw err(415, "unsupported_image", "That vault file isn't a PNG or JPEG photo");
       const form = new FormData();
-      form.set("params", JSON.stringify({ type: "face_swap", image: "target", characters: characters.map((character) => ({ character })), vaultItem: photo }));
-      form.set("target", new Blob([await res.arrayBuffer()], { type }), "target");
-      return brief((await call("POST", "/jobs", { form })).json as Job);
+      form.set("params", JSON.stringify({ image: "photo", steps, vaultItem: photo }));
+      form.set("photo", new Blob([await res.arrayBuffer()], { type }), "photo");
+      return briefEdit((await call("POST", "/edits", { form })).json as EditView);
     }));
 
-    /** A one-photo edit of a vault photo; keeping the result adds a new version of that photo. */
-    const editVaultPhoto = async (photo: string, params: Record<string, unknown>) => {
-      const res = await vault(`/items/${encodeURIComponent(photo)}/content`);
-      const type = res.headers.get("content-type") ?? "";
-      if (!/^image\/(png|jpeg)/.test(type)) throw err(415, "unsupported_image", "That vault file isn't a PNG or JPEG photo");
-      const form = new FormData();
-      form.set("params", JSON.stringify({ ...params, image: "photo", vaultItem: photo }));
-      form.set("photo", new Blob([await res.arrayBuffer()], { type }), "photo");
-      return brief((await call("POST", "/jobs", { form })).json as Job);
-    };
-    const vaultPhoto = z.uuid().describe("Vault photo id (list_vault_photos, or the photo open in the editor)");
-
-    s.registerTool("blur_background", {
-      title: "Blur a vault photo's background",
-      description: "Queue a background blur on one photo of the user's vault: the subject stays sharp. Saving the result adds a new version of that photo (undo it in the vault). Default strength 60.",
-      inputSchema: { photo: vaultPhoto, strength: z.int().min(0).max(100).default(60).describe("0 = barely visible, 100 = strongest") },
-      annotations: act,
-    }, async ({ photo, strength }) => toolResult(() => editVaultPhoto(photo, { type: "blur", strength })));
-
-    s.registerTool("enhance_faces", {
-      title: "Enhance the faces in a vault photo",
-      description: "Queue a face restoration on one photo of the user's vault (faces only, same size). Fails with no_face_found when the photo has no face. Saving the result adds a new version of that photo. Default strength balanced.",
-      inputSchema: { photo: vaultPhoto, strength: z.enum(["subtle", "balanced", "strong"]).default("balanced").describe("subtle = light, strong = visibly smoother") },
-      annotations: act,
-    }, async ({ photo, strength }) => toolResult(() => editVaultPhoto(photo, { type: "enhance", strength })));
-
-    s.registerTool("upscale_photo", {
-      title: "Upscale a vault photo",
-      description: "Queue an upscale (×2 or ×4, capped at about 40 megapixels) of one photo of the user's vault. Saving the result adds a new version of that photo. Default ×2.",
-      inputSchema: { photo: vaultPhoto, scale: z.union([z.literal(2), z.literal(4)]).default(2) },
-      annotations: act,
-    }, async ({ photo, scale }) => toolResult(() => editVaultPhoto(photo, { type: "upscale", scale })));
+    s.registerTool("list_edits", {
+      title: "List edits",
+      description: "The user's recent edits of photos (Editor or edit_photo), newest first, with their steps and status. Unsaved results are deleted after 7 days.",
+      inputSchema: { limit: z.int().min(1).max(50).default(10) }, annotations: ro,
+    }, async ({ limit }) => toolResult(async () => ({ edits: (await get<{ edits: EditView[] }>(`/edits?limit=${limit}`)).edits.map(briefEdit) })));
 
     s.registerTool("run_saved_prompt", {
       title: "Run a saved prompt", description: "Queue one run of a saved prompt now (list_saved_prompts).", inputSchema: { id }, annotations: act,
@@ -242,10 +228,26 @@ export function createLockeMcp(app: FastifyInstance, vaultUrl: string) {
 
     s.registerTool("save_result_to_vault", {
       title: "Save a result to the vault",
-      description: "Keep one finished result in the user's Locke Vault (encrypted). An edit of a vault photo (face swap, enhance, upscale, blur) becomes a new version of that photo; anything else becomes a new vault photo.",
-      inputSchema: { job: id, result: z.int().min(1).max(4).default(1).describe("Which result of the job (1 = first)") },
+      description: "Keep one finished result (a job's, or an edit's final image) in the user's Locke Vault (encrypted). An edit of a vault photo becomes one new version of that photo; anything else becomes a new vault photo.",
+      inputSchema: { job: id.describe("A job id, or an edit id (ed_…)"), result: z.int().min(1).max(4).default(1).describe("Which result of the job (1 = first)") },
       annotations: act,
     }, async ({ job, result }) => toolResult(async () => {
+      if (job.startsWith("ed_")) {
+        const e = await get<EditView>(`/edits/${encodeURIComponent(job)}`);
+        if (e.status !== "done") throw err(409, "not_done", "That edit has no result yet");
+        const img = await call("GET", `/edits/${encodeURIComponent(job)}/images/result`);
+        const body = new Uint8Array(img.raw);
+        if (e.vaultItem) {
+          try {
+            await vault(`/items/${encodeURIComponent(e.vaultItem)}/versions?${new URLSearchParams({ app: "locke", operation: e.operation })}`, { method: "POST", headers: { "content-type": img.type }, body });
+            return { saved: "new_version", photo: e.vaultItem };
+          } catch (x) {
+            if (!(x instanceof HttpError && x.status === 404)) throw x;
+          }
+        }
+        const r = (await (await vault(`/items?${new URLSearchParams({ title: `Edit · ${e.steps.map((x) => x.op).join(", ")}`, app: "locke" })}`, { method: "POST", headers: { "content-type": img.type }, body })).json()) as { id: string };
+        return { saved: "new_photo", photo: r.id };
+      }
       const j = await get<Job>(`/jobs/${encodeURIComponent(job)}`);
       if (j.status !== "done") throw err(409, "not_done", "That job has no results yet");
       const img = await call("GET", `/jobs/${encodeURIComponent(job)}/results/${result}`);
@@ -285,15 +287,17 @@ export function createLockeMcp(app: FastifyInstance, vaultUrl: string) {
     }));
 
     s.registerTool("cancel_job", {
-      title: "Cancel a job", description: "Cancel a queued or running job. Its inputs are deleted; this can't be undone.",
+      title: "Cancel a job or edit", description: "Cancel a queued or running job, or an edit in progress (ed_…). Its images are deleted; this can't be undone.",
       inputSchema: { id }, annotations: destructive,
-    }, async ({ id: jobId }) => toolResult(async () => brief(await send<Job>("POST", `/jobs/${encodeURIComponent(jobId)}/cancel`))));
+    }, async ({ id: jobId }) => toolResult(async () => jobId.startsWith("ed_")
+      ? briefEdit(await send<EditView>("POST", `/edits/${encodeURIComponent(jobId)}/cancel`))
+      : brief(await send<Job>("POST", `/jobs/${encodeURIComponent(jobId)}/cancel`))));
 
     s.registerTool("delete_job", {
-      title: "Delete a job", description: "Delete a finished job and its results (copies saved to the vault are kept). This can't be undone.",
+      title: "Delete a job or edit", description: "Delete a job or an edit (ed_…) and its results (copies saved to the vault are kept). This can't be undone.",
       inputSchema: { id }, annotations: destructive,
     }, async ({ id: jobId }) => toolResult(async () => {
-      await call("DELETE", `/jobs/${encodeURIComponent(jobId)}`);
+      await call("DELETE", jobId.startsWith("ed_") ? `/edits/${encodeURIComponent(jobId)}` : `/jobs/${encodeURIComponent(jobId)}`);
       return { deleted: jobId };
     }));
 

@@ -25,9 +25,12 @@ export interface SavedPrompt {
   count: number; mode: "fast" | "quality"; character: string | null; references: { id: string }[]; schedule: Schedule | null;
   createdAt: string; updatedAt: string;
 }
-export type WorkflowStep = { op: "enhance"; strength: "subtle" | "balanced" | "strong" } | { op: "face_swap"; characters: string[] } | { op: "upscale"; scale: 2 | 4 };
+/** One step on a photo (Editor edits and workflows share them; any order). */
+export type Level = "subtle" | "balanced" | "strong";
+export type WorkflowStep =
+  | { op: "face_swap"; characters: string[] } | { op: "enhance"; strength: Level } | { op: "upscale"; scale: 2 | 4 } | { op: "blur"; strength: number };
 export interface WorkflowData {
-  name: string; sources: { source: string; collection: string | null; label: string }[]; steps: WorkflowStep[]; blur: { strength: number } | null;
+  name: string; sources: { source: string; collection: string | null; label: string }[]; steps: WorkflowStep[];
 }
 export interface Workflow extends WorkflowData {
   id: string; active: boolean; activatedAt: string | null; lastCheckAt: string | null; lastError: string | null; createdAt: string;
@@ -117,6 +120,8 @@ export const vaultSources = async (a: IlvenAuth) => (await vault<{ sources: Vaul
 export const sourceQuery = (a: IlvenAuth, source: string, q: { collection?: string; cursor?: string; limit?: number }) =>
   vault<{ items: SourceItem[]; cursor: string | null }>(a, "POST", `/sources/${encodeURIComponent(source)}/query`, { limit: 60, ...q });
 export const vaultItemUrl = (id: string) => `${V}/items/${id}/content`;
+/** One version's own address: a cached image can never be an older version than the one shown. */
+export const vaultVersionUrl = (id: string, n: number) => `${V}/items/${id}/versions/${n}/content`;
 export const sourceItemUrl = (source: string, ref: string) => `${V}/sources/${encodeURIComponent(source)}/items/${encodeURIComponent(ref)}/content`;
 export async function addVaultVersion(a: IlvenAuth, itemId: string, blob: Blob, operation: string) {
   const r = await a.fetch(`${V}/items/${itemId}/versions?${new URLSearchParams({ app: "locke", operation })}`, {

@@ -3,7 +3,7 @@ import { useI18n } from "../i18n/index.tsx";
 import { useAuth, VAULT_URL } from "../app/session.tsx";
 import { ApiError } from "../app/jobs.tsx";
 import {
-  authBlob, sourceItemUrl, sourceQuery, vaultItems, vaultItemUrl, vaultSources, type SourceItem, type VaultItem, type VaultSource,
+  authBlob, sourceItemUrl, sourceQuery, vaultItems, vaultItemUrl, vaultSources, vaultVersionUrl, type SourceItem, type VaultItem, type VaultSource,
 } from "../app/data.tsx";
 import { AuthImg, Sheet } from "./Shared.tsx";
 import { Icon } from "./Icon.tsx";
@@ -11,9 +11,10 @@ import { Icon } from "./Icon.tsx";
 /**
  * Pick images from Locke Vault: the vault's own items, or any of its read-only sources (Documents, Locke's results,
  * iCloud…). PNG and JPEG only (what the GPU takes). With `stage`, a picked source image is first copied into the
- * vault (HANDOFF §5.3), so edits become versions of that vault item.
+ * vault (HANDOFF §5.3), so edits become versions of that vault item. Vault images are read by version (their own
+ * address), so a picked image is always the version shown, never an older one cached earlier in the session.
  */
-export interface Picked { file: File; vaultItem?: string }
+export interface Picked { file: File; vaultItem?: string; version?: number }
 const OK_TYPE = /^image\/(png|jpeg)$/;
 
 export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stage?: boolean; onPick(p: Picked[]): void; onClose(): void }) {
@@ -38,7 +39,7 @@ export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stag
     try {
       if (tab === "vault") {
         const r = await vaultItems(auth, more ? cursor ?? undefined : undefined);
-        const list = r.items.filter((i) => OK_TYPE.test(i.versions[i.versions.length - 1]?.contentType ?? "")).map((i) => ({ key: `v:${i.id}`, url: vaultItemUrl(i.id), name: i.title, item: i }));
+        const list = r.items.filter((i) => OK_TYPE.test(i.versions[i.versions.length - 1]?.contentType ?? "")).map((i) => ({ key: `v:${i.id}`, url: i.currentVersion ? vaultVersionUrl(i.id, i.currentVersion) : vaultItemUrl(i.id), name: i.title, item: i }));
         setItems((x) => (more && x ? [...x, ...list] : list));
         setCursor(r.cursor);
       } else {
@@ -69,6 +70,7 @@ export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stag
         const it = items.find((i) => i.key === key);
         if (!it) continue;
         let vaultItem = it.item?.id;
+        let version = it.item?.currentVersion ?? undefined;
         let url = it.url;
         if (!vaultItem && stage && it.ref) {
           // Copy the source image into the vault first; edits then become its versions.
@@ -78,11 +80,12 @@ export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stag
           const d = await r.json().catch(() => null) as { id?: string; error?: string; message?: string } | null;
           if (!r.ok || !d?.id) throw new ApiError(d?.error ?? "vault_error", d?.message ?? t("picker.error"));
           vaultItem = d.id;
-          url = vaultItemUrl(d.id);
+          version = 1;
+          url = vaultVersionUrl(d.id, 1);
         }
         const blob = await authBlob(auth, url);
         if (!OK_TYPE.test(blob.type)) throw new ApiError("type", t("create.refs.type"));
-        out.push({ file: new File([blob], `${it.name.replace(/\.[a-z0-9]+$/i, "").slice(0, 60) || "image"}.${blob.type === "image/png" ? "png" : "jpg"}`, { type: blob.type }), ...(vaultItem ? { vaultItem } : {}) });
+        out.push({ file: new File([blob], `${it.name.replace(/\.[a-z0-9]+$/i, "").slice(0, 60) || "image"}.${blob.type === "image/png" ? "png" : "jpg"}`, { type: blob.type }), ...(vaultItem ? { vaultItem, ...(version ? { version } : {}) } : {}) });
       }
       onPick(out);
       onClose();
@@ -126,6 +129,11 @@ export function VaultPicker({ max, stage, onPick, onClose }: { max: number; stag
               <button key={i.key} type="button" className={`tile app-picktile ${n >= 0 ? "is-on" : ""}`} aria-pressed={n >= 0} aria-label={i.name} onClick={() => toggle(i.key)}>
                 <AuthImg url={i.url} alt="" />
                 {n >= 0 && <span className="tile-tag">{max > 1 ? n + 1 : <Icon name="check" size={16} />}</span>}
+                {i.item && (i.item.currentVersion ?? 1) > 1 && (
+                  <span className="tile-tag app-vtag" title={i.item.versions.find((v) => v.n === i.item!.currentVersion)?.operation}>
+                    {t("picker.version", { n: i.item.currentVersion ?? 1 })}
+                  </span>
+                )}
               </button>
             );
           })}

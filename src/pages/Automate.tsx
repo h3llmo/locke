@@ -6,17 +6,18 @@ import { useAuth } from "../app/session.tsx";
 import { ApiError, useOptions } from "../app/jobs.tsx";
 import {
   deleteWorkflow, enableAutomation, retryRun, saveWorkflow, setWorkflowActive, useAutomation, useCharacters, useWorkflows,
-  vaultItemUrl, vaultSources, workflowRuns, type Character, type VaultSource, type Workflow, type WorkflowData, type WorkflowRun, type WorkflowStep,
+  vaultItemUrl, vaultSources, workflowRuns, type VaultSource, type Workflow, type WorkflowData, type WorkflowRun,
 } from "../app/data.tsx";
 import { EmptyState, Page } from "../components/Page.tsx";
 import { Icon } from "../components/Icon.tsx";
-import { AuthImg, CharacterBubbles } from "../components/Shared.tsx";
+import { AuthImg } from "../components/Shared.tsx";
+import { StepFlow, StepsEditor } from "../components/Steps.tsx";
 import { useToast } from "../components/Toasts.tsx";
 import { useDate } from "./Jobs.tsx";
 
 /**
- * Automate (HANDOFF §5.4): workflows watch vault sources and edit every new image: Enhance / Face swap in the user's
- * order, then Blur, always last. Each image is copied into the vault and every step adds a version there, so the vault's
+ * Automate (HANDOFF §5.4): workflows watch vault sources and edit every new image with the user's steps, in any order
+ * (the Editor's step builder, components/Steps.tsx). Each image is copied into the vault and every step adds a version there, so the vault's
  * "Undo last step" removes a step image by image. Runs while the user is away with Locke's delegated key (Nevli).
  */
 export function AutomatePage() {
@@ -53,15 +54,6 @@ function AutomationAccess({ onChange }: { onChange?(): void }) {
   );
 }
 
-export function useStepLabel() {
-  const { t } = useI18n();
-  return (s: WorkflowStep | { op: "blur" }, chars: Character[]) => {
-    if (s.op === "face_swap") return `${t("jobs.type.face_swap")} · ${s.characters.map((id) => chars.find((c) => c.id === id)?.name ?? "?").join(", ")}`;
-    if (s.op === "upscale") return `${t("jobs.type.upscale")} ×${s.scale}`;
-    return t(s.op === "blur" ? "jobs.type.blur" : "jobs.type.enhance");
-  };
-}
-
 function WorkflowList() {
   const { t } = useI18n();
   const auth = useAuth();
@@ -70,7 +62,6 @@ function WorkflowList() {
   const { data, reload } = useWorkflows();
   const { data: characters } = useCharacters();
   const chars = Array.isArray(characters) ? characters : [];
-  const label = useStepLabel();
   // Live status while something runs.
   useEffect(() => { const id = setInterval(() => void reload(), 15_000); return () => clearInterval(id); }, [reload]);
   const toggle = async (w: Workflow) => {
@@ -101,14 +92,7 @@ function WorkflowList() {
               </div>
               {w.lastError && <p className="hint hint-error">{t(errorKey(w.lastError))}</p>}
               <div className="app-pills app-row">{w.sources.map((s) => <span key={`${s.source}|${s.collection}`} className="pill">{s.label}</span>)}</div>
-              <div className="flow app-flow">
-                {[...w.steps, ...(w.blur ? [{ op: "blur" as const }] : [])].map((s, i) => (
-                  <span key={i} className="app-row app-flowstep">
-                    {i > 0 && <Icon name="arrow" size={16} />}
-                    <span className="pill pill-accent">{label(s, chars)}</span>
-                  </span>
-                ))}
-              </div>
+              <StepFlow steps={w.steps} chars={chars} />
             </section>
           ))}
         </div>
@@ -147,13 +131,12 @@ function WorkflowEdit() {
   const chars = Array.isArray(characters) ? characters : [];
   const existing = Array.isArray(workflows) ? workflows.find((w) => w.id === id) ?? null : null;
   const [sources, setSources] = useState<VaultSource[] | null | "error">(null);
-  const [d, setD] = useState<WorkflowData | null>(isNew ? { name: "", sources: [], steps: [], blur: null } : null);
+  const [d, setD] = useState<WorkflowData | null>(isNew ? { name: "", sources: [], steps: [] } : null);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const label = useStepLabel();
 
   useEffect(() => { vaultSources(auth).then((s) => setSources(s.filter((x) => x.available)), () => setSources("error")); }, [auth]);
-  useEffect(() => { if (existing && !d) setD({ name: existing.name, sources: existing.sources, steps: existing.steps, blur: existing.blur }); }, [existing]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (existing && !d) setD({ name: existing.name, sources: existing.sources, steps: existing.steps }); }, [existing]); // eslint-disable-line react-hooks/exhaustive-deps
   // A source without an "everything" view (iCloud): an older workflow's "all" meant its first collection.
   useEffect(() => {
     if (!d || !Array.isArray(sources)) return;
@@ -174,15 +157,7 @@ function WorkflowEdit() {
     if (hasSource(src.id, collection?.id ?? null)) setD({ ...d, sources: d.sources.filter((s) => !(s.source === src.id && s.collection === (collection?.id ?? null))) });
     else if (d.sources.length < 5) setD({ ...d, sources: [...d.sources, { source: src.id, collection: collection?.id ?? null, label: collection ? `${src.name} · ${collection.name}` : src.name }] });
   };
-  const setStep = (i: number, s: WorkflowStep) => setD({ ...d, steps: d.steps.map((x, k) => (k === i ? s : x)) });
-  const move = (i: number, by: -1 | 1) => {
-    const j = i + by;
-    if (j < 0 || j >= d.steps.length) return;
-    const steps = [...d.steps];
-    [steps[i], steps[j]] = [steps[j]!, steps[i]!];
-    setD({ ...d, steps });
-  };
-  const valid = d.name.trim() && d.sources.length > 0 && (d.steps.length > 0 || d.blur) && d.steps.every((s) => s.op !== "face_swap" || s.characters.length > 0);
+  const valid = d.name.trim() && d.sources.length > 0 && d.steps.length > 0 && d.steps.every((s) => s.op !== "face_swap" || s.characters.length > 0);
   const save = async () => {
     if (!valid) return;
     setBusy(true);
@@ -202,7 +177,6 @@ function WorkflowEdit() {
   const remove = async () => {
     try { await deleteWorkflow(auth, id!); await reload(); nav("/automate"); } catch { toast(t("jobs.error")); }
   };
-  const maxChars = caps?.faceSwap?.maxCharacters ?? 1;
 
   return (
     <div className="app-page">
@@ -246,58 +220,8 @@ function WorkflowEdit() {
 
       <section className="card app-stack" aria-labelledby="wf-steps">
         <h2 className="t-title-s" id="wf-steps"><span className="app-stepnum">2</span>{t("automate.steps")}</h2>
-        {d.steps.map((s, i) => (
-          <div key={i} className="app-wfstep">
-            <div className="app-row">
-              <span className="t-label">{i + 1}. {label(s.op === "face_swap" ? { ...s, characters: [] } : s, chars).split(" · ")[0]}</span>
-              <span className="app-grow-0" />
-              <button type="button" className="icon-btn app-up" aria-label={t("automate.step.up")} disabled={i === 0} onClick={() => move(i, -1)}><Icon name="back" size={16} /></button>
-              <button type="button" className="icon-btn app-down" aria-label={t("automate.step.down")} disabled={i === d.steps.length - 1} onClick={() => move(i, 1)}><Icon name="back" size={16} /></button>
-              <button type="button" className="icon-btn" aria-label={t("automate.step.remove")} onClick={() => setD({ ...d, steps: d.steps.filter((_, k) => k !== i) })}><Icon name="trash" size={16} /></button>
-            </div>
-            {s.op === "face_swap" && (
-              <>
-                <CharacterBubbles characters={chars} selected={s.characters} onToggle={(cid) => {
-                  const on = s.characters.includes(cid);
-                  if (!on && s.characters.length >= maxChars) { toast(t("editor.characters.max", { n: maxChars })); return; }
-                  setStep(i, { ...s, characters: on ? s.characters.filter((x) => x !== cid) : [...s.characters, cid] });
-                }} extra={<Link className="bubble" to="/characters?new=1"><span className="bubble-face app-bubble-empty"><Icon name="plus" /></span><span>{t("editor.character.new")}</span></Link>} />
-                <span className="hint">{t("automate.faceswap.hint")}</span>
-              </>
-            )}
-            {s.op === "upscale" && (
-              <div className="seg seg-sm">
-                {([2, 4] as const).map((x) => <button key={x} type="button" aria-pressed={s.scale === x} disabled={!!caps?.upscale && !caps.upscale.scales.includes(x)} onClick={() => setStep(i, { ...s, scale: x })}>×{x}</button>)}
-              </div>
-            )}
-            {s.op === "enhance" && (
-              <div className="seg seg-sm">
-                {(["subtle", "balanced", "strong"] as const).map((x) => <button key={x} type="button" aria-pressed={s.strength === x} onClick={() => setStep(i, { ...s, strength: x })}>{t(`automate.strength.${x}` as MessageKey)}</button>)}
-              </div>
-            )}
-          </div>
-        ))}
-        <div className="app-row">
-          {d.steps.length < 4 && <button type="button" className="btn btn-secondary btn-sm" disabled={!caps?.faceSwap} onClick={() => setD({ ...d, steps: [...d.steps, { op: "face_swap", characters: [] }] })}><Icon name="plus" size={16} />{t("jobs.type.face_swap")}</button>}
-          {d.steps.length < 4 && <button type="button" className="btn btn-secondary btn-sm" disabled={!caps?.enhance} onClick={() => setD({ ...d, steps: [...d.steps, { op: "enhance", strength: "balanced" }] })}><Icon name="plus" size={16} />{t("jobs.type.enhance")}</button>}
-          {d.steps.length < 4 && <button type="button" className="btn btn-secondary btn-sm" disabled={!caps?.upscale} onClick={() => setD({ ...d, steps: [...d.steps, { op: "upscale", scale: caps?.upscale?.scales[0] === 4 ? 4 : 2 }] })}><Icon name="plus" size={16} />{t("jobs.type.upscale")}</button>}
-        </div>
-        {(!caps?.enhance || !caps?.blur || !caps?.upscale) && <p className="hint">{t("automate.gpuSoon")}</p>}
-
-        <div className="app-wfstep app-wfblur">
-          <div className="opt-row">
-            <span className="opt-label">{t("jobs.type.blur")} <span className="pill">{t("automate.blur.last")}</span></span>
-            <button type="button" role="switch" aria-checked={!!d.blur} aria-label={t("jobs.type.blur")} disabled={!caps?.blur && !d.blur} className={`switch ${d.blur ? "is-on" : ""}`}
-              onClick={() => setD({ ...d, blur: d.blur ? null : { strength: 60 } })} />
-          </div>
-          {d.blur && (
-            <label className="field">
-              <span className="field-label">{t("automate.blur.strength", { n: d.blur.strength })}</span>
-              <input type="range" min={0} max={100} step={5} value={d.blur.strength} onChange={(e) => setD({ ...d, blur: { strength: Number(e.target.value) } })} />
-            </label>
-          )}
-          <span className="hint">{t("automate.blur.hint")}</span>
-        </div>
+        <StepsEditor steps={d.steps} onChange={(steps) => setD({ ...d, steps })} caps={caps} chars={chars} back={`/automate/${id}`} />
+        <span className="hint">{t("automate.steps.hint")}</span>
       </section>
 
       <p className="t-caption">{t("automate.output")}</p>
@@ -326,7 +250,7 @@ function Activity({ workflow }: { workflow: Workflow }) {
   const [runs, setRuns] = useState<WorkflowRun[] | null>(null);
   const load = () => workflowRuns(auth, workflow.id).then(setRuns, () => setRuns((r) => r ?? []));
   useEffect(() => { void load(); const id = setInterval(() => void load(), 10_000); return () => clearInterval(id); }, [workflow.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  const steps = workflow.steps.length + (workflow.blur ? 1 : 0);
+  const steps = workflow.steps.length;
   return (
     <section className="app-stack-s" aria-labelledby="wf-activity">
       <h2 className="t-title-s" id="wf-activity">{t("automate.activity")}</h2>

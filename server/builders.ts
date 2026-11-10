@@ -10,7 +10,9 @@ export interface GenerateSpec {
   positive: string[]; negative: string[]; style: string; aspect: "square" | "portrait" | "landscape";
   count: number; mode: "fast" | "quality"; seed: number | null;
 }
-type Extra = Pick<NewJob, "scheduleId" | "keep" | "workflowRunId"> & { summary?: Record<string, unknown> };
+export type NewJobExtra = Pick<NewJob, "scheduleId" | "keep" | "workflowRunId" | "editId"> & { summary?: Record<string, unknown> };
+type Extra = NewJobExtra;
+const links = (e: Extra) => ({ scheduleId: e.scheduleId, keep: e.keep, workflowRunId: e.workflowRunId, editId: e.editId });
 
 /** Results come back as JPEG (quality 95, no metadata): much smaller than PNG for photos, and upscale needs it. */
 export const RESULT_FORMAT = "jpeg";
@@ -43,9 +45,16 @@ class Inputs {
   }
 }
 
+/** What a worker must support to take each kind of job (also checked up front for every step of an edit). */
+export const faceSwapRequirements = (chars: { gender: string; age: string; faces: number }[]) =>
+  ({ characters: chars.map((c) => ({ gender: c.gender, age: c.age, faces: c.faces })), format: RESULT_FORMAT });
+export const imageRequirements = (type: "enhance" | "blur", strength: string | number) =>
+  ({ format: RESULT_FORMAT, ...(type === "enhance" ? { strength } : {}) });
+export const upscaleRequirements = (scale: 2 | 4) => ({ scale, format: "jpeg" });
+
 export async function faceSwapJob(ctx: Ctx, sub: string, target: Buffer, chars: CharacterInput[], extra: Extra = {}) {
   if (!chars.length || chars.some((c) => !c.faces.length)) throw err(400, "bad_request", "Each character needs at least one photo");
-  const requirements = { characters: chars.map((c) => ({ gender: c.gender, age: c.age, faces: c.faces.length })), format: RESULT_FORMAT };
+  const requirements = faceSwapRequirements(chars.map((c) => ({ gender: c.gender, age: c.age, faces: c.faces.length })));
   await assertSomeWorkerCan(ctx, "face_swap", requirements);
   const t = cleanImage("photo", target);
   if (!t.size) throw err(415, "unsupported_image", "photo: unreadable image size");
@@ -56,7 +65,7 @@ export async function faceSwapJob(ctx: Ctx, sub: string, target: Buffer, chars: 
     ownerSub: sub, type: "face_swap", inputs: inputs.list, requirements, maxResults: 1, resultSize: t.size,
     params: { image, match: "largest", characters, output },
     summary: { title: "Face swap", characters: chars.length, ...extra.summary },
-    scheduleId: extra.scheduleId, keep: extra.keep, workflowRunId: extra.workflowRunId,
+    ...links(extra),
   });
 }
 
@@ -78,7 +87,7 @@ export async function generateJob(ctx: Ctx, sub: string, p: GenerateSpec, refs: 
       title: title.length > 140 ? `${title.slice(0, 139)}…` : title, style: p.style, aspect: p.aspect, mode: p.mode, count: p.count,
       references: refs.length, positive: p.positive, negative: p.negative, ...extra.summary,
     },
-    scheduleId: extra.scheduleId, keep: extra.keep, workflowRunId: extra.workflowRunId,
+    ...links(extra),
   });
 }
 
@@ -87,7 +96,7 @@ export async function generateJob(ctx: Ctx, sub: string, p: GenerateSpec, refs: 
  * (§5.4): one image in, one result of the same size out.
  */
 export async function imageJob(ctx: Ctx, sub: string, type: "enhance" | "blur", image: Buffer, strength: string | number, extra: Extra = {}) {
-  const requirements = { format: RESULT_FORMAT, ...(type === "enhance" ? { strength } : {}) };
+  const requirements = imageRequirements(type, strength);
   await assertSomeWorkerCan(ctx, type, requirements);
   const t = cleanImage("photo", image);
   const inputs = new Inputs();
@@ -97,7 +106,7 @@ export async function imageJob(ctx: Ctx, sub: string, type: "enhance" | "blur", 
     resultSize: t.size,
     params: { image: id, strength, output },
     summary: { title: type === "blur" ? "Background blur" : "Enhance", ...extra.summary },
-    scheduleId: extra.scheduleId, keep: extra.keep, workflowRunId: extra.workflowRunId,
+    ...links(extra),
   });
 }
 
@@ -106,7 +115,7 @@ export const UPSCALE_MAX_PIXELS = 40_000_000;
 
 /** Upscale (worker API §5.7): ×2 or ×4, reduced to stay within UPSCALE_MAX_PIXELS (never below the input). JPEG only. */
 export async function upscaleJob(ctx: Ctx, sub: string, image: Buffer, scale: 2 | 4, extra: Extra = {}) {
-  const requirements = { scale, format: "jpeg" };
+  const requirements = upscaleRequirements(scale);
   await assertSomeWorkerCan(ctx, "upscale", requirements);
   cleanImage("photo", image);
   const inputs = new Inputs();
@@ -115,7 +124,7 @@ export async function upscaleJob(ctx: Ctx, sub: string, image: Buffer, scale: 2 
     ownerSub: sub, type: "upscale", inputs: inputs.list, requirements, maxResults: 1,
     params: { image: id, scale, maxPixels: UPSCALE_MAX_PIXELS, output: { format: "jpeg" } },
     summary: { title: `Upscale ×${scale}`, ...extra.summary },
-    scheduleId: extra.scheduleId, keep: extra.keep, workflowRunId: extra.workflowRunId,
+    ...links(extra),
   });
 }
 

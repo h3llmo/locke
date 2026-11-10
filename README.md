@@ -42,7 +42,10 @@ npm run build        # dist/web (app) + dist/index.mjs (server)
   or weekly (wall-clock, user's time zone); a run is skipped while the previous one still waits; results can be kept.
 - **Jobs:** Recent and Scheduled tabs, result page (Keep to the vault, or as a new version of the vault image that was
   edited; Download; viewer; Run again).
-- **Editor:** face swap (saved characters), face enhancement, upscale ×2/×4 or background blur of an uploaded or vault photo.
+- **Editor:** one photo (uploaded or from the vault) and any steps in any order: face swap (saved characters), face
+  enhancement, upscale ×2/×4, background blur. Applying them makes one **edit** (`server/edits.ts`): each step is a hidden
+  GPU job feeding the next; only the final result is offered, and keeping it on a vault photo adds one version. Edits
+  show as one row in Jobs; "Edit the result" chains another edit. A step that finds no face is skipped.
 - **Characters:** name, gender and age (which face is theirs), 1–8 photos, main face first. Sealed at rest.
 - **Automate:** workflows watch vault sources (any collection, e.g. one schedule) and run Face swap / Enhance, then
   Blur last, on every new image; each step adds a version in the vault. They run while the user is away with a
@@ -57,10 +60,10 @@ npm run build        # dist/web (app) + dist/index.mjs (server)
   schedules, source, automation). Both use their own worker with values real workers don't announce, so live workers
   can stay live.
 - **Ilven assistant**: the platform's assistant button on every page, with page context (current page, the photo open in
-  the editor, chosen characters); lists reload after it acts. Locke's MCP (internal port 8081) offers 18 tools that call
+  the editor, chosen characters); lists reload after it acts. Locke's MCP (internal port 8081) offers 16 tools that call
   Locke's own REST API in-process with the user's own Ilven API key, so the assistant has exactly the user's rights:
   get_status, list_jobs, get_job, list_characters, list_saved_prompts, list_workflows, list_vault_photos,
-  generate_images, face_swap, enhance_faces, upscale_photo and blur_background (a vault photo), run_saved_prompt, save_result_to_vault, set_schedule_active,
+  generate_images, edit_photo (steps on a vault photo), list_edits, run_saved_prompt, save_result_to_vault, set_schedule_active,
   set_workflow_active, cancel_job and delete_job (both destructive: confirmed in the chat). Like every Ilven app, the
   default preset is empty: an Ilven admin allows tools in Nevli-Web.
 - **Enhance and upscale are live** (windows-pilot 0.5.0, worker API §5.3, §5.7) in the Editor and as workflow steps.
@@ -70,5 +73,6 @@ npm run build        # dist/web (app) + dist/index.mjs (server)
 - Workflows on sources without "new since" (iCloud albums) list the whole collection every 5 minutes and remember what
   they saw, so a photo added to an album is picked up whatever its date. Each ticked iCloud album (and Favorites,
   Hidden) is its own collection: one workflow per album.
-- Editing a vault photo: keeping the result adds a version (undo in the vault).
+- Workflows use the same step builder: any order (blur is no longer forced last), one vault version per step.
+- The vault picker reads each vault image by version, so a picked image is never an older cached version.
 - Not yet: push notifications.

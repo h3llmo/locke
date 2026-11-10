@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { HttpError, type Caller } from "@ilven/common";
 import { err, newId, purgeJob, readResult, type Ctx } from "./jobs.ts";
-import { faceSwapJob, imageJob, upscaleJob } from "./builders.ts";
+import { MAX_STEPS, STEP_TITLES, skippable, startStep, stepSchema, type Step } from "./steps.ts";
 import { characterStore, type Auth } from "./characters.ts";
 import { detectFormat, contentType } from "./images.ts";
 import { openRow, sealRow } from "./sealed.ts";
@@ -10,8 +10,8 @@ import { VaultClient, VaultError, type SourceInfo } from "./vault.ts";
 import { notifier } from "./notify.ts";
 
 /**
- * Automate (HANDOFF §5.4): workflows watch vault sources and run steps on every new image, in this order:
- * Enhance / Face swap (the user's order) → Blur, always last. Each new image is copied into the vault, then every
+ * Automate (HANDOFF §5.4): workflows watch vault sources and run steps on every new image, in the user's order (face
+ * swap, enhance, upscale, blur; shared with the Editor, server/steps.ts). Each new image is copied into the vault, then every
  * finished step adds a version to that vault item (linear history: "Undo last step" in the vault removes the last).
  *
  * Workflows run while the user is away, so Locke holds a delegated key for the user (Nevli, issued only while the
@@ -25,11 +25,6 @@ const CHECK_EVERY_S = 60;
 const FULL_SCAN_EVERY_S = 300;
 const FULL_SCAN_PAGES = 50; // 5,000 photos per collection at most
 
-const stepSchema = z.discriminatedUnion("op", [
-  z.object({ op: z.literal("enhance"), strength: z.enum(["subtle", "balanced", "strong"]).default("balanced") }),
-  z.object({ op: z.literal("face_swap"), characters: z.array(z.string().max(64)).min(1).max(4) }),
-  z.object({ op: z.literal("upscale"), scale: z.union([z.literal(2), z.literal(4)]).default(2) }),
-]);
 export const workflowSchema = z.object({
   name: z.string().trim().min(1).max(80),
   sources: z.array(z.object({
@@ -37,11 +32,11 @@ export const workflowSchema = z.object({
     collection: z.string().max(100).nullable().default(null),
     label: z.string().trim().min(1).max(160),
   })).min(1).max(5),
-  steps: z.array(stepSchema).max(4).default([]),
+  steps: z.array(stepSchema).max(MAX_STEPS).default([]),
+  // Before steps had a free order, blur was a separate setting, always last. Still read; saved as a step.
   blur: z.object({ strength: z.number().int().min(0).max(100) }).nullable().default(null),
 }).refine((w) => w.steps.length > 0 || w.blur, { message: "Add at least one step" });
 export type WorkflowData = z.infer<typeof workflowSchema>;
-type Step = { op: "enhance"; strength: string } | { op: "face_swap"; characters: string[] } | { op: "upscale"; scale: 2 | 4 } | { op: "blur"; strength: number };
 type Cursor = { since?: string; listed?: boolean; scannedAt?: string };
 interface WorkflowRow {
   id: string; owner_sub: string; data: string; active: boolean; activated_at: Date | null; cursors: Record<string, Cursor>;
@@ -52,9 +47,9 @@ interface RunRow {
   step: number; job_id: string | null; notes: string[]; failure: string | null; created_at: Date; updated_at: Date;
 }
 
-const STEP_TITLES: Record<Step["op"], string> = { face_swap: "Face swap", enhance: "Enhance", upscale: "Upscale", blur: "Blur" };
 const keyOf = (s: { source: string; collection: string | null }) => `${s.source}|${s.collection ?? ""}`;
 export const stepsOf = (d: WorkflowData): Step[] => [...d.steps, ...(d.blur ? [{ op: "blur" as const, strength: d.blur.strength }] : [])];
+const normalized = (d: WorkflowData): WorkflowData => ({ ...d, steps: stepsOf(d), blur: null });
 
 export interface AutomationDeps { nevliUrl: string; appSecret: string; vaultUrl: string }
 
@@ -108,7 +103,9 @@ export function registerAutomationApi(app: FastifyInstance, ctx: Ctx, prefix: st
     return rows[0];
   };
   const validate = async (sub: string, body: unknown) => {
-    const d = workflowSchema.parse(body);
+    const parsed = workflowSchema.parse(body);
+    const d: WorkflowData = { ...parsed, steps: stepsOf(parsed), blur: null };
+    if (d.steps.length > MAX_STEPS) throw err(400, "bad_request", `At most ${MAX_STEPS} steps`);
     for (const s of d.steps) if (s.op === "face_swap") for (const c of s.characters) await chars.get(sub, c);
     if (new Set(d.sources.map(keyOf)).size !== d.sources.length) throw err(400, "bad_request", "A source is listed twice");
     return d;
@@ -125,7 +122,7 @@ export function registerAutomationApi(app: FastifyInstance, ctx: Ctx, prefix: st
       [w.id],
     );
     return {
-      id: w.id, ...openRow<WorkflowData>(ctx.sealer, w.id, w.data), active: w.active, activatedAt: w.activated_at,
+      id: w.id, ...normalized(openRow<WorkflowData>(ctx.sealer, w.id, w.data)), active: w.active, activatedAt: w.activated_at,
       lastCheckAt: w.last_check_at, lastError: w.last_error, createdAt: w.created_at, updatedAt: w.updated_at,
       stats: {
         pending: by("pending")?.n ?? 0, running: by("running")?.n ?? 0, waitingForGpu: waiting.rows[0]!.n,
@@ -318,7 +315,6 @@ async function discover(ctx: Ctx, deps: AutomationDeps, log: (e: unknown, msg: s
 
 async function advance(ctx: Ctx, deps: AutomationDeps, log: (e: unknown, msg: string) => void) {
   const auto = automation(ctx, deps);
-  const chars = characterStore(ctx);
   const notify = notifier(ctx);
   const tell = (r: RunRow, status: "done" | "failed") => { notify.forWorkflowRun(r.owner_sub, r.workflow_id, status).catch((e) => log(e, "notification failed")); };
   const { rows } = await ctx.db.query<RunRow & { data: string; active: boolean }>(
@@ -356,16 +352,7 @@ async function advance(ctx: Ctx, deps: AutomationDeps, log: (e: unknown, msg: st
         const step = steps[r.step]!;
         const image = await vault.content(item);
         const extra = { workflowRunId: r.id, summary: { title: `${d.name} · ${STEP_TITLES[step.op]}`, workflow: d.name } };
-        let jobId: string;
-        if (step.op === "face_swap") {
-          const cs = [];
-          for (const id of step.characters) cs.push(await chars.load(r.owner_sub, id));
-          jobId = await faceSwapJob(ctx, r.owner_sub, image, cs, extra);
-        } else if (step.op === "upscale") {
-          jobId = await upscaleJob(ctx, r.owner_sub, image, step.scale, extra);
-        } else {
-          jobId = await imageJob(ctx, r.owner_sub, step.op, image, step.strength, extra);
-        }
+        const jobId = await startStep(ctx, r.owner_sub, step, image, extra);
         await set({ job_id: jobId, status: "running" });
         inFlight.set(r.workflow_id, (inFlight.get(r.workflow_id) ?? 0) + 1);
         continue;
@@ -380,7 +367,7 @@ async function advance(ctx: Ctx, deps: AutomationDeps, log: (e: unknown, msg: st
       if (!job || !step || ["cancelled", "expired"].includes(job.status)) { await fail("cancelled"); continue; }
       if (job.status === "queued" || job.status === "running") continue;
       if (job.status === "failed") {
-        if (job.failure_code === "no_face_found" && (step.op === "face_swap" || step.op === "enhance")) {
+        if (skippable(step, job.failure_code)) {
           // No face to swap or enhance in this image: keep it as it is and go on.
           await set({ step: r.step + 1, job_id: null, notes: [...r.notes, "no_face_found"] });
           await purgeJob(ctx, r.job_id);

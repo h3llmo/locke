@@ -171,11 +171,13 @@ test("saved prompt with a reference; a schedule runs it and keeps its results; L
   made.schedule = scheduleId;
 });
 
-test("automation: delegated key from Nevli; a workflow picks up a new image and adds face swap and upscale versions in the vault", async () => {
+// Every step here uses a character aged "child", which only the e2e worker matches: live GPUs (which now offer upscale,
+// enhance and blur) never pick up test jobs.
+test("automation: delegated key from Nevli; a workflow picks up a new image and adds a version per step in the vault", async () => {
   const before = await call("GET", `${API}/automation`, { auth: alice });
   assert.equal(before.status, 200);
   const wf = await call("POST", `${API}/workflows`, { auth: alice, json: {
-    name: "E2E workflow", sources: [{ source: "locke", collection: made.schedule, label: "E2E" }], steps: [{ op: "face_swap", characters: [made.character] }, { op: "upscale", scale: 2 }],
+    name: "E2E workflow", sources: [{ source: "locke", collection: made.schedule, label: "E2E" }], steps: [{ op: "face_swap", characters: [made.character] }, { op: "face_swap", characters: [made.character] }],
   } });
   assert.equal(wf.status, 201, JSON.stringify(wf.body));
   made.workflow = wf.body.id;
@@ -202,8 +204,8 @@ test("automation: delegated key from Nevli; a workflow picks up a new image and 
 
   // The engine stages it into the vault and queues the face swap (age "child": only the e2e worker matches).
   await workOne(["face_swap"], (p) => assert.equal(p.characters[0].age, "child"));
-  // Then the upscale step, on the face-swapped version.
-  await workOne(["upscale"], (p) => { assert.equal(p.scale, 2); assert.equal(p.output.format, "jpeg"); assert.ok(p.maxPixels > 0); });
+  // Then the second step, on the first one's version; every job asks for JPEG.
+  await workOne(["face_swap"], (p) => assert.equal(p.output.format, "jpeg"));
   const done = await until("the workflow run to finish", async () => {
     const r = await call("GET", `${API}/workflows/${made.workflow}/runs`, { auth: alice });
     return r.body.runs.find((x) => x.status === "done" || x.status === "failed");
@@ -211,10 +213,61 @@ test("automation: delegated key from Nevli; a workflow picks up a new image and 
   assert.equal(done.status, "done", JSON.stringify(done));
   made.items.add(done.itemId);
   const item = await call("GET", `${V}/items/${done.itemId}`, { auth: alice });
-  assert.deepEqual(item.body.versions.map((v) => [v.app, v.operation]), [["vault", "import:locke"], ["locke", "face_swap"], ["locke", "upscale"]]);
+  assert.deepEqual(item.body.versions.map((v) => [v.app, v.operation]), [["vault", "import:locke"], ["locke", "face_swap"], ["locke", "face_swap"]]);
   const w = (await call("GET", `${API}/workflows/${made.workflow}`, { auth: alice })).body;
   assert.equal(w.stats.done, 1);
   assert.equal(w.lastError, null);
+});
+
+test("edits: several steps on one photo run as one, in order; a step without a face is skipped; only the final result is offered", async () => {
+  const send = (steps, extra = {}) => {
+    const form = new FormData();
+    form.set("params", JSON.stringify({ image: "photo", steps, ...extra }));
+    form.set("photo", new Blob([PNG], { type: "image/png" }), "photo.png");
+    return call("POST", `${API}/edits`, { auth: alice, form });
+  };
+  // Checked up front: unknown character, bad step, too many steps.
+  assert.equal((await send([{ op: "face_swap", characters: ["ch_unknown"] }])).body.error, "character_not_found");
+  assert.equal((await send([{ op: "sharpen" }])).status, 400);
+  assert.equal((await send(Array(7).fill({ op: "upscale", scale: 2 }))).status, 400);
+
+  // Two face swaps (age "child": only the e2e worker matches, so the real GPU never gets these).
+  const steps = [{ op: "face_swap", characters: [made.character] }, { op: "face_swap", characters: [made.character] }];
+  const r = await send(steps);
+  assert.equal(r.status, 201, JSON.stringify(r.body));
+  const id = r.body.id;
+  assert.equal(r.body.status, "running");
+  assert.equal(r.body.step, 0);
+  assert.equal(r.body.operation, "face_swap-face_swap");
+  // Steps are hidden jobs: the job list doesn't show them.
+  const hidden = await call("GET", `${API}/jobs?limit=200`, { auth: alice });
+  assert.ok(!hidden.body.jobs.some((j) => j.summary?.title?.startsWith("Edit ·")), "step jobs are not listed");
+
+  // Step 1 finds no face: skipped, and step 2 gets the photo unchanged.
+  const c = await until("the edit's first step", async () => {
+    const x = await call("POST", `${W}/jobs/claim`, { auth: workerKey, json: { waitSeconds: 20, types: ["face_swap"] } });
+    return x.status === 200 ? x.body : undefined;
+  });
+  made.jobs.add(c.jobId);
+  const f = await call("POST", `${W}/jobs/${c.jobId}/fail`, { auth: workerKey, json: { leaseId: c.leaseId, code: "no_face_found", retryable: false } });
+  assert.equal(f.status, 200, JSON.stringify(f.body));
+  await workOne(["face_swap"]); // returns its input: the original photo
+  const done = await until("the edit to finish", async () => {
+    const e = (await call("GET", `${API}/edits/${id}`, { auth: alice })).body;
+    return e.status !== "running" ? e : undefined;
+  });
+  assert.equal(done.status, "done", JSON.stringify(done));
+  assert.deepEqual(done.notes, ["0:no_face_found"]);
+  assert.equal(done.result.width, 1);
+  const img = await call("GET", `${API}/edits/${id}/images/result`, { auth: alice });
+  assert.equal(img.status, 200);
+  assert.equal(img.headers?.get?.("cache-control") ?? "private, no-store", "private, no-store");
+  assert.equal((await call("GET", `${API}/edits/${id}/images/result`, { auth: admin })).status, 404, "per user");
+  assert.ok((await call("GET", `${API}/edits`, { auth: alice })).body.edits.some((e) => e.id === id));
+  // Step jobs are gone once their result moved on.
+  assert.equal((await call("GET", `${API}/jobs/${c.jobId}`, { auth: alice })).status, 404);
+  assert.equal((await call("DELETE", `${API}/edits/${id}`, { auth: alice })).status, 204);
+  assert.equal((await call("GET", `${API}/edits/${id}`, { auth: alice })).status, 404);
 });
 
 test("background blur: checked like other edits (the real blur runs on the live GPU, not in this test)", async () => {
@@ -284,8 +337,8 @@ test("assistant tools (MCP): listed for Nevli, need the user's key, act as the u
   };
   const { tools } = await rpc("tools/list", {});
   const names = tools.map((x) => x.name).sort();
-  for (const n of ["blur_background", "cancel_job", "delete_job", "enhance_faces", "face_swap", "generate_images", "get_job", "get_status", "list_characters", "list_jobs", "list_saved_prompts",
-    "list_vault_photos", "list_workflows", "run_saved_prompt", "save_result_to_vault", "set_schedule_active", "set_workflow_active", "upscale_photo"]) assert.ok(names.includes(n), n);
+  for (const n of ["cancel_job", "delete_job", "edit_photo", "generate_images", "get_job", "get_status", "list_characters", "list_jobs", "list_saved_prompts",
+    "list_vault_photos", "list_workflows", "run_saved_prompt", "save_result_to_vault", "set_schedule_active", "set_workflow_active", "list_edits"]) assert.ok(names.includes(n), n);
   for (const n of ["cancel_job", "delete_job"]) assert.equal(tools.find((x) => x.name === n).annotations.destructiveHint, true, n);
   assert.match((await tool("list_jobs", {})).error, /API key/, "no key, no call");
   assert.ok((await tool("list_jobs", {}, "ilv_" + "a".repeat(43))).error, "unknown key refused");
@@ -321,13 +374,15 @@ test("assistant tools (MCP): listed for Nevli, need the user's key, act as the u
   made.items.add(kept.body.photo);
   assert.ok((await tool("list_vault_photos", {}, key)).body.photos.some((p) => p.id === kept.body.photo));
 
-  // Face swap that vault photo with a saved character → saving adds a version of the same photo.
-  const fs = await tool("face_swap", { photo: kept.body.photo, characters: [made.character] }, key);
-  assert.equal(fs.error, null, fs.error);
-  made.jobs.add(fs.body.id);
-  assert.equal(fs.body.vaultItem, kept.body.photo);
+  // Edit that vault photo (a face swap with a saved character) → saving adds one version of the same photo.
+  const ed = await tool("edit_photo", { photo: kept.body.photo, steps: [{ op: "face_swap", characters: [made.character] }] }, key);
+  assert.equal(ed.error, null, ed.error);
+  assert.equal(ed.body.kind, "edit");
   await workOne(["face_swap"], (p) => assert.equal(p.characters[0].age, "child"));
-  assert.equal((await tool("save_result_to_vault", { job: fs.body.id }, key)).body.saved, "new_version");
+  await until("the assistant's edit to finish", async () => ((await tool("list_edits", {}, key)).body.edits.find((e) => e.id === ed.body.id)?.status === "done") || undefined);
+  assert.equal((await tool("save_result_to_vault", { job: ed.body.id }, key)).body.saved, "new_version");
+  assert.equal((await call("GET", `${V}/items/${kept.body.photo}`, { auth: alice })).body.versions.at(-1).operation, "face_swap");
+  assert.equal((await tool("delete_job", { id: ed.body.id }, key)).body.deleted, ed.body.id);
   assert.equal((await call("GET", `${V}/items/${kept.body.photo}`, { auth: alice })).body.versions.length, 2);
 
   // Other users' things don't exist for her key; destructive tools work on her own jobs.

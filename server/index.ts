@@ -11,11 +11,12 @@ import { createLockeMcp } from "./mcp.ts";
 import { migrations } from "./db.ts";
 import { ObjectStore } from "./store.ts";
 import { registerWithNevli, storageFromNevli } from "./nevli.ts";
-import { expireJobs, reapLeases, SETTINGS, type Ctx } from "./jobs.ts";
+import { expireJobs, jobEvents, reapLeases, SETTINGS, type Ctx } from "./jobs.ts";
 import { registerWorkerApi } from "./worker-api.ts";
 import { API_PREFIX, registerApi } from "./api.ts";
 import { runSchedules } from "./prompts.ts";
 import { runWorkflows, type AutomationDeps } from "./automation.ts";
+import { expireEdits, runEdits } from "./edits.ts";
 import { startNotifications } from "./notify.ts";
 
 /**
@@ -109,6 +110,12 @@ setInterval(() => void expireJobs(ctx).catch((e) => app.log.error({ err: e }, "e
 startNotifications(ctx, (e) => app.log.warn({ err: e }, "notification failed"));
 // Schedules (saved prompts) and automated workflows.
 setInterval(() => void runSchedules(ctx, (e) => app.log.error({ err: e }, "schedule run failed")).catch((e) => app.log.error({ err: e }, "scheduler failed")), 20_000).unref();
+// Edits: a finished step starts the next one at once; the timer catches anything missed (e.g. after a restart).
+const editLog = (e: unknown, msg: string) => app.log.error({ err: e }, msg);
+const advanceEdits = () => void runEdits(ctx, editLog).catch((e) => editLog(e, "edit engine failed"));
+jobEvents.on("finished", advanceEdits);
+setInterval(advanceEdits, 10_000).unref();
+setInterval(() => void expireEdits(ctx).catch((e) => app.log.error({ err: e }, "edit expiry failed")), 10 * 60 * 1000).unref();
 setInterval(() => void runWorkflows(ctx, deps, (e, msg) => app.log.error({ err: e }, msg)).catch((e) => app.log.error({ err: e }, "workflow engine failed")), 20_000).unref();
 
 await mcp.listen({ host: "0.0.0.0", port: 8081 });

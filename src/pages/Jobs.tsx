@@ -9,6 +9,8 @@ import {
 import { runPrompt, setSchedule, usePrompts, type SavedPrompt } from "../app/data.tsx";
 import { describeCadence } from "../app/cadence.ts";
 import { EmptyState, Page } from "../components/Page.tsx";
+import { useEdits, type Edit } from "../app/edits.ts";
+import { EditProgress, EditStatusPill, EditThumb, useEditTitle } from "./Editor.tsx";
 import { Icon } from "../components/Icon.tsx";
 import { useToast } from "../components/Toasts.tsx";
 
@@ -27,7 +29,7 @@ const statusPill: Record<Job["status"], string> = {
 
 const FAILS = ["unsupported", "invalid_input", "decrypt_failed", "no_face_found", "out_of_memory", "model_missing",
   "engine_unavailable", "timeout", "cancelled", "internal", "lease_expired"];
-const failKey = (code: string | null, type?: Job["type"]) =>
+export const failKey = (code: string | null, type?: Job["type"]) =>
   (code === "no_face_found" && type === "enhance" ? "jobs.fail.no_face_found.enhance" : `jobs.fail.${code && FAILS.includes(code) ? code : "internal"}`) as MessageKey;
 
 export function useDate() {
@@ -139,12 +141,19 @@ function JobList() {
   );
 }
 
+/** Jobs and edits, newest first: an edit (several steps on one photo) is one row, never one per step. */
 function RecentJobs() {
   const { t } = useI18n();
-  const { jobs } = useJobs();
+  const { jobs: jobList } = useJobs();
+  const { edits } = useEdits();
   const meta = useMeta();
   const title = useJobTitle();
+  const editTitle = useEditTitle();
   const when = useDate();
+  type Row = { at: string; job?: Job; edit?: Edit };
+  const jobs: Row[] | null | "error" = jobList === "error" || edits === "error" ? (Array.isArray(jobList) ? jobList.map((j) => ({ at: j.createdAt, job: j })) : "error")
+    : jobList === null || edits === null ? null
+    : [...jobList.map((j) => ({ at: j.createdAt, job: j })), ...edits.map((e) => ({ at: e.createdAt, edit: e }))].sort((a, b) => b.at.localeCompare(a.at));
   return (
     <>
       {jobs === null && <div className="app-joblist">{[0, 1, 2].map((i) => <div key={i} className="skel" style={{ height: 68, borderRadius: 16 }} />)}</div>}
@@ -156,7 +165,19 @@ function RecentJobs() {
       )}
       {Array.isArray(jobs) && jobs.length > 0 && (
         <ul className="app-joblist" role="list">
-          {jobs.map((j) => (
+          {jobs.map(({ job: j, edit: e }) => e ? (
+            <li key={e.id}>
+              <Link className="app-jobrow" to={`/editor/${e.id}`}>
+                <EditThumb edit={e} />
+                <span className="app-jobrow-text">
+                  <span className="t-body-s clamp1">{editTitle(e)}</span>
+                  <span className="t-caption clamp1">{[t("edit.kind"), when(e.createdAt)].join(" · ")}</span>
+                  <EditProgress edit={e} />
+                </span>
+                <EditStatusPill edit={e} />
+              </Link>
+            </li>
+          ) : j && (
             <li key={j.id}>
               <Link className="app-jobrow" to={`/jobs/${j.id}`}>
                 <Thumb job={j} />

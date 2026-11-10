@@ -180,4 +180,31 @@ export const migrations: Migration[] = [
       );
     `,
   },
+  {
+    // Edits: several tools on one photo, in the user's order, as one thing (one job per step, hidden). The working
+    // image and the original live sealed in the object store under a per-edit key; only the final result is offered.
+    id: "005_edits",
+    sql: `
+      CREATE TABLE edits (
+        id text PRIMARY KEY,
+        owner_sub text NOT NULL,
+        data text NOT NULL,
+        blob_key text NOT NULL,
+        status text NOT NULL CHECK (status IN ('running', 'done', 'failed', 'cancelled')),
+        step int NOT NULL DEFAULT 0,
+        job_id text,
+        notes jsonb NOT NULL DEFAULT '[]',
+        failure text,
+        result jsonb,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        finished_at timestamptz,
+        expires_at timestamptz
+      );
+      CREATE INDEX edits_owner ON edits (owner_sub, created_at DESC);
+      CREATE INDEX edits_open ON edits (created_at) WHERE status = 'running';
+      ALTER TABLE jobs ADD COLUMN edit_id text;
+      CREATE INDEX jobs_edit ON jobs (edit_id) WHERE edit_id IS NOT NULL;
+    `,
+  },
 ];

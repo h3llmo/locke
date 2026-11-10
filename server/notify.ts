@@ -5,7 +5,7 @@ import { err, jobEvents, type Ctx } from "./jobs.ts";
 /**
  * Notifications to the user's own Discord channel (an incoming webhook they create). Messages are generic on purpose:
  * no prompt, no image, no character or workflow name leaves Locke, only "results are ready" and a link back.
- * Test jobs never notify; workflow steps notify once per finished image (from the workflow engine).
+ * Test jobs never notify; workflow steps notify once per finished image (from the workflow engine), edits once per edit.
  */
 const WEBHOOK = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api\/webhooks\/\d{5,30}\/[A-Za-z0-9_-]{20,200}$/;
 
@@ -16,6 +16,8 @@ const TEXT: Record<Lang, Record<string, (n: number) => string>> = {
     face_swap: () => "Your face swap is ready",
     enhance: () => "Your enhanced image is ready",
     blur: () => "Your blurred image is ready",
+    upscale: () => "Your upscaled image is ready",
+    editDone: () => "Your edit is ready",
     scheduled: (n) => (n > 1 ? `Scheduled run: ${n} images are ready` : "Scheduled run: your image is ready"),
     failed: () => "A job failed",
     workflowDone: () => "A workflow finished an image (saved in your vault)",
@@ -27,6 +29,8 @@ const TEXT: Record<Lang, Record<string, (n: number) => string>> = {
     face_swap: () => "Votre échange de visage est prêt",
     enhance: () => "Votre image améliorée est prête",
     blur: () => "Votre image floutée est prête",
+    upscale: () => "Votre image agrandie est prête",
+    editDone: () => "Votre retouche est prête",
     scheduled: (n) => (n > 1 ? `Exécution planifiée : ${n} images sont prêtes` : "Exécution planifiée : votre image est prête"),
     failed: () => "Une tâche a échoué",
     workflowDone: () => "Un workflow a terminé une image (enregistrée dans votre coffre)",
@@ -68,12 +72,12 @@ export function notifier(ctx: Ctx) {
   };
 
   const forJob = async (jobId: string, status: "done" | "failed") => {
-    const { rows } = await ctx.db.query<{ owner_sub: string; type: string; is_test: boolean; workflow_run_id: string | null; schedule_id: string | null; result_count: number | null }>(
-      "SELECT owner_sub, type, is_test, workflow_run_id, schedule_id, result_count FROM jobs WHERE id = $1",
+    const { rows } = await ctx.db.query<{ owner_sub: string; type: string; is_test: boolean; workflow_run_id: string | null; edit_id: string | null; schedule_id: string | null; result_count: number | null }>(
+      "SELECT owner_sub, type, is_test, workflow_run_id, edit_id, schedule_id, result_count FROM jobs WHERE id = $1",
       [jobId],
     );
     const j = rows[0];
-    if (!j || j.is_test || j.workflow_run_id) return;
+    if (!j || j.is_test || j.workflow_run_id || j.edit_id) return;
     const r = await settings(j.owner_sub);
     if (!r || (status === "failed" && !r.notify_failures)) return;
     const key = status === "failed" ? "failed" : j.schedule_id && j.type === "generate" ? "scheduled" : j.type;
@@ -86,7 +90,14 @@ export function notifier(ctx: Ctx) {
     await post(r, status === "done" ? "workflowDone" : "workflowFailed", 1, `/automate/${workflowId}`);
   };
 
-  return { settings, post, forJob, forWorkflowRun };
+  /** An edit (several steps) finished: one message for the whole edit, never per step. */
+  const forEdit = async (sub: string, editId: string, status: "done" | "failed") => {
+    const r = await settings(sub);
+    if (!r || (status === "failed" && !r.notify_failures)) return;
+    await post(r, status === "done" ? "editDone" : "failed", 1, `/editor/${editId}`);
+  };
+
+  return { settings, post, forJob, forWorkflowRun, forEdit };
 }
 
 /** Listens for finished jobs. Failures to notify never affect the job. */
